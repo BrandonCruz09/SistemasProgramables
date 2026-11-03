@@ -7,7 +7,7 @@
 > **Equipo:** 08, según el padrón del repositorio del curso.
 > **Semestre:** ago-dic-2026
 > **Materia:** Sistemas Programables — ISC TecNM León
-> **Avance al 2 de noviembre:** cámara probada individualmente; integración física, MQTT y nube pendientes de validación conjunta.
+> **Avance al 2 de noviembre:** streaming y detección de perros/personas probados desde el celular; integración de actuadores, MQTT y nube pendiente de validación conjunta.
 
 | Nombre | Matrícula | Rol | GitHub |
 |---|---|---|---|
@@ -23,7 +23,7 @@ PetCare busca ayudar a quienes cuidan perros a supervisar el alimento disponible
 
 ![Arquitectura del sistema](hardware/arquitectura.png)
 
-La cámara es una segunda placa. La PC obtiene JPEG por HTTP; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4 del curso. Se usará el plan gratuito **Spark**, sin facturación; la cuenta y sus reglas aún están pendientes de configurar/verificar.
+La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4 del curso. Se usará el plan gratuito **Spark**, sin facturación; la cuenta y sus reglas aún están pendientes de configurar/verificar.
 
 ### Tópicos MQTT
 
@@ -32,7 +32,7 @@ La cámara es una segunda placa. La PC obtiene JPEG por HTTP; **frames directos 
 | `petcare/equipo8/telemetry` | DevKit → broker → PC | JSON con peso, temperatura, humedad, presencia, nivel y estado |
 | `petcare/equipo8/commands` | PC → broker → DevKit | `id` y `action`: `feed`, `water`, `stop_water` |
 | `petcare/equipo8/ack` | DevKit → broker → PC | Resultado y motivo de aceptación/rechazo |
-| `petcare/equipo8/vision` | PC → broker | Resultado de movimiento; no contiene la fotografía |
+| `petcare/equipo8/vision` | PC → broker | Presencia de perro/persona, disponibilidad y recuadros; sin fotografía |
 
 LED y buzzer dependen de la lógica local, sin comando MQTT propio. El circuito completo MQTT se incluye en código, todavía sin evidencia de ejecución física integral.
 
@@ -75,11 +75,11 @@ python -m pip install -r servidor/requirements.txt
 
 1. **Cámara en Thonny:** usar base ESP32CAM-MB por USB de datos. Elegir MicroPython ESP32 y el puerto detectado. Requiere firmware con módulo `camera`; no sustituirlo por firmware genérico ni borrarlo sin respaldo.
 2. Ejecutar `firmware/esp32cam/probar_camara.py`. Debe terminar con tres JPEG válidos y devolver `>>>`.
-3. Copiar `wifi_config.example.py` como `wifi_config.py`, completar Wi-Fi 2.4 GHz local y guardar ese archivo en la **cámara**. Ejecutar `camara_wifi.py`; abrir la IP que imprime, ruta `/foto`, desde la misma red. El archivo privado está excluido de Git. No se instala automáticamente como `main.py` durante pruebas.
+3. Copiar `wifi_config.example.py` como `wifi_config.py`, completar la red local y guardar en la **cámara** junto con `camara_wifi.py` y `main.py` de `firmware/esp32cam/`. El programa arranca al energizar. Abrir `/foto` o `/stream` en la IP que imprime; cerrar el video directo antes de iniciar el servidor PC. Las claves están excluidas de Git.
 4. **DevKit:** conectar componentes según HAL, sin energizar mientras se cablea. Copiar los `.py` de `firmware/esp32/` a la placa. Calibrar con `calibrar_bascula.py` y completar tara/factor en `config.py`. Probar servo sin carga antes del conjunto.
 5. Completar red y broker en `config.py` solo localmente; no subir claves. Si MQTT está vacío, el equipo ejecuta supervisión local. Instalar `umqtt.simple` en la DevKit para habilitar MQTT. Ejecutar `main.py`; STOP de Thonny detiene el ciclo.
-6. En la PC iniciar Mosquitto configurado para la LAN. Copiar `servidor/server_config.example.json` como `server_config.json`; ajustar IP del broker y `camera_url` terminada en `/foto`. No usar `127.0.0.1` como broker desde la DevKit: allí va la IP de la PC.
-7. Ejecutar `python servidor/petcare_server.py`. Firebase permanece desactivado en el ejemplo; activarlo solo después de configurar autenticación/reglas y validar localmente.
+6. En la PC configurar `server_config.json` a partir del ejemplo; ajustar `camera_stream_url`. Ejecutar `descargar_modelo.py` y `vision_main.py` desde `servidor/`, o usar `iniciar_video.cmd`. Abrir `http://IP_DE_LA_PC:8765/` desde el celular en el mismo Wi-Fi. [Guía de video y detección](docs/VIDEO_Y_DETECCION.md).
+7. Para integrar MQTT, iniciar Mosquitto y luego `python servidor/petcare_server.py`. El puente consulta `vision_url` en la PC. Desde la DevKit, el broker es la IP de la PC, no `127.0.0.1`. Firebase permanece desactivado hasta configurar autenticación y reglas. El video funciona sin estos servicios.
 
 No conectar la salida de bomba al nuevo montaje por gravedad hasta elegir su actuador. La fuente externa y el USB no deben alimentar simultáneamente el mismo riel de 5 V sin aislamiento verificado.
 
@@ -98,7 +98,8 @@ No conectar la salida de bomba al nuevo montaje por gravedad hasta elegir su act
 |---|---|---|
 | paho-mqtt | >=2.0,<3 | MQTT |
 | requests | >=2.31,<3 | HTTP cámara y Firebase REST |
-| opencv-python-headless | >=4.10,<5 | Decodificación y movimiento |
+| opencv-python-headless | >=4.10,<5 | Decodificación, DNN y recuadros |
+| numpy | >=2,<3 | Imágenes y salidas de la red |
 
 ### Pruebas reproducibles en PC
 
@@ -110,13 +111,13 @@ Son pruebas de lógica con dobles; no certifican funcionamiento físico, conexi�
 
 ## 🧠 Inteligencia Artificial
 
-**Objetivo confirmado:** detectar cualquier perro frente a los platos con un modelo preentrenado en la PC, sin identificar animales individuales. [Plan de integración IA + Firebase Spark](docs/PLAN_IA_FIREBASE.md). El detector de perros aún no está implementado; la lógica actual se describe a continuación.
+Detectar perros y personas en la PC mediante **MobileNet SSD preentrenado sobre VOC**. No identifica a una persona ni distingue perros individuales. El modelo original se descarga por separado y se verifica con SHA-256; se conserva su licencia MIT.
 
-- **Implementado en código:** procesamiento clásico OpenCV de imágenes consecutivas: escala de grises, reducción a 160×120, desenfoque y diferencia de píxeles.
-- **Qué detecta:** cambio visual/movimiento; no identifica perros ni reconoce enfermedades.
-- **Umbral inicial:** 1.8 % de imagen cambiada, ajustable; no equivale a confianza de un modelo.
-- **Decisión:** publicar resultado de visión. El movimiento no dispensa automáticamente alimento.
-- **Pendiente:** validación con escenas reales y integrar el modelo de perros y validar la decisión IA→actuador. No hay modelo entrenado ni precisión medida.
+- El flujo es ESP32-CAM → MJPEG → PC/OpenCV → página web del celular.
+- Se dibujan recuadros y se confirma presencia después de tres cuadros. Mínimos: perro 0.60; persona 0.80. No son porcentajes de precisión del sistema.
+- El equipo confirmó video y detección de persona/perro en el teléfono. También se reportó un falso positivo de perro como persona; se añadieron umbrales por clase y revisión de recuadros contradictorios. Falta medir su efecto en escenas repetidas.
+- La zona de platos está sin ajustar hasta fijar la cámara. La detección no dispensa alimento ni activa actuadores.
+- [Funcionamiento, pruebas y límites](docs/VIDEO_Y_DETECCION.md). MQTT/Firebase y la decisión IA→actuador siguen pendientes de prueba conjunta.
 
 ## 🎥 Demostración
 
@@ -134,20 +135,21 @@ El puente actual usa **Realtime Database vía REST**, con autenticación anónim
 
 ```text
 /petcare/equipo8/latest   → última telemetría
-/petcare/equipo8/vision   → resultado de movimiento
+/petcare/equipo8/vision   → resultado de perro/persona y disponibilidad
 /petcare/equipo8/command  → solicitud {id, action}
 /petcare/equipo8/events   → eventos y confirmaciones
 ```
 
-Integración, reglas por usuario y dashboard pendientes de validar. No se incluye una cuenta de servicio ni reglas públicas abiertas.
+Integración Firebase y reglas por usuario pendientes de validar. La página local de video ya está disponible; no es un dashboard de Firebase. No se incluye una cuenta de servicio ni reglas públicas abiertas.
 
 ## ⚠️ Retos técnicos encontrados
 
-1. Reinicio brownout al activar Wi-Fi; se revisó conexión USB sin desactivar protección. El usuario luego confirmó enlace de fotos funcionando; falta prueba prolongada.
+1. Reinicio brownout al activar Wi-Fi. Se mantuvo la protección; la conexión USB actual permitió transmitir después. Falta prueba prolongada y alimentación final.
 2. Movimiento del SG90 depende de alimentación y fricción real. Se limita recorrido y se libera PWM en reposo; todavía falta probar la compuerta final.
 3. La báscula requiere soporte rígido, tara y calibración; coroplast solo no garantiza medición estable.
 4. El cambio de depósito de agua a embudo exige un cierre controlado: el firmware de bomba no resuelve por sí solo un sistema por gravedad.
-5. Se corrigió identificación del repo a equipo 08. Firmware y servidor publicados usan `petcare/equipo8`; no mezclar con copias anteriores `equipo9`.
+5. La clasificación puede confundir perro/persona; falta medir falsos positivos con la cámara fija.
+6. Se corrigió identificación del repo a equipo 08. Firmware y servidor publicados usan `petcare/equipo8`; no mezclar con copias anteriores `equipo9`.
 
 ---
 Avance inicial para retroalimentación. No es entrega final ni declaración de sistema completo funcionando.

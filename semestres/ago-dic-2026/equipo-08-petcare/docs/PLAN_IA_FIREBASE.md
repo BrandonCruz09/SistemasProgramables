@@ -1,6 +1,6 @@
 # Integración acordada: detección de perros y Firebase sin facturación
 
-Actualizado: 2 de noviembre de 2026. Este documento define la siguiente implementación; no afirma que el detector de perros o la nube estén probados.
+Plan inicial del 2 de noviembre de 2026, conservado como antecedente. **Actualización posterior:** el streaming, detector de perros/personas y página móvil ya se implementaron. Consulta [Video y detección](VIDEO_Y_DETECCION.md) para el estado vigente. Firebase y el circuito IA→actuador continúan pendientes.
 
 ## Alcance confirmado
 

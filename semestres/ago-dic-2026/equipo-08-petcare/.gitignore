@@ -10,3 +10,8 @@ server_config.json
 *.bin
 *.hex
 *.elf
+servidor/models/*.caffemodel
+servidor/models/*.prototxt
+servidor/models/*.part
+*.log
+detener_video.flag

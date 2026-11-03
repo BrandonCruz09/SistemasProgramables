@@ -1,3 +1,4 @@
 paho-mqtt>=2.0,<3
 requests>=2.31,<3
 opencv-python-headless>=4.10,<5
+numpy>=2,<3

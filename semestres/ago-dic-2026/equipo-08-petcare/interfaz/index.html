@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PetCare · Cámara en vivo</title>
+  <style>
+    :root{font-family:system-ui,sans-serif;color:#1b383d;background:#f3f6f3;color-scheme:light}
+    *{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:auto;padding:24px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+    .brand{font-size:27px;font-weight:800;letter-spacing:-1px}.brand span{color:#238477}
+    .tag{background:#e3ece7;border-radius:24px;padding:7px 12px;font-size:13px}
+    h1{font-size:clamp(24px,4vw,34px);margin:0 0 8px}p{line-height:1.5;color:#52696b}
+    .intro{margin:0 0 22px}.viewer{position:relative;background:#232e33;border-radius:18px;overflow:hidden;aspect-ratio:4/3;max-height:65vh}
+    #video{width:100%;height:100%;object-fit:contain;display:block}.badge{position:absolute;top:14px;left:14px;border-radius:30px;padding:7px 12px;color:white;background:#40585c;font-size:13px}
+    .badge.live{background:#176851}.badge.off{background:#894b2c}
+    .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 22px}
+    button,.button{border:1px solid #bfcdc7;border-radius:10px;background:white;color:#1b383d;padding:11px 18px;font:inherit;cursor:pointer;text-decoration:none}
+    button.primary{background:#176851;color:white;border-color:#176851}button:focus-visible,a:focus-visible{outline:3px solid #e7a745;outline-offset:3px}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{padding:18px;border:1px solid #dbe3dd;background:white;border-radius:14px}
+    .card h2{font-size:14px;font-weight:500;color:#52696b;margin:0 0 8px}.value{font-weight:700;font-size:21px}
+    #message{padding:12px 0;margin:0;min-height:48px}.foot{font-size:13px;border-top:1px solid #dbe3dd;padding-top:18px;margin-top:18px}
+    .details{font-size:13px;color:#52696b}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:6px}
+    @media(max-width:600px){main{padding:18px 14px}.cards{grid-template-columns:1fr 1fr}.card:last-child{grid-column:1/-1}.viewer{border-radius:12px}.tag{font-size:11px}.controls>*{flex:1;text-align:center;padding:11px 8px}}
+  </style>
+</head>
+<body>
+<main>
+  <header><div class="brand">Pet<span>Care</span></div><span class="tag">Equipo 08 · ITL</span></header>
+  <h1>Una mirada a sus platos</h1>
+  <p class="intro">Observa la estación y revisa cuándo aparece un perro o una persona.</p>
+  <section class="viewer" aria-label="Video de la estación">
+    <img id="video" alt="Video en vivo de la cámara PetCare">
+    <span id="connection" class="badge"><span class="dot"></span>Conectando</span>
+  </section>
+  <div class="controls">
+    <button id="toggle" class="primary" type="button">Pausar vista</button>
+    <button id="retry" type="button">Reconectar</button>
+    <a class="button" href="/snapshot.jpg" target="_blank" rel="noopener">Ver captura</a>
+  </div>
+  <section class="cards" aria-label="Detecciones">
+    <div class="card"><h2>Perro</h2><div class="value" id="dog">Esperando</div></div>
+    <div class="card"><h2>Persona</h2><div class="value" id="person">Esperando</div></div>
+    <div class="card"><h2>Zona de platos</h2><div class="value" id="zone">Sin ajustar</div></div>
+  </section>
+  <p id="message" role="status" aria-live="polite">Esperando imágenes recientes de la cámara.</p>
+  <div class="details" id="metrics">La detección se procesa en la computadora.</div>
+  <p class="foot">Acceso por la misma red Wi-Fi. Mantén encendida la PC. Las detecciones pueden equivocarse y no activan el dispensador. Pausar detiene solo esta vista.</p>
+</main>
+<script>
+  const video=document.querySelector('#video'), badge=document.querySelector('#connection');
+  const toggle=document.querySelector('#toggle');
+  let paused=false, available=false, polling=false, retryAt=0;
+  function connect(){if(!paused){video.src='/stream?t='+Date.now();retryAt=Date.now();}}
+  toggle.addEventListener('click',()=>{paused=!paused;toggle.textContent=paused?'Reanudar vista':'Pausar vista';if(paused){video.removeAttribute('src');badge.textContent='Vista pausada';badge.className='badge';}else connect();});
+  document.querySelector('#retry').addEventListener('click',()=>{paused=false;toggle.textContent='Pausar vista';connect();});
+  video.addEventListener('error',()=>{available=false;badge.textContent='Reconectando';badge.className='badge off';});
+  async function update(){
+    if(polling)return;polling=true;
+    const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),2500);
+    try{
+      const r=await fetch('/api/status',{cache:'no-store',signal:controller.signal});
+      if(!r.ok)throw new Error('Servidor no disponible');
+      const s=await r.json();available=s.available;
+      if(!paused){badge.textContent=available?'En vivo':'Sin señal de cámara';badge.className='badge '+(available?'live':'off');}
+      for(const [id,value] of [['dog',s.dog_detected],['person',s.person_detected]]) document.getElementById(id).textContent=available?(value?'Detectado':'Sin detección'):'Sin datos';
+      document.querySelector('#zone').textContent=!available?'Sin datos':!s.zone_configured?'Por ajustar':s.dog_in_bowl_zone?'Perro en zona':'Sin perro';
+      document.querySelector('#message').textContent=available?(s.uncertain_detections?'Detección dudosa: el modelo propone dos clases sobre el mismo objeto. Ajusta el encuadre.':'Las etiquetas con ? esperan confirmación. El porcentaje es la puntuación del modelo, no una garantía de acierto.'):'La cámara no está enviando imágenes recientes. Revisa su alimentación y conexión Wi-Fi.';
+      document.querySelector('#metrics').textContent=available?`${s.fps} cuadros/s · Procesamiento ${s.inference_ms} ms · Imagen recibida hace ${s.frame_age_seconds} s`:'El video se recuperará al volver la conexión.';
+    }catch(e){available=false;if(!paused){badge.textContent='PC sin respuesta';badge.className='badge off';}for(const id of ['dog','person','zone'])document.getElementById(id).textContent='Sin datos';document.querySelector('#message').textContent='Revisa que la PC y el servidor estén encendidos.';}
+    finally{clearTimeout(timer);polling=false;}
+    if(!paused&&(!video.naturalWidth||!available)&&Date.now()-retryAt>6000)connect();
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!paused)connect();});
+  connect();update();setInterval(update,1000);
+</script>
+</body>
+</html>

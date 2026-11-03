@@ -9,7 +9,7 @@
 # ============================================
 # PetCare | Equipo 08 | Puente MQTT + OpenCV + Firebase Realtime Database
 # Corre en la computadora, no en la ESP32. Recibe telemetria MQTT, consulta la
-# ESP32-CAM por HTTP, detecta movimiento y sincroniza estado/comandos con Firebase.
+# servidor de vision por HTTP y sincroniza estado/comandos con Firebase.
 from __future__ import annotations
 import json
 import queue
@@ -164,6 +164,7 @@ class PetCareBridge:
         self.settings = settings
         self.firebase = firebase
         self.camera_url = settings.get("camera_url", "").strip()
+        self.vision_url = settings.get("vision_url", "").strip()
         self.camera_interval = max(0.5, float(settings.get("camera_interval_seconds", 1.5)))
         self.command_interval = max(1.0, float(settings.get("command_interval_seconds", 2)))
         self.motion_interval = max(2.0, float(settings.get("vision_publish_seconds", 10)))
@@ -275,7 +276,37 @@ class PetCareBridge:
                                 {"status": "enviado", "sent_at": utc_now()})
             print("Orden Firebase -> MQTT:", command_id, action)
 
+    def poll_vision(self):
+        now = time.monotonic()
+        if now - self.last_camera_poll < self.camera_interval:
+            return
+        self.last_camera_poll = now
+        try:
+            response = self.requests.get(self.vision_url, timeout=3)
+            response.raise_for_status()
+            result = response.json()
+            if not isinstance(result, dict) or not isinstance(result.get("available"), bool):
+                raise ValueError("Estado de vision no valido")
+            # Solo se transfieren resultados; la PC comparte el video por HTTP.
+            result.pop("viewers", None)
+        except Exception:
+            result = {"available": False, "dog_detected": None, "person_detected": None,
+                      "dog_in_bowl_zone": None, "detections": [],
+                      "error": "Servidor de vision no disponible", "processed_at": utc_now()}
+        key = (result.get("available"), result.get("dog_detected"),
+               result.get("person_detected"), result.get("dog_in_bowl_zone"))
+        if key != self.last_motion_state or now - self.last_vision_publish >= self.motion_interval:
+            self.last_motion_state = key
+            self.last_vision_publish = now
+            if self.client and self.client.is_connected():
+                self.client.publish(BASE_TOPIC + "/vision", json.dumps(result), qos=0, retain=False)
+            self._firebase_call("vision", "put", VISION_PATH, result)
+            print("Vision: disponible=%s perro=%s persona=%s" % key[:3])
+
     def poll_camera(self):
+        if self.vision_url:
+            self.poll_vision()
+            return
         if not self.camera_url:
             return
         now = time.monotonic()
@@ -286,7 +317,7 @@ class PetCareBridge:
             response = self.requests.get(self.camera_url, timeout=3)
             response.raise_for_status()
             if "image/" not in response.headers.get("Content-Type", ""):
-                raise ValueError("La URL no devolvio una imagen; usa el endpoint /capture")
+                raise ValueError("La URL no devolvio una imagen; usa el endpoint /foto")
             result = self.detector.analyze_jpeg(response.content)
             if not result["ready"]:
                 print("OpenCV: imagen inicial recibida; esperando siguiente cuadro para comparar.")

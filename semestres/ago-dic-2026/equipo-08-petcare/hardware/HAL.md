@@ -13,7 +13,7 @@ Prefijo MQTT: `petcare/equipo8`. El puerto USB de cada placa se selecciona en Th
 | Bomba 5 V + MOSFET | Actuador provisional | Gate 23 | `/ack` y `status.state` | `/commands`: `water`, `stop_water` | pulso 1200 ms; límite 2000 ms | No conectar al montaje por gravedad |
 | LED RGB cátodo común | Actuador | R16, G17, B21 | Estado derivado de sensores | Sin tópico propio; lógica local | rojo/amarillo/azul/verde | Pendiente físico |
 | Buzzer activo | Actuador | 22 | Aviso de fin de alimento | Sin tópico propio; lógica local | ON/OFF, aviso 100 ms | Confirmar driver/consumo |
-| ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/foto` → PC; PC publica `/vision` | GET `/foto` | JPEG VGA 640×480, calidad 12 | Captura y acceso local reportados funcionando |
+| ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/stream` → PC; puente consulta `/api/status` y publica `/vision` | GET `/foto` o `/stream` | JPEG VGA 640×480, calidad 12 | Streaming probado; detección móvil de perro/persona confirmada por el equipo |
 
 Los sufijos de tópico se concatenan al prefijo anterior. Los campos de sensores están dentro de `status` en el mensaje de telemetría.
 Las órdenes usan JSON con `id` único y `action`; ejemplo: `{"id":"prueba-001","action":"feed"}`.

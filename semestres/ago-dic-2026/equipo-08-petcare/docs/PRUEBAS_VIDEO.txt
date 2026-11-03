@@ -1,0 +1,28 @@
+PetCare - Equipo 08
+2 de noviembre de 2026
+Comando: python -m unittest discover -s servidor -p "test_*.py" -v
+
+Vision: disponible=False perro=None persona=None
+Visor conectado: 127.0.0.1
+Visor conectado: 127.0.0.1
+test_bowl_weight_blocks_extra_food (test_petcare.PetCareTests.test_bowl_weight_blocks_extra_food) ... ok
+test_empty_water_blocks_pump (test_petcare.PetCareTests.test_empty_water_blocks_pump) ... ok
+test_feed_opens_closes_and_releases_pwm (test_petcare.PetCareTests.test_feed_opens_closes_and_releases_pwm) ... ok
+test_feed_requires_calibrated_scale (test_petcare.PetCareTests.test_feed_requires_calibrated_scale) ... ok
+test_pump_is_interlocked_and_times_out (test_petcare.PetCareTests.test_pump_is_interlocked_and_times_out) ... ok
+test_accepts_only_known_command_with_id (test_petcare_cloud.PetCareCloudTests.test_accepts_only_known_command_with_id) ... ok
+test_motion_threshold (test_petcare_cloud.PetCareCloudTests.test_motion_threshold) ... ok
+test_bridge_marks_vision_unavailable_on_network_error (test_vision.VisionTests.test_bridge_marks_vision_unavailable_on_network_error) ... ok
+test_classes_threshold_and_clipping (test_vision.VisionTests.test_classes_threshold_and_clipping) ... ok
+test_confirmation_requires_consecutive_frames (test_vision.VisionTests.test_confirmation_requires_consecutive_frames) ... ok
+test_conflicting_classes_are_not_counted_twice (test_vision.VisionTests.test_conflicting_classes_are_not_counted_twice) ... ok
+test_http_page_status_and_two_readers (test_vision.VisionTests.test_http_page_status_and_two_readers) ... ok
+test_incomplete_and_oversized_frame (test_vision.VisionTests.test_incomplete_and_oversized_frame) ... ok
+test_jpeg_split_across_packets (test_vision.VisionTests.test_jpeg_split_across_packets) ... ok
+test_person_uses_a_higher_threshold (test_vision.VisionTests.test_person_uses_a_higher_threshold) ... ok
+test_stale_frame_does_not_report_absence_or_keep_positive (test_vision.VisionTests.test_stale_frame_does_not_report_absence_or_keep_positive) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 2.568s
+
+OK

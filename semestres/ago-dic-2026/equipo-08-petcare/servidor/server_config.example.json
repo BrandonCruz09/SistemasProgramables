@@ -14,5 +14,20 @@
     "enabled": false,
     "database_url": "https://TU-PROYECTO-default-rtdb.firebaseio.com",
     "api_key": "PEGA_AQUI_TU_WEB_API_KEY"
+  },
+  "camera_stream_url": "http://IP_DE_TU_CAMARA/stream",
+  "vision_url": "http://127.0.0.1:8765/api/status",
+  "vision": {
+    "confidence": 0.55,
+    "confirm_frames": 3,
+    "bowl_zone": null,
+    "class_thresholds": {
+      "dog": 0.6,
+      "person": 0.8
+    }
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8765
   }
 }
