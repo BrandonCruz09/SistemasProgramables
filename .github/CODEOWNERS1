@@ -1,0 +1,99 @@
+# ============================================
+# CODEOWNERS — Sistemas Programables ago-dic-2026
+# Cada equipo solo puede editar su carpeta.
+# La profe (@vetapia) aprueba todos los PRs.
+# ============================================
+# Formato: ruta   @usuario-github
+
+# Profe — aprueba todo el repositorio
+*                                               @vetapia
+
+# ============================================
+# HORARIO 7
+# ============================================
+
+# equipo-01 — cineSphere 4D
+semestres/ago-dic-2026/equipo-01-cinesphere4d/  @vetapia @pendiente-becerra @pendiente-ramos
+
+# equipo-02 — LSM Interpretación en tiempo real
+semestres/ago-dic-2026/equipo-02-lsm/           @vetapia @pendiente-gonzalez-m
+
+# equipo-03 — AuraGuard
+semestres/ago-dic-2026/equipo-03-auraguard/     @vetapia @pendiente-garcia-v @pendiente-gonzalez-a
+
+# equipo-04 — MasaViva
+semestres/ago-dic-2026/equipo-04-masaviva/      @vetapia @pendiente-troncoso @pendiente-vazquez
+
+# equipo-05 — MichiGate AI
+semestres/ago-dic-2026/equipo-05-michigate-ai/  @vetapia @pendiente-hernandez-a @pendiente-herrera
+
+# equipo-06 — MOTO SOS
+semestres/ago-dic-2026/equipo-06-motoSOS/       @vetapia @pendiente-fernandez @pendiente-garcia-e @pendiente-martinez-a
+
+# equipo-07 — OMNISERVE
+semestres/ago-dic-2026/equipo-07-omniserve/     @vetapia @pendiente-anguiano @pendiente-mendez
+
+# equipo-08 — PETCARE
+semestres/ago-dic-2026/equipo-08-petcare/       @vetapia @pendiente-flores-i @pendiente-padilla-b @pendiente-padilla-l
+
+# equipo-09 — SafeDrop
+semestres/ago-dic-2026/equipo-09-safedrop/      @vetapia @pendiente-medina @pendiente-ojeda
+
+# equipo-10 — SmartClass
+semestres/ago-dic-2026/equipo-10-smartclass/    @vetapia @pendiente-carrillo @pendiente-torres-j
+
+# equipo-11 — Por definir (Sígueme)
+semestres/ago-dic-2026/equipo-11-por-definir-h7/ @vetapia @pendiente-campos @pendiente-gonzalez-c @pendiente-morales @pendiente-torres-f
+
+# ============================================
+# HORARIO 10
+# ============================================
+
+# equipo-12 — AuraBot
+semestres/ago-dic-2026/equipo-12-aurabot/       @vetapia @pendiente-barroso @pendiente-sandoval-p @pendiente-taboada
+
+# equipo-13 — BikeSafe
+semestres/ago-dic-2026/equipo-13-bikesafe/      @vetapia @pendiente-sandoval-o @pendiente-talamantes
+
+# equipo-14 — EcoClasifica
+semestres/ago-dic-2026/equipo-14-ecoclasifica/  @vetapia @pendiente-tiquet @pendiente-torres-f2
+
+# equipo-15 — ElfFactory
+semestres/ago-dic-2026/equipo-15-elffactory/    @vetapia @pendiente-espinoza @pendiente-ramirez-f @pendiente-rodriguez-e
+
+# equipo-16 — MARC5
+semestres/ago-dic-2026/equipo-16-marc5/         @vetapia @pendiente-hernandez-jm @pendiente-sepulveda @pendiente-silva
+
+# equipo-17 — PIE DIAFOOT
+semestres/ago-dic-2026/equipo-17-piediadiafoot/ @vetapia @pendiente-angeles @pendiente-lopez-a @pendiente-moreno-g
+
+# equipo-18 — SIPME
+semestres/ago-dic-2026/equipo-18-sipme/         @vetapia @pendiente-ramirez-c @pendiente-salcedo @pendiente-sanchez-d
+
+# equipo-19 — SmartLocker
+semestres/ago-dic-2026/equipo-19-smartlocker/   @vetapia @pendiente-martinez-c @pendiente-mora @pendiente-munoz
+
+# equipo-20 — Por definir horario 10
+semestres/ago-dic-2026/equipo-20-por-definir-h10/ @vetapia @pendiente-martinez-d @pendiente-salazar
+
+# ============================================
+# HORARIO 12
+# ============================================
+
+# equipo-21 — K9 Rescue Cam
+semestres/ago-dic-2026/equipo-21-k9rescuecam/   @vetapia @pendiente-lagos @pendiente-vargas
+
+# equipo-22 — MeowGuard
+semestres/ago-dic-2026/equipo-22-meowguard/     @vetapia @pendiente-moreno-m @pendiente-nino
+
+# equipo-23 — OmniDock
+semestres/ago-dic-2026/equipo-23-omnidock/      @vetapia @pendiente-dominguez @pendiente-fernandez-j @pendiente-rocha
+
+# equipo-24 — PinkGuard
+semestres/ago-dic-2026/equipo-24-pinkguard/     @vetapia @pendiente-montoya @pendiente-rios @pendiente-torres-y
+
+# equipo-25 — PlayBracelet
+semestres/ago-dic-2026/equipo-25-playbracelet/  @vetapia @pendiente-cuevas @pendiente-rivera
+
+# equipo-26 — TremorControl AI
+semestres/ago-dic-2026/equipo-26-tremorcontrol-ai/ @vetapia @pendiente-flores-j @pendiente-ramirez-b

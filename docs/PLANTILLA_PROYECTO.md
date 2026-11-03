@@ -29,24 +29,11 @@ Explica en 2–3 oraciones:
 
 ## 🏗️ Arquitectura del Sistema
 
-```
-[Sensores x3]
-      │
-      ▼
-[ESP32 MicroPython]  ──publica──▶  [Broker MQTT Mosquitto]
-[ESP32-CAM]          ──frames──▶         │
-                                         ▼
-                              [Servidor Python PC]
-                              [IA: OpenCV/MediaPipe/TF]
-                                    │         │
-                              publica cmd   escribe
-                                    │         │
-                                    ▼         ▼
-                             [ESP32 Actuadores]  [Firebase/Firestore]
-                                                       │
-                                                       ▼
-                                              [Dashboard Web]
-```
+> 📌 **Inserta aquí tu diagrama de arquitectura como imagen.**
+> No uses texto — coloca una imagen que muestre el flujo completo de tu sistema.
+> Guárdala en `hardware/` y actualiza la ruta abajo.
+
+![Arquitectura del sistema](hardware/arquitectura.png)
 
 ### Tópicos MQTT
 
@@ -79,10 +66,11 @@ Explica en 2–3 oraciones:
 
 ### Diagrama de conexiones
 
-> Inserta aquí imagen del esquemático (Fritzing exportado a PNG).
-> El archivo fuente `.fzz` debe estar en `hardware/esquematico.fzz`.
+> Inserta aquí una imagen que muestre cómo están conectados los componentes.
+> Puede ser un diagrama hecho en cualquier herramienta (Fritzing, draw.io, Canva, foto del circuito, etc.).
+> Guarda la imagen en `hardware/` y actualiza la ruta abajo.
 
-![Esquemático](hardware/esquematico.png)
+![Diagrama de conexiones](hardware/diagrama.png)
 
 ---
 
@@ -96,24 +84,19 @@ pip install -r servidor/requirements.txt
 
 ### Cómo ejecutar el sistema completo
 
-```cmd
-REM 1. Levantar el broker MQTT (ejecutar en una CMD aparte)
+**1. Levantar el broker MQTT** (en una terminal aparte):
+```
 mosquitto
+```
 
-REM 2. Cargar firmware en la ESP32
-REM    Opción A (recomendada): abrir Thonny, conectar la ESP32
-REM    y cargar los archivos desde firmware\ con la interfaz gráfica
-REM
-REM    Opción B (línea de comandos):
-mpremote connect COM3 cp firmware\main.py :main.py
+**2. Cargar firmware en la ESP32:**
+Abrir Thonny → conectar la ESP32 → cargar los archivos de `firmware/` desde la interfaz gráfica.
 
-REM 3. Ejecutar el servidor de IA (ajustar COM según Administrador de dispositivos)
+**3. Ejecutar el servidor de IA:**
+```
 cd servidor
 python mqtt_bridge.py
 ```
-
-> ⚠️ El puerto COM varía por computadora. Para encontrar el tuyo:
-> Administrador de dispositivos → Puertos (COM y LPT) → busca "CP210x" o "CH340"
 
 ### Librerías ESP32 (MicroPython — corren en la placa)
 

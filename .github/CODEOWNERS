@@ -1,11 +1,12 @@
 # ============================================
 # CODEOWNERS — Sistemas Programables ago-dic-2026
 # Cada equipo solo puede editar su carpeta.
-# La profe (@vetapia) aprueba todos los PRs.
+# Mtra. Tapia (@vetapia) aprueba todos los PRs.
+# Actualizado: 27 octubre 2026
 # ============================================
 # Formato: ruta   @usuario-github
 
-# Profe — aprueba todo el repositorio
+# Mtra. Tapia — aprueba todo el repositorio
 *                                               @vetapia
 
 # ============================================
@@ -13,87 +14,97 @@
 # ============================================
 
 # equipo-01 — cineSphere 4D
+# ⚠️ PENDIENTE: sin registro GitHub
 semestres/ago-dic-2026/equipo-01-cinesphere4d/  @vetapia @pendiente-becerra @pendiente-ramos
 
-# equipo-02 — LSM Interpretación en tiempo real
-semestres/ago-dic-2026/equipo-02-lsm/           @vetapia @pendiente-gonzalez-m
+# equipo-02 — LSM
+# ⚠️ Link incorrecto — apunta al repo de Mtra. Tapia, no al Fork
+semestres/ago-dic-2026/equipo-02-lsm/           @vetapia @2323099-tec
 
 # equipo-03 — AuraGuard
-semestres/ago-dic-2026/equipo-03-auraguard/     @vetapia @pendiente-garcia-v @pendiente-gonzalez-a
+semestres/ago-dic-2026/equipo-03-auraguard/     @vetapia @andregp1019 @pendiente-garcia-v
 
 # equipo-04 — MasaViva
-semestres/ago-dic-2026/equipo-04-masaviva/      @vetapia @pendiente-troncoso @pendiente-vazquez
+semestres/ago-dic-2026/equipo-04-masaviva/      @vetapia @Venous7050 @pendiente-troncoso
 
 # equipo-05 — MichiGate AI
-semestres/ago-dic-2026/equipo-05-michigate-ai/  @vetapia @pendiente-hernandez-a @pendiente-herrera
+semestres/ago-dic-2026/equipo-05-michigate-ai/  @vetapia @angelricardo127 @pendiente-herrera
 
 # equipo-06 — MOTO SOS
-semestres/ago-dic-2026/equipo-06-motoSOS/       @vetapia @pendiente-fernandez @pendiente-garcia-e @pendiente-martinez-a
+semestres/ago-dic-2026/equipo-06-motoSOS/       @vetapia @alanmcoronado7-wq @pendiente-fernandez @pendiente-garcia-e
 
 # equipo-07 — OMNISERVE
-semestres/ago-dic-2026/equipo-07-omniserve/     @vetapia @pendiente-anguiano @pendiente-mendez
+semestres/ago-dic-2026/equipo-07-omniserve/     @vetapia @Catu21 @pendiente-anguiano
 
 # equipo-08 — PETCARE
-semestres/ago-dic-2026/equipo-08-petcare/       @vetapia @pendiente-flores-i @pendiente-padilla-b @pendiente-padilla-l
+semestres/ago-dic-2026/equipo-08-petcare/       @vetapia @BrandonCruz09 @pendiente-flores-i @pendiente-padilla-l
 
 # equipo-09 — SafeDrop
-semestres/ago-dic-2026/equipo-09-safedrop/      @vetapia @pendiente-medina @pendiente-ojeda
+semestres/ago-dic-2026/equipo-09-safedrop/      @vetapia @Medrivs @pendiente-ojeda
 
 # equipo-10 — SmartClass
-semestres/ago-dic-2026/equipo-10-smartclass/    @vetapia @pendiente-carrillo @pendiente-torres-j
+# ⚠️ Torres Uribe confundido con número — verificar usuario danielTU03
+semestres/ago-dic-2026/equipo-10-smartclass/    @vetapia @danielTU03 @pendiente-carrillo
 
 # equipo-11 — Por definir (Sígueme)
-semestres/ago-dic-2026/equipo-11-por-definir-h7/ @vetapia @pendiente-campos @pendiente-gonzalez-c @pendiente-morales @pendiente-torres-f
+# ⚠️ PENDIENTE: sin registro GitHub
+semestres/ago-dic-2026/equipo-11-por-definir-h7/ @vetapia @pendiente-campos @pendiente-gonzalez-c @Morales Vega Diego @pendiente-torres-f
 
 # ============================================
 # HORARIO 10
 # ============================================
 
 # equipo-12 — AuraBot
-semestres/ago-dic-2026/equipo-12-aurabot/       @vetapia @pendiente-barroso @pendiente-sandoval-p @pendiente-taboada
+semestres/ago-dic-2026/equipo-12-aurabot/       @vetapia @salvador323 @pendiente-barroso @pendiente-sandoval-p
 
 # equipo-13 — BikeSafe
-semestres/ago-dic-2026/equipo-13-bikesafe/      @vetapia @pendiente-sandoval-o @pendiente-talamantes
+semestres/ago-dic-2026/equipo-13-bikesafe/      @vetapia @Sand027 @pendiente-talamantes
 
 # equipo-14 — EcoClasifica
-semestres/ago-dic-2026/equipo-14-ecoclasifica/  @vetapia @pendiente-tiquet @pendiente-torres-f2
+semestres/ago-dic-2026/equipo-14-ecoclasifica/  @vetapia @FrancoTR-IT @pendiente-tiquet
 
 # equipo-15 — ElfFactory
-semestres/ago-dic-2026/equipo-15-elffactory/    @vetapia @pendiente-espinoza @pendiente-ramirez-f @pendiente-rodriguez-e
+# ⚠️ Link con .git al final — funciona pero pedir corrección
+semestres/ago-dic-2026/equipo-15-elffactory/    @vetapia @EduardoAxel8 @pendiente-espinoza @pendiente-ramirez-f
 
 # equipo-16 — MARC5
-semestres/ago-dic-2026/equipo-16-marc5/         @vetapia @pendiente-hernandez-jm @pendiente-sepulveda @pendiente-silva
+semestres/ago-dic-2026/equipo-16-marc5/         @vetapia @enriqueSilva1012 @pendiente-hernandez-jm @pendiente-sepulveda
 
 # equipo-17 — PIE DIAFOOT
-semestres/ago-dic-2026/equipo-17-piediadiafoot/ @vetapia @pendiente-angeles @pendiente-lopez-a @pendiente-moreno-g
+semestres/ago-dic-2026/equipo-17-piediadiafoot/ @vetapia @Danna-noob @pendiente-lopez-a @pendiente-moreno-g
 
 # equipo-18 — SIPME
-semestres/ago-dic-2026/equipo-18-sipme/         @vetapia @pendiente-ramirez-c @pendiente-salcedo @pendiente-sanchez-d
+semestres/ago-dic-2026/equipo-18-sipme/         @vetapia @CryZRz @pendiente-ramirez-c @pendiente-sanchez-d
 
 # equipo-19 — SmartLocker
-semestres/ago-dic-2026/equipo-19-smartlocker/   @vetapia @pendiente-martinez-c @pendiente-mora @pendiente-munoz
+# ⚠️ Martínez Bárcenas sin Fork — usar cesar21223 por ahora
+# ⚠️ Mora Vázquez llenó mal el formulario — pendiente
+semestres/ago-dic-2026/equipo-19-smartlocker/   @vetapia @cesar21223 @pendiente-martinez-c @pendiente-mora
 
 # equipo-20 — Por definir horario 10
-semestres/ago-dic-2026/equipo-20-por-definir-h10/ @vetapia @pendiente-martinez-d @pendiente-salazar
+semestres/ago-dic-2026/equipo-20-por-definir-h10/ @vetapia @AxelSlzr @pendiente-martinez-d
 
 # ============================================
 # HORARIO 12
 # ============================================
 
 # equipo-21 — K9 Rescue Cam
-semestres/ago-dic-2026/equipo-21-k9rescuecam/   @vetapia @pendiente-lagos @pendiente-vargas
+semestres/ago-dic-2026/equipo-21-k9rescuecam/   @vetapia @23240371-hub @pendiente-lagos
 
 # equipo-22 — MeowGuard
-semestres/ago-dic-2026/equipo-22-meowguard/     @vetapia @pendiente-moreno-m @pendiente-nino
+# ⚠️ Fork apunta a repo propio MeowGuard, no al fork del curso — verificar
+semestres/ago-dic-2026/equipo-22-meowguard/     @vetapia @momots-bit @pendiente-nino
 
 # equipo-23 — OmniDock
-semestres/ago-dic-2026/equipo-23-omnidock/      @vetapia @pendiente-dominguez @pendiente-fernandez-j @pendiente-rocha
+# ⚠️ Link incorrecto — apunta al repo de Mtra. Tapia, no al Fork
+semestres/ago-dic-2026/equipo-23-omnidock/      @vetapia @FFO76-0 @pendiente-dominguez @pendiente-rocha
 
 # equipo-24 — PinkGuard
-semestres/ago-dic-2026/equipo-24-pinkguard/     @vetapia @pendiente-montoya @pendiente-rios @pendiente-torres-y
+semestres/ago-dic-2026/equipo-24-pinkguard/     @vetapia @pinkCClaws @pendiente-rios @pendiente-torres-y
 
 # equipo-25 — PlayBracelet
-semestres/ago-dic-2026/equipo-25-playbracelet/  @vetapia @pendiente-cuevas @pendiente-rivera
+# ⚠️ Fork con nombre diferente: SistemasProgramablesProyecto — verificar
+semestres/ago-dic-2026/equipo-25-playbracelet/  @vetapia @AleRivera-proj @pendiente-cuevas
 
 # equipo-26 — TremorControl AI
-semestres/ago-dic-2026/equipo-26-tremorcontrol-ai/ @vetapia @pendiente-flores-j @pendiente-ramirez-b
+semestres/ago-dic-2026/equipo-26-tremorcontrol-ai/ @vetapia @Jorge843 @pendiente-ramirez-b
