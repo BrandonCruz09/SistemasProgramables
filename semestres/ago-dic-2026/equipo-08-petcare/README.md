@@ -23,7 +23,7 @@ PetCare busca ayudar a quienes cuidan perros a supervisar el alimento disponible
 
 ![Arquitectura del sistema](hardware/arquitectura.png)
 
-La cámara es una segunda placa. La PC obtiene JPEG por HTTP; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, no Firestore; su adecuación final a la rúbrica debe confirmarse.
+La cámara es una segunda placa. La PC obtiene JPEG por HTTP; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4 del curso. Se usará el plan gratuito **Spark**, sin facturación; la cuenta y sus reglas aún están pendientes de configurar/verificar.
 
 ### Tópicos MQTT
 
@@ -110,11 +110,13 @@ Son pruebas de lógica con dobles; no certifican funcionamiento físico, conexi�
 
 ## 🧠 Inteligencia Artificial
 
+**Objetivo confirmado:** detectar cualquier perro frente a los platos con un modelo preentrenado en la PC, sin identificar animales individuales. [Plan de integración IA + Firebase Spark](docs/PLAN_IA_FIREBASE.md). El detector de perros aún no está implementado; la lógica actual se describe a continuación.
+
 - **Implementado en código:** procesamiento clásico OpenCV de imágenes consecutivas: escala de grises, reducción a 160×120, desenfoque y diferencia de píxeles.
 - **Qué detecta:** cambio visual/movimiento; no identifica perros ni reconoce enfermedades.
 - **Umbral inicial:** 1.8 % de imagen cambiada, ajustable; no equivale a confianza de un modelo.
 - **Decisión:** publicar resultado de visión. El movimiento no dispensa automáticamente alimento.
-- **Pendiente:** validación con escenas reales y definir con la profesora si necesita un modelo entrenado o una decisión IA→actuador. No hay modelo entrenado ni precisión medida.
+- **Pendiente:** validación con escenas reales y integrar el modelo de perros y validar la decisión IA→actuador. No hay modelo entrenado ni precisión medida.
 
 ## 🎥 Demostración
 
