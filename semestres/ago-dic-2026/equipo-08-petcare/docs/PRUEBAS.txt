@@ -1,0 +1,15 @@
+PetCare equipo 08 | 2026-11-02
+Comando desde carpeta del proyecto:
+python -m unittest discover -s servidor -p "test_*.py" -v
+
+Resultado: 7 pruebas correctas (OK).
+- Bloqueo de alimento con peso >= limite.
+- Bloqueo de bomba sin agua.
+- Apertura, cierre y liberacion de PWM en FSM.
+- Bloqueo de alimento sin calibracion.
+- Enclavamiento y timeout de bomba.
+- Validacion de acciones e identificadores de comandos.
+- Umbral de deteccion de movimiento.
+
+Validacion AST: 17 scripts; encabezados y matriculas presentes.
+No son pruebas de hardware, MQTT en red, OpenCV con camara ni Firebase real.

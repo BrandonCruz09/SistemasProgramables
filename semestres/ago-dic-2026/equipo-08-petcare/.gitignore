@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+wifi_config.py
+server_config.json
+.firebase_refresh_token
+*serviceAccount*.json
+*service-account*.json
+.env
+*.bin
+*.hex
+*.elf

@@ -1,0 +1,44 @@
+# Tabla HAL — PetCare, equipo 08
+
+Asignación del firmware de este avance. Son valores configurados, **no mediciones físicas** del montaje completo.
+Prefijo MQTT: `petcare/equipo8`. El puerto USB de cada placa se selecciona en Thonny; no es un GPIO.
+
+| Componente | Tipo | Pin ESP32 principal | Publicación / campo | Suscripción / acción | Unidad o rango | Estado |
+|---|---|---|---|---|---|---|
+| Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; capacidad nominal 5000 g, tara/factor pendientes | Sin calibrar |
+| DHT22 | Sensor | DATA 4 | `/telemetry`: `temperature_c`, `humidity_pct`, `dht_ok` | — | °C y %HR; rango real por verificar | Pendiente físico |
+| PIR | Sensor | OUT 27 | `/telemetry`: `pir` | — | booleano | Confirmar modelo/VCC |
+| Flotador | Sensor | 26 a GND, pull-up | `/telemetry`: `water_available` | — | booleano; LOW=agua en configuración | Verificar sentido |
+| SG90 | Actuador | PWM 25 | `/ack` y `status.state` | `/commands`: `feed` | 30° cerrado / 75° abierto, recorrido por ajustar | Pendiente con compuerta |
+| Bomba 5 V + MOSFET | Actuador provisional | Gate 23 | `/ack` y `status.state` | `/commands`: `water`, `stop_water` | pulso 1200 ms; límite 2000 ms | No conectar al montaje por gravedad |
+| LED RGB cátodo común | Actuador | R16, G17, B21 | Estado derivado de sensores | Sin tópico propio; lógica local | rojo/amarillo/azul/verde | Pendiente físico |
+| Buzzer activo | Actuador | 22 | Aviso de fin de alimento | Sin tópico propio; lógica local | ON/OFF, aviso 100 ms | Confirmar driver/consumo |
+| ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/foto` → PC; PC publica `/vision` | GET `/foto` | JPEG VGA 640×480, calidad 12 | Captura y acceso local reportados funcionando |
+
+Los sufijos de tópico se concatenan al prefijo anterior. Los campos de sensores están dentro de `status` en el mensaje de telemetría.
+Las órdenes usan JSON con `id` único y `action`; ejemplo: `{"id":"prueba-001","action":"feed"}`.
+El firmware bloquea alimento sin calibración y bloquea bomba sin agua. No hay dispensado periódico autónomo implementado.
+La cámara todavía usa HTTP: publicar imágenes JPEG por MQTT queda pendiente respecto al esquema del curso.
+
+## Alimentación y montaje
+
+- DevKit por USB durante pruebas. HX711 y DHT22 a 3V3/GND; señales del ESP32 a 3.3 V.
+- SG90 rojo a +5 V externo, marrón a V−, naranja a GPIO25. V− unido a GND de DevKit; no unir V+ al VIN si DevKit está por USB.
+- La base ESP32CAM-MB programa la cámara por USB. No se requiere FTDI.
+- Confirmar VCC del PIR por modelo; no conectar una salida de 5 V directamente al ESP32.
+- Bomba mediante MOSFET lógico y diodo de rueda libre; nunca directo al GPIO.
+- Jarra azul: comida. Bote rojo con embudo: agua. El embudo no detiene el flujo: falta seleccionar el cierre y adaptar el control.
+- Caja de coroplast con soportes rígidos para depósitos y celda; electrónica separada del agua.
+
+## Dato → acción implementada
+
+| Dato/evento | Acción |
+|---|---|
+| Báscula no calibrada o peso no disponible | Rechazar `feed` |
+| Peso ≥250 g | Rechazar nuevo dispensado (umbral inicial, ajustar) |
+| `feed` autorizado | Abrir compuerta 900 ms, cerrar, esperar 350 ms y retirar PWM |
+| Falta de agua | Apagar/bloquear bomba y LED rojo |
+| Bomba llega al tiempo límite | Apagar bomba |
+| Presencia PIR, con agua y báscula calibrada | LED azul; no dispensar automáticamente |
+| Fin de alimento | Aviso de buzzer 100 ms |
+| Ctrl+C en firmware principal | Cerrar recursos y apagar salidas según `safe_shutdown()` |
