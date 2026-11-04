@@ -3,6 +3,8 @@
 Asignación del firmware de este avance. Son valores configurados, **no mediciones físicas** del montaje completo.
 Prefijo MQTT: `petcare/equipo8`. El puerto USB de cada placa se selecciona en Thonny; no es un GPIO.
 
+El 3 de noviembre se validó MQTT/Firebase con sensores y salidas simulados en PC, bajo el prefijo independiente `petcare/equipo8/simulacion/ID_EJECUCION`. Esa prueba no cambia los estados físicos de esta tabla ni calibra la celda.
+
 | Componente | Tipo | Pin ESP32 principal | Publicación / campo | Suscripción / acción | Unidad o rango | Estado |
 |---|---|---|---|---|---|---|
 | Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; capacidad nominal 5000 g, tara/factor pendientes | Sin calibrar |

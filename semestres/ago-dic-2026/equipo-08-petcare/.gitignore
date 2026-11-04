@@ -15,3 +15,6 @@ servidor/models/*.prototxt
 servidor/models/*.part
 *.log
 detener_video.flag
+firebase_sim_config.json
+database.rules.local.json
+simulacion_resultado.json

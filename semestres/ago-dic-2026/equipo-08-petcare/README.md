@@ -7,7 +7,7 @@
 > **Equipo:** 08, según el padrón del repositorio del curso.
 > **Semestre:** ago-dic-2026
 > **Materia:** Sistemas Programables — ISC TecNM León
-> **Avance al 2 de noviembre:** streaming y detección de perros/personas probados desde el celular; integración de actuadores, MQTT y nube pendiente de validación conjunta.
+> **Avance al 3 de noviembre:** video y detección probados desde el celular. Firebase Realtime Database y MQTT verificados con una ESP32 simulada; integración física pendiente.
 
 | Nombre | Matrícula | Rol | GitHub |
 |---|---|---|---|
@@ -23,7 +23,7 @@ PetCare busca ayudar a quienes cuidan perros a supervisar el alimento disponible
 
 ![Arquitectura del sistema](hardware/arquitectura.png)
 
-La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4 del curso. Se usará el plan gratuito **Spark**, sin facturación; la cuenta y sus reglas aún están pendientes de configurar/verificar.
+La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4. El proyecto está en **Spark**, sin facturación vinculada. Se verificaron reglas y lectura/escritura reales para una identidad limitada a datos simulados. Firestore no está habilitado.
 
 ### Tópicos MQTT
 
@@ -109,6 +109,8 @@ python -m unittest discover -s servidor -p "test_*.py" -v
 
 Son pruebas de lógica con dobles; no certifican funcionamiento físico, conexión cloud ni estabilidad de alimentación.
 
+Para la prueba integrada contra Firebase real, ejecutar `servidor/iniciar_simulacion.cmd` después de completar la configuración privada indicada en [Firebase y simulación](docs/FIREBASE_Y_SIMULACION.md). Inicia Mosquitto solo en la PC, utiliza la FSM del firmware con salidas simuladas y cierra el broker al terminar. Pasaron 17 comprobaciones integradas y 19 pruebas de software. [Resultado guardado](docs/PRUEBAS_FIREBASE_SIMULADA.json).
+
 ## 🧠 Inteligencia Artificial
 
 Detectar perros y personas en la PC mediante **MobileNet SSD preentrenado sobre VOC**. No identifica a una persona ni distingue perros individuales. El modelo original se descarga por separado y se verifica con SHA-256; se conserva su licencia MIT.
@@ -140,7 +142,7 @@ El puente actual usa **Realtime Database vía REST**, con autenticación anónim
 /petcare/equipo8/events   → eventos y confirmaciones
 ```
 
-Integración Firebase y reglas por usuario pendientes de validar. La página local de video ya está disponible; no es un dashboard de Firebase. No se incluye una cuenta de servicio ni reglas públicas abiertas.
+Las rutas anteriores son las previstas para el hardware. La prueba usa `petcare/equipo8/simulacion/ID_EJECUCION`, con `simulated: true`, e incorpora `probe` y `report`. Se verificaron datos y confirmaciones en Firebase real; la báscula y los actuadores siguen sin prueba conjunta física. Las reglas autorizan únicamente el UID de la PC en esa carpeta y bloquean el resto. La página local de video no es un dashboard de Firebase. No se incluye una cuenta de servicio ni reglas públicas abiertas.
 
 ## ⚠️ Retos técnicos encontrados
 

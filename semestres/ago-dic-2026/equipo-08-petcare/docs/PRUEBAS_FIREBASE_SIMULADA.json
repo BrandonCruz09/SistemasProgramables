@@ -1,0 +1,100 @@
+{
+  "run_id": "20261104T050754Z-805e50",
+  "simulated": true,
+  "firebase_root": "petcare/equipo8/simulacion/20261104T050754Z-805e50",
+  "started_at": "2026-11-04T05:07:54+00:00",
+  "checks": [
+    {
+      "test": "Firebase escritura y lectura",
+      "passed": true,
+      "detail": "PUT y GET devolvieron el mismo objeto"
+    },
+    {
+      "test": "Acceso publico bloqueado",
+      "passed": true,
+      "detail": "HTTP 401 sin token"
+    },
+    {
+      "test": "Acceso limitado a simulacion",
+      "passed": true,
+      "detail": "La identidad de prueba no puede leer datos de hardware"
+    },
+    {
+      "test": "Renovacion de sesion",
+      "passed": true,
+      "detail": "La sesion renovada conserva identidad y acceso"
+    },
+    {
+      "test": "Telemetria MQTT a Firebase",
+      "passed": true,
+      "detail": "ESP32 simulada -> Mosquitto -> puente -> latest; peso 75 g ficticio"
+    },
+    {
+      "test": "Historial guardado",
+      "passed": true,
+      "detail": "Se guardo al menos un evento simulado"
+    },
+    {
+      "test": "Orden de alimento",
+      "passed": true,
+      "detail": "Firebase -> MQTT -> FSM -> ack -> Firebase: aceptado"
+    },
+    {
+      "test": "Cierre de compuerta simulada",
+      "passed": true,
+      "detail": "La FSM vuelve a LISTO y libera el servo simulado"
+    },
+    {
+      "test": "Comando duplicado",
+      "passed": true,
+      "detail": "No repitio el movimiento simulado"
+    },
+    {
+      "test": "Bloqueo por plato lleno",
+      "passed": true,
+      "detail": "Firebase -> MQTT -> FSM -> ack -> Firebase: rechazado"
+    },
+    {
+      "test": "Bloqueo sin calibracion",
+      "passed": true,
+      "detail": "Firebase -> MQTT -> FSM -> ack -> Firebase: rechazado"
+    },
+    {
+      "test": "Bloqueo sin agua",
+      "passed": true,
+      "detail": "Firebase -> MQTT -> FSM -> ack -> Firebase: rechazado"
+    },
+    {
+      "test": "Orden de agua",
+      "passed": true,
+      "detail": "Firebase -> MQTT -> FSM -> ack -> Firebase: aceptado"
+    },
+    {
+      "test": "Tiempo limite de bomba simulada",
+      "passed": true,
+      "detail": "La salida simulada queda apagada"
+    },
+    {
+      "test": "Orden de detener agua",
+      "passed": true,
+      "detail": "Firebase -> MQTT -> FSM -> ack -> Firebase: aceptado"
+    },
+    {
+      "test": "Orden invalida rechazada",
+      "passed": true,
+      "detail": "El puente rechazo una accion no permitida"
+    },
+    {
+      "test": "Estado de vision de demostracion",
+      "passed": true,
+      "detail": "Ejemplo ficticio; no es inferencia de la camara"
+    }
+  ],
+  "passed": true,
+  "mqtt": {
+    "host": "127.0.0.1",
+    "port": 57289,
+    "topic": "petcare/equipo8/simulacion/20261104T050754Z-805e50"
+  },
+  "finished_at": "2026-11-04T05:08:07+00:00"
+}

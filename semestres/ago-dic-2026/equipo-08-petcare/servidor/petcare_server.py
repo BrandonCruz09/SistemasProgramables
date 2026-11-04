@@ -61,6 +61,7 @@ class FirebaseREST:
         self.id_token = None
         self.refresh_token = None
         self.expires_at = 0
+        self.uid = None
         if self.token_file.exists():
             self.refresh_token = self.token_file.read_text(encoding="utf-8").strip() or None
         self._ensure_token()
@@ -82,6 +83,7 @@ class FirebaseREST:
             if response.ok:
                 token = response.json()
                 self.id_token = token["id_token"]
+                self.uid = token.get("user_id")
                 self._save_refresh(token.get("refresh_token", self.refresh_token))
                 self.expires_at = time.time() + int(token.get("expires_in", 3600))
                 return
@@ -92,9 +94,11 @@ class FirebaseREST:
             json={"returnSecureToken": True},
             timeout=10,
         )
-        response.raise_for_status()
+        if not response.ok:
+            raise RuntimeError("Firebase Auth HTTP %s; revisa proveedor y configuracion local" % response.status_code)
         token = response.json()
         self.id_token = token["idToken"]
+        self.uid = token.get("localId")
         self._save_refresh(token["refreshToken"])
         self.expires_at = time.time() + int(token.get("expiresIn", 3600))
         print("Firebase: autenticacion anonima lista; UID:", token.get("localId", "(sin UID)"))
@@ -110,7 +114,9 @@ class FirebaseREST:
             response = self.session.request(
                 method, url, params={"auth": self.id_token}, json=payload, timeout=10
             )
-        response.raise_for_status()
+        if not response.ok:
+            # La URL de requests contiene el token; no incluirla en registros.
+            raise RuntimeError("Firebase HTTP %s en %s" % (response.status_code, path))
         if response.content:
             return response.json()
         return None
@@ -163,6 +169,12 @@ class PetCareBridge:
         self.requests = requests
         self.settings = settings
         self.firebase = firebase
+        self.base_topic = settings.get("mqtt", {}).get("base_topic", BASE_TOPIC).strip("/")
+        self.firebase_root = settings.get("firebase_root", "petcare/equipo8").strip("/")
+        self.telemetry_path = self.firebase_root + "/latest"
+        self.vision_path = self.firebase_root + "/vision"
+        self.command_path = self.firebase_root + "/command"
+        self.events_path = self.firebase_root + "/events"
         self.camera_url = settings.get("camera_url", "").strip()
         self.vision_url = settings.get("vision_url", "").strip()
         self.camera_interval = max(0.5, float(settings.get("camera_interval_seconds", 1.5)))
@@ -182,8 +194,8 @@ class PetCareBridge:
         self.last_seen_command = None
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
-        if int(reason_code) == 0:
-            client.subscribe([(BASE_TOPIC + "/telemetry", 0), (BASE_TOPIC + "/ack", 0)])
+        if reason_code == 0:
+            client.subscribe([(self.base_topic + "/telemetry", 0), (self.base_topic + "/ack", 0)])
             print("MQTT conectado; escuchando telemetria y confirmaciones.")
         else:
             print("MQTT: el broker rechazo la conexion:", reason_code)
@@ -228,23 +240,23 @@ class PetCareBridge:
                 break
             if topic.endswith("/telemetry") and isinstance(payload, dict):
                 saved = {"received_at": utc_now(), **payload}
-                self._firebase_call("telemetria", "put", TELEMETRY_PATH, saved)
+                self._firebase_call("telemetria", "put", self.telemetry_path, saved)
                 status = payload.get("status", {})
                 if not isinstance(status, dict):
                     status = {}
                 event = status.get("last_event")
                 now = time.monotonic()
                 if (event and event != self.last_event) or now - self.last_history_write >= 60:
-                    self._firebase_call("historial", "post", EVENTS_PATH,
+                    self._firebase_call("historial", "post", self.events_path,
                                         {"received_at": utc_now(), "type": "telemetry", "data": saved})
                     self.last_history_write = now
                     self.last_event = event
                 print("Telemetria MQTT recibida; estado:", status.get("state", "desconocido"))
             elif topic.endswith("/ack") and isinstance(payload, dict):
-                current = self._firebase_call("lectura de comando", "get", COMMAND_PATH)
+                current = self._firebase_call("lectura de comando", "get", self.command_path)
                 if isinstance(current, dict) and current.get("id") == payload.get("id"):
                     status = "aceptado" if payload.get("ok") else "rechazado"
-                    self._firebase_call("confirmacion de comando", "patch", COMMAND_PATH,
+                    self._firebase_call("confirmacion de comando", "patch", self.command_path,
                                         {"status": status, "result": payload.get("message", ""),
                                          "device_state": payload.get("state", ""),
                                          "acknowledged_at": utc_now()})
@@ -257,22 +269,22 @@ class PetCareBridge:
         if now - self.last_command_poll < self.command_interval:
             return
         self.last_command_poll = now
-        command = self._firebase_call("lectura de comando", "get", COMMAND_PATH)
+        command = self._firebase_call("lectura de comando", "get", self.command_path)
         if not isinstance(command, dict) or command.get("status") != "pendiente":
             return
         parsed = sanitize_command(command)
         if not parsed:
-            self._firebase_call("rechazo de comando", "patch", COMMAND_PATH,
+            self._firebase_call("rechazo de comando", "patch", self.command_path,
                                 {"status": "rechazado", "result": "id o accion no validos"})
             return
         command_id, action = parsed
         if command_id == self.last_seen_command:
             return
         payload = json.dumps({"id": command_id, "action": action}, separators=(",", ":"))
-        result = self.client.publish(BASE_TOPIC + "/commands", payload, qos=1, retain=False)
+        result = self.client.publish(self.base_topic + "/commands", payload, qos=1, retain=False)
         if result.rc == 0:
             self.last_seen_command = command_id
-            self._firebase_call("estado de comando", "patch", COMMAND_PATH,
+            self._firebase_call("estado de comando", "patch", self.command_path,
                                 {"status": "enviado", "sent_at": utc_now()})
             print("Orden Firebase -> MQTT:", command_id, action)
 
@@ -299,8 +311,8 @@ class PetCareBridge:
             self.last_motion_state = key
             self.last_vision_publish = now
             if self.client and self.client.is_connected():
-                self.client.publish(BASE_TOPIC + "/vision", json.dumps(result), qos=0, retain=False)
-            self._firebase_call("vision", "put", VISION_PATH, result)
+                self.client.publish(self.base_topic + "/vision", json.dumps(result), qos=0, retain=False)
+            self._firebase_call("vision", "put", self.vision_path, result)
             print("Vision: disponible=%s perro=%s persona=%s" % key[:3])
 
     def poll_camera(self):
@@ -331,8 +343,8 @@ class PetCareBridge:
                 self.last_vision_publish = now
                 payload = json.dumps(result, separators=(",", ":"))
                 if self.client and self.client.is_connected():
-                    self.client.publish(BASE_TOPIC + "/vision", payload, qos=0, retain=False)
-                self._firebase_call("vision", "put", VISION_PATH, result)
+                    self.client.publish(self.base_topic + "/vision", payload, qos=0, retain=False)
+                self._firebase_call("vision", "put", self.vision_path, result)
                 print("OpenCV: movimiento" if result["movement_detected"] else "OpenCV: sin movimiento",
                       "(%.2f%% del cuadro cambiado)" % result["changed_percent"])
         except Exception as exc:

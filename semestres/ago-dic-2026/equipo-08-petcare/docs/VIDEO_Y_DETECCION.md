@@ -2,6 +2,8 @@
 
 Avance del 2 de noviembre de 2026. Equipo 08.
 
+Actualización del 3 de noviembre: MQTT y Firebase ya se probaron con una ESP32 simulada y datos ficticios. Ver [Firebase y simulación](FIREBASE_Y_SIMULACION.md). Los pendientes y observaciones de esta página corresponden a la prueba original de video; la integración con sensores reales sigue pendiente.
+
 La ESP32-CAM ya transmite video a la computadora. La PC ejecuta MobileNet SSD con OpenCV, dibuja los recuadros y comparte el resultado en una página que se puede abrir desde el celular. En la prueba del equipo se confirmó video en el teléfono y detección de una persona y de un perro. También se observó una confusión: en algunos momentos el perro fue marcado como persona.
 
 ## Cómo funciona

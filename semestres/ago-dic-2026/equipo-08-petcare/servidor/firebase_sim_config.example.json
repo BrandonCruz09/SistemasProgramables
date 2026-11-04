@@ -1,0 +1,8 @@
+{
+  "firebase": {
+    "enabled": true,
+    "database_url": "https://TU-PROYECTO-default-rtdb.firebaseio.com",
+    "api_key": "TU_WEB_API_KEY"
+  },
+  "mosquitto_exe": "C:/Program Files/Mosquitto/mosquitto.exe"
+}
