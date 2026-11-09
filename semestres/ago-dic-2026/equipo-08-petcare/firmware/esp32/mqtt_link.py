@@ -39,7 +39,7 @@ class MQTTLink:
             return
         try:
             data = json.loads(message.decode())
-            if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water"):
+            if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water", "signal_dog"):
                 self.pending_command = data
         except Exception:
             print("MQTT: comando JSON invalido; ignorado")
@@ -49,10 +49,10 @@ class MQTTLink:
         try:
             from umqtt.simple import MQTTClient
             client = MQTTClient(
-                config.MQTT_CLIENT_ID, config.MQTT_HOST,
+                config.MQTT_CLIENT_ID.encode(), config.MQTT_HOST,
                 port=config.MQTT_PORT,
-                user=config.MQTT_USER or None,
-                password=config.MQTT_PASSWORD or None,
+                user=config.MQTT_USER.encode() if config.MQTT_USER else None,
+                password=config.MQTT_PASSWORD.encode() if config.MQTT_USER else None,
                 keepalive=30
             )
             client.set_callback(self._on_message)
@@ -101,6 +101,8 @@ class MQTTLink:
             elif action == "stop_water":
                 controller.stop_pump()
                 ok, message = True, "Orden de detener bomba aplicada"
+            elif action == 'signal_dog':
+                ok, message = controller.request_signal(now)
             else:
                 ok, message = False, "Accion no permitida"
             self._publish_ack(command_id, action, ok, message, controller.state)

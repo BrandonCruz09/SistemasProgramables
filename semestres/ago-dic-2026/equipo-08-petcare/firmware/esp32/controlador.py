@@ -30,6 +30,14 @@ class PetCareController:
         self.status = {}
         self.last_event = "Sistema iniciado en modo seguro"
         self._last_beep_until = None
+        self._signal_until = None
+
+    def request_signal(self, now_ms):
+        # Indicador breve de IA. No mueve la compuerta ni enciende la bomba.
+        self._signal_until = self._add(now_ms, 1500)
+        self.led.set_color('white')
+        self.last_event = 'IA: perro confirmado; orden RGB blanca durante 1500 ms'
+        return True, self.last_event
 
     @staticmethod
     def _diff(a, b):
@@ -125,11 +133,15 @@ class PetCareController:
         if self._last_beep_until is not None and self._diff(now_ms, self._last_beep_until) >= 0:
             self.buzzer.off()
             self._last_beep_until = None
+        if self._signal_until is not None and self._diff(now_ms, self._signal_until) >= 0:
+            self._signal_until = None
         self._update_led()
         return self.status
 
     def _update_led(self):
-        if not self.status.get("water_available"):
+        if self._signal_until is not None:
+            color = 'white'
+        elif not self.status.get("water_available"):
             color = "red"
         elif not self.status.get("calibrated"):
             color = "yellow"
@@ -143,9 +155,11 @@ class PetCareController:
         data = dict(self.status)
         data["state"] = self.state
         data["last_event"] = self.last_event
+        data['ia_signal_active'] = self._signal_until is not None
         return data
 
     def safe_shutdown(self):
+        self._signal_until = None
         self.pump.off()
         self.buzzer.off()
         try:

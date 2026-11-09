@@ -153,6 +153,20 @@ def run():
                                       'person_detected':False,'source':'fixture-software','processed_at':utc_now()})
         record('Estado de vision de demostracion', firebase.get(root+'/vision').get('simulated') is True,
                'Ejemplo ficticio; no es inferencia de la camara')
+        bridge.ia_enabled = True
+        command_ia = bridge.process_vision({'available':True,'dog_detected':True,
+            'frame_age_seconds':.1,'frame_number':1,'processed_at':utc_now(),
+            'detections':[{'class':'dog','confidence':.90}],'uncertain_detections':0})
+        record('Decision IA de ejemplo enviada', command_ia is not None,
+               'Resultado dog inyectado; orden signal_dog, sin alimento ni agua')
+        done = pump_until(lambda: any(a['id']==command_ia['id'] for a in sim.acks))
+        pump_until(lambda:command_ia['id'] not in bridge.pending_ia, timeout=5)
+        event_ia = firebase.get(root+'/eventos_ia/'+command_ia['id'])
+        record('Evento IA y ACK guardados en Firebase', done and event_ia.get('estado')=='confirmado',
+               'RTDB real; actuador y deteccion simulados, ambos declarados')
+        record('Rutas de Sprint 3 con datos simulados', bool(firebase.get(root+'/lecturas')) and
+               firebase.get(root+'/estado_actual').get('telemetria',{}).get('simulated') is True,
+               'lecturas y estado_actual devueltos por Firebase')
         report['passed']=True
     except Exception as exc:
         # No imprimir URLs de autenticacion ni configuraciones privadas.

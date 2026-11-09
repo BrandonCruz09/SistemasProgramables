@@ -1,0 +1,58 @@
+Validación del software ampliado al 8 de noviembre de 2026
+Sintaxis revisada: 48 archivos Python.
+No es ejecución de MicroPython en las placas.
+
+MQTT camara conectado; publicando JPEG en b'petcare/equipo8/cam/frame'
+MQTT conectado a :1883
+MQTT comando: ia-test signal_dog OK
+Frame 1 -> IA perro -> MQTT signal_dog: ia-8e68b466660d4e4198a0ef8f
+IA -> MQTT -> ACK: ia-8e68b466660d4e4198a0ef8f True
+Confirmacion del ESP32: ia-8e68b466660d4e4198a0ef8f
+MQTT conectado; escuchando telemetria y confirmaciones.
+Telemetria MQTT recibida; estado: desconocido
+Vision: disponible=False perro=None persona=None
+Visor conectado: 127.0.0.1
+Visor conectado: 127.0.0.1
+test_bomba_termina_apagada (test_banco_hardware.BancoTests.test_bomba_termina_apagada) ... ok
+test_duracion_invalida_no_activa (test_banco_hardware.BancoTests.test_duracion_invalida_no_activa) ... ok
+test_interrupcion_apaga_bomba (test_banco_hardware.BancoTests.test_interrupcion_apaga_bomba) ... ok
+test_servo_rechaza_pulso_fuera_de_limite (test_banco_hardware.BancoTests.test_servo_rechaza_pulso_fuera_de_limite) ... ok
+test_historial_recuperado_no_finge_telemetria_viva (test_dashboard.DashboardTests.test_historial_recuperado_no_finge_telemetria_viva) ... ok
+test_historico_limitado_y_dato_caducado (test_dashboard.DashboardTests.test_historico_limitado_y_dato_caducado) ... ok
+test_inicio_no_depende_de_dns_inversa (test_dashboard.DashboardTests.test_inicio_no_depende_de_dns_inversa) ... ok
+test_no_inventa_datos_al_arrancar (test_dashboard.DashboardTests.test_no_inventa_datos_al_arrancar) ... ok
+test_pagina_y_api_http (test_dashboard.DashboardTests.test_pagina_y_api_http) ... ok
+test_camara_rechaza_retenidos_y_jpeg_invalido (test_ia_mqtt.IATests.test_camara_rechaza_retenidos_y_jpeg_invalido) ... ok
+test_cliente_camara_usa_bytes_y_timeout (test_ia_mqtt.IATests.test_cliente_camara_usa_bytes_y_timeout) ... ok
+test_cliente_esp32_envia_identidad_y_claves_como_bytes (test_ia_mqtt.IATests.test_cliente_esp32_envia_identidad_y_claves_como_bytes) ... ok
+test_cooldown_y_clasificacion_dudosa (test_ia_mqtt.IATests.test_cooldown_y_clasificacion_dudosa) ... ok
+test_cuadro_repetido_no_rearma (test_ia_mqtt.IATests.test_cuadro_repetido_no_rearma) ... ok
+test_mqtt_link_real_deduplica_y_confirma (test_ia_mqtt.IATests.test_mqtt_link_real_deduplica_y_confirma) ... ok
+test_puente_envio_ack_y_firebase (test_ia_mqtt.IATests.test_puente_envio_ack_y_firebase) ... ok
+test_senal_no_mueve_motores_y_se_apaga (test_ia_mqtt.IATests.test_senal_no_mueve_motores_y_se_apaga) ... ok
+test_sin_imagen_o_vieja_no_dispara (test_ia_mqtt.IATests.test_sin_imagen_o_vieja_no_dispara) ... ok
+test_una_senal_por_presencia_y_rearme (test_ia_mqtt.IATests.test_una_senal_por_presencia_y_rearme) ... ok
+test_bowl_weight_blocks_extra_food (test_petcare.PetCareTests.test_bowl_weight_blocks_extra_food) ... ok
+test_empty_water_blocks_pump (test_petcare.PetCareTests.test_empty_water_blocks_pump) ... ok
+test_feed_opens_closes_and_releases_pwm (test_petcare.PetCareTests.test_feed_opens_closes_and_releases_pwm) ... ok
+test_feed_requires_calibrated_scale (test_petcare.PetCareTests.test_feed_requires_calibrated_scale) ... ok
+test_pump_is_interlocked_and_times_out (test_petcare.PetCareTests.test_pump_is_interlocked_and_times_out) ... ok
+test_accepts_only_known_command_with_id (test_petcare_cloud.PetCareCloudTests.test_accepts_only_known_command_with_id) ... ok
+test_motion_threshold (test_petcare_cloud.PetCareCloudTests.test_motion_threshold) ... ok
+test_mqtt_v2_reason_code_subscribes_correct_topic (test_simulacion.SimulationTests.test_mqtt_v2_reason_code_subscribes_correct_topic) ... ok
+test_simulated_payload_uses_its_own_database_path (test_simulacion.SimulationTests.test_simulated_payload_uses_its_own_database_path) ... ok
+test_simulator_rejects_hardware_topic (test_simulacion.SimulationTests.test_simulator_rejects_hardware_topic) ... ok
+test_bridge_marks_vision_unavailable_on_network_error (test_vision.VisionTests.test_bridge_marks_vision_unavailable_on_network_error) ... ok
+test_classes_threshold_and_clipping (test_vision.VisionTests.test_classes_threshold_and_clipping) ... ok
+test_confirmation_requires_consecutive_frames (test_vision.VisionTests.test_confirmation_requires_consecutive_frames) ... ok
+test_conflicting_classes_are_not_counted_twice (test_vision.VisionTests.test_conflicting_classes_are_not_counted_twice) ... ok
+test_http_page_status_and_two_readers (test_vision.VisionTests.test_http_page_status_and_two_readers) ... ok
+test_incomplete_and_oversized_frame (test_vision.VisionTests.test_incomplete_and_oversized_frame) ... ok
+test_jpeg_split_across_packets (test_vision.VisionTests.test_jpeg_split_across_packets) ... ok
+test_person_uses_a_higher_threshold (test_vision.VisionTests.test_person_uses_a_higher_threshold) ... ok
+test_stale_frame_does_not_report_absence_or_keep_positive (test_vision.VisionTests.test_stale_frame_does_not_report_absence_or_keep_positive) ... ok
+
+----------------------------------------------------------------------
+Ran 38 tests in 3.583s
+
+OK

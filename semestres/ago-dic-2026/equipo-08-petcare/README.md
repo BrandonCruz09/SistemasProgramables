@@ -1,5 +1,7 @@
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 
+> **Ampliación de software posterior a este corte:** ya se prepararon JPEG por MQTT, decisión IA con señal RGB, ACK, rutas de Firebase y dashboard. Pruebas de software y nube simulada aprobadas; carga y prueba física pendientes. [Estado actualizado y pasos](docs/INTEGRACION_MQTT_IA.md).
+
 ![Estado](https://img.shields.io/badge/estado-en--desarrollo-yellow)
 ![Semestre](https://img.shields.io/badge/semestre-ago--dic--2026-blue)
 ![Materia](https://img.shields.io/badge/materia-Sistemas%20Programables-orange)
@@ -7,7 +9,7 @@
 > **Equipo:** 08, según el padrón del repositorio del curso.
 > **Semestre:** ago-dic-2026
 > **Materia:** Sistemas Programables — ISC TecNM León
-> **Avance al 8 de noviembre:** cámara y detección móvil confirmadas; lectura RAW de la báscula, movimiento del servo y LED del MOSFET reportados por el equipo. Firebase/MQTT tienen evidencia de simulación previa. Pendientes gramos, bombeo y cadena física completa IA → MQTT → actuador. [Reporte del corte](docs/AVANCE_2026-11-08.md).
+> **Avance al 8 de noviembre:** cámara y detección móvil confirmadas; lectura RAW, servo sin carga y LED del MOSFET reportados por el equipo. Ampliación de software: frames MQTT, respuesta RGB de IA, dashboard y registro RTDB. Pasaron 38 pruebas de software, 12 comprobaciones de cadena local y 20 con Firebase real y dispositivos simulados. Pendientes carga nueva, gramos, bombeo y cadena física completa. [Reporte del corte](docs/AVANCE_2026-11-08.md).
 
 | Nombre | Matrícula | Rol | GitHub |
 |---|---|---|---|
@@ -23,7 +25,7 @@ PetCare busca ayudar a quienes cuidan perros a supervisar el alimento disponible
 
 ![Arquitectura del sistema](hardware/arquitectura.png)
 
-La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; **frames directos por MQTT aún no están implementados**. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4. El proyecto está en **Spark**, sin facturación vinculada. Se verificaron reglas y lectura/escritura reales para una identidad limitada a datos simulados. Firestore no está habilitado.
+La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; el modo JPEG por MQTT ya está preparado y probado en PC con transporte real y cámara simulada; falta cargarlo a la cámara física. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4. El proyecto está en **Spark**, sin facturación vinculada. Se verificaron reglas y lectura/escritura reales para una identidad limitada a datos simulados. Firestore no está habilitado.
 
 ### Tópicos MQTT
 
@@ -34,7 +36,7 @@ La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet 
 | `petcare/equipo8/ack` | DevKit → broker → PC | Resultado y motivo de aceptación/rechazo |
 | `petcare/equipo8/vision` | PC → broker | Presencia de perro/persona, disponibilidad y recuadros; sin fotografía |
 
-LED y buzzer dependen de la lógica local, sin comando MQTT propio. El circuito completo MQTT se incluye en código, todavía sin evidencia de ejecución física integral.
+El RGB admite ahora `signal_dog` por MQTT: blanco durante 1.5 s y retorno a la supervisión local. El buzzer conserva lógica local. La ejecución física integral sigue pendiente.
 
 ## 🛠️ Hardware
 
@@ -118,8 +120,8 @@ Detectar perros y personas en la PC mediante **MobileNet SSD preentrenado sobre 
 - El flujo es ESP32-CAM → MJPEG → PC/OpenCV → página web del celular.
 - Se dibujan recuadros y se confirma presencia después de tres cuadros. Mínimos: perro 0.60; persona 0.80. No son porcentajes de precisión del sistema.
 - El equipo confirmó video y detección de persona/perro en el teléfono. También se reportó un falso positivo de perro como persona; se añadieron umbrales por clase y revisión de recuadros contradictorios. Falta medir su efecto en escenas repetidas.
-- La zona de platos está sin ajustar hasta fijar la cámara. La detección no dispensa alimento ni activa actuadores.
-- [Funcionamiento, pruebas y límites](docs/VIDEO_Y_DETECCION.md). MQTT/Firebase y la decisión IA→actuador siguen pendientes de prueba conjunta.
+- La zona de platos está sin ajustar hasta fijar la cámara. La detección no dispensa alimento. La política opcional `dog_indicator_enabled` envía una señal breve al RGB por MQTT; queda pendiente comprobarla en hardware.
+- [Funcionamiento, pruebas y límites](docs/VIDEO_Y_DETECCION.md). El envío de decisión IA→MQTT→RGB y el registro en RTDB se probaron con dispositivos simulados. Falta repetirlos con el hardware real.
 
 ## 🎥 Demostración
 

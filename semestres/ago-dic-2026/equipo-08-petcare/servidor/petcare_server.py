@@ -14,9 +14,12 @@ from __future__ import annotations
 import json
 import queue
 import time
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
+from ia_policy import DogSignalPolicy
+from dashboard import DashboardState, start_dashboard
 
 BASE_TOPIC = "petcare/equipo8"
 TELEMETRY_PATH = "petcare/equipo8/latest"
@@ -103,16 +106,16 @@ class FirebaseREST:
         self.expires_at = time.time() + int(token.get("expiresIn", 3600))
         print("Firebase: autenticacion anonima lista; UID:", token.get("localId", "(sin UID)"))
 
-    def request(self, method, path, payload=None):
+    def request(self, method, path, payload=None, query=None):
         self._ensure_token()
         url = self.db_url + "/" + quote(path.strip("/"), safe="/") + ".json"
         response = self.session.request(
-            method, url, params={"auth": self.id_token}, json=payload, timeout=10
+            method, url, params={**(query or {}), "auth": self.id_token}, json=payload, timeout=10
         )
         if response.status_code == 401:
             self._ensure_token(force=True)
             response = self.session.request(
-                method, url, params={"auth": self.id_token}, json=payload, timeout=10
+                method, url, params={**(query or {}), "auth": self.id_token}, json=payload, timeout=10
             )
         if not response.ok:
             # La URL de requests contiene el token; no incluirla en registros.
@@ -123,6 +126,9 @@ class FirebaseREST:
 
     def get(self, path):
         return self.request("GET", path)
+
+    def recent(self, path):
+        return self.request('GET', path, query={'orderBy':'"$key"','limitToLast':120})
 
     def put(self, path, payload):
         return self.request("PUT", path, payload)
@@ -192,6 +198,13 @@ class PetCareBridge:
         self.last_camera_error = 0
         self.last_firebase_error = 0
         self.last_seen_command = None
+        self.ia_enabled = settings.get('automation', {}).get('dog_indicator_enabled', False) is True
+        self.ia_policy = DogSignalPolicy(settings.get('automation', {}).get('cooldown_seconds', 15))
+        self.pending_ia = {}
+        self.lecturas_path = self.firebase_root + '/lecturas'
+        self.ia_events_path = self.firebase_root + '/eventos_ia'
+        self.current_path = self.firebase_root + '/estado_actual'
+        self.dashboard = DashboardState()
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code == 0:
@@ -224,8 +237,13 @@ class PetCareBridge:
         if not self.firebase:
             return None
         try:
-            return getattr(self.firebase, method)(*args)
+            result = getattr(self.firebase, method)(*args)
+            with self.dashboard.lock:
+                self.dashboard.cloud = {'status':'Última operación Firebase correcta', 'updated_at':utc_now()}
+            return result
         except Exception as exc:
+            with self.dashboard.lock:
+                self.dashboard.cloud = {'status':'Firebase pendiente o sin acceso', 'updated_at':utc_now()}
             now = time.monotonic()
             if now - self.last_firebase_error > 10:
                 self.last_firebase_error = now
@@ -240,7 +258,10 @@ class PetCareBridge:
                 break
             if topic.endswith("/telemetry") and isinstance(payload, dict):
                 saved = {"received_at": utc_now(), **payload}
+                self.dashboard.update(saved)
                 self._firebase_call("telemetria", "put", self.telemetry_path, saved)
+                self._firebase_call('estado actual', 'patch', self.current_path,
+                                    {'telemetria': saved, 'updated_at': utc_now()})
                 status = payload.get("status", {})
                 if not isinstance(status, dict):
                     status = {}
@@ -249,10 +270,21 @@ class PetCareBridge:
                 if (event and event != self.last_event) or now - self.last_history_write >= 60:
                     self._firebase_call("historial", "post", self.events_path,
                                         {"received_at": utc_now(), "type": "telemetry", "data": saved})
+                    self._firebase_call('lectura historica', 'put',
+                                        self.lecturas_path + '/' + str(time.time_ns()), saved)
                     self.last_history_write = now
                     self.last_event = event
                 print("Telemetria MQTT recibida; estado:", status.get("state", "desconocido"))
             elif topic.endswith("/ack") and isinstance(payload, dict):
+                with self.dashboard.lock:
+                    self.dashboard.events.append(dict(payload, received_at=utc_now()))
+                cid = payload.get('id')
+                if isinstance(cid, str) and cid in self.pending_ia:
+                    self.pending_ia.pop(cid)
+                    self._firebase_call('confirmacion IA', 'patch', self.ia_events_path + '/' + cid,
+                                        {'estado': 'confirmado' if payload.get('ok') else 'rechazado',
+                                         'ack': payload, 'acknowledged_at': utc_now()})
+                    print('IA -> MQTT -> ACK:', cid, payload.get('ok'), payload.get('message', ''))
                 current = self._firebase_call("lectura de comando", "get", self.command_path)
                 if isinstance(current, dict) and current.get("id") == payload.get("id"):
                     status = "aceptado" if payload.get("ok") else "rechazado"
@@ -261,6 +293,33 @@ class PetCareBridge:
                                          "device_state": payload.get("state", ""),
                                          "acknowledged_at": utc_now()})
                 print("Confirmacion del ESP32:", payload.get("id"), payload.get("message", ""))
+
+    def process_vision(self, result):
+        """Actuar solo sobre cuadros recientes, sin alimentar por detección."""
+        now = time.monotonic()
+        for cid, sent in list(self.pending_ia.items()):
+            if now - sent >= 5:
+                self.pending_ia.pop(cid)
+                self._firebase_call('IA sin ACK', 'patch', self.ia_events_path + '/' + cid,
+                                    {'estado': 'sin_confirmacion', 'updated_at': utc_now()})
+                print('IA sin confirmacion del ESP32:', cid)
+        if not self.ia_enabled or not self.client or not self.client.is_connected():
+            return None
+        command = self.ia_policy.propose(result, now)
+        if not command:
+            return None
+        # QoS0 sin retención: no acumular señales de cámara para dispositivos desconectados.
+        sent = self.client.publish(self.base_topic + '/commands', json.dumps(command), qos=0, retain=False)
+        if sent.rc != 0:
+            return None
+        self.ia_policy.accepted(now)
+        self.pending_ia[command['id']] = now
+        event = {'deteccion': 'dog', 'accion': 'signal_dog', 'confianza': command['confidence'],
+                 'timestamp': utc_now(), 'estado': 'enviado', 'command': command,
+                 'simulated': '/simulacion/' in self.base_topic}
+        self._firebase_call('evento IA', 'put', self.ia_events_path + '/' + command['id'], event)
+        print('Frame', command['frame_number'], '-> IA perro -> MQTT signal_dog:', command['id'])
+        return command
 
     def poll_command(self):
         if not self.firebase or not self.client or not self.client.is_connected():
@@ -305,6 +364,9 @@ class PetCareBridge:
             result = {"available": False, "dog_detected": None, "person_detected": None,
                       "dog_in_bowl_zone": None, "detections": [],
                       "error": "Servidor de vision no disponible", "processed_at": utc_now()}
+        self.process_vision(result)
+        with self.dashboard.lock:
+            self.dashboard.vision = result
         key = (result.get("available"), result.get("dog_detected"),
                result.get("person_detected"), result.get("dog_in_bowl_zone"))
         if key != self.last_motion_state or now - self.last_vision_publish >= self.motion_interval:
@@ -313,6 +375,8 @@ class PetCareBridge:
             if self.client and self.client.is_connected():
                 self.client.publish(self.base_topic + "/vision", json.dumps(result), qos=0, retain=False)
             self._firebase_call("vision", "put", self.vision_path, result)
+            self._firebase_call('estado vision', 'patch', self.current_path,
+                                {'vision': result, 'updated_at': utc_now()})
             print("Vision: disponible=%s perro=%s persona=%s" % key[:3])
 
     def poll_camera(self):
@@ -374,7 +438,10 @@ def load_settings(folder):
 def main():
     import paho.mqtt.client as mqtt
     folder = Path(__file__).resolve().parent
-    settings = load_settings(folder)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=Path, default=folder / 'server_config.json')
+    args = parser.parse_args()
+    settings = json.loads(args.config.read_text(encoding='utf-8-sig'))
     mqtt_settings = settings.get("mqtt", {})
     host = mqtt_settings.get("host", "127.0.0.1")
     port = int(mqtt_settings.get("port", 1883))
@@ -389,6 +456,13 @@ def main():
             except Exception as exc:
                 print("Firebase no disponible; MQTT/OpenCV local continuan:", exc)
     bridge = PetCareBridge(settings, firebase)
+    dashboard_server = None
+    dashboard_settings = settings.get('dashboard', {})
+    if dashboard_settings.get('enabled'):
+        if firebase:
+            bridge.dashboard.restore_history(bridge._firebase_call('recuperar histórico', 'recent', bridge.lecturas_path))
+        dashboard_server = start_dashboard(bridge.dashboard, folder.parent/'interfaz/dashboard.html',
+                                          dashboard_settings.get('host','0.0.0.0'), dashboard_settings.get('port',8766))
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="petcare-equipo8-pc")
     client.on_connect = bridge.on_connect
     client.on_message = bridge.on_message
@@ -401,6 +475,9 @@ def main():
     try:
         client.connect(host, port, keepalive=30)
     except OSError as exc:
+        if dashboard_server:
+            dashboard_server.shutdown()
+            dashboard_server.server_close()
         print("No se pudo conectar al broker MQTT. Inicia Mosquitto y revisa host/puerto:", exc)
         return 2
     client.loop_start()
@@ -409,6 +486,9 @@ def main():
     except KeyboardInterrupt:
         print("\nCierre solicitado; no se enviaran mas ordenes.")
     finally:
+        if dashboard_server:
+            dashboard_server.shutdown()
+            dashboard_server.server_close()
         client.loop_stop()
         client.disconnect()
 

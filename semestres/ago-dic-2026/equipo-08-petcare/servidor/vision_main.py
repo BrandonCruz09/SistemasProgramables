@@ -18,6 +18,7 @@ import cv2
 import numpy as np
 from detector import DogPersonDetector
 from video_source import CameraStream
+from mqtt_camera import MQTTCameraStream
 from video_web import VideoState, create_server
 
 
@@ -100,7 +101,10 @@ def main():
     detector = DogPersonDetector(folder/'models', vision.get('confidence', .55),
                                 vision.get('confirm_frames', 3), vision.get('bowl_zone'),
                                 vision.get('class_thresholds'))
-    camera = CameraStream(url)
+    transport = settings.get('camera_transport', 'http')
+    if transport not in ('http', 'mqtt'):
+        raise ValueError('camera_transport debe ser http o mqtt')
+    camera = MQTTCameraStream(settings.get('mqtt', {})) if transport == 'mqtt' else CameraStream(url)
     state = VideoState()
     worker = VisionWorker(camera, detector, state)
     web = settings.get('web', {})
@@ -115,6 +119,7 @@ def main():
     print('PetCare: http://%s:%d/' % (local_address(url), server.server_port), flush=True)
     print('Abre esa direccion en el celular conectado al mismo Wi-Fi.', flush=True)
     print('Ctrl+C detiene el servidor. Las detecciones no accionan la compuerta.', flush=True)
+    print('Entrada de imagen:', transport, '| La respuesta LED requiere iniciar tambien mqtt_bridge.py.', flush=True)
     try:
         while http_thread.is_alive():
             if stop_file.exists():

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PetCare Estado e histórico</title>
+<style>
+*{box-sizing:border-box}body{font:17px system-ui;margin:0;background:#f3f6f3;color:#1b383d}main{max-width:960px;margin:auto;padding:28px 18px}header{display:flex;justify-content:space-between;align-items:center}h1{font-size:32px}a{color:#176851}p{line-height:1.55}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card,section{background:white;border:1px solid #dbe3dd;border-radius:14px;padding:20px;margin-bottom:16px}.card h2{font-size:15px;font-weight:500;margin:0 0 8px}.value{font-size:24px;font-weight:700}.muted{color:#52696b;font-size:14px}#status{font-weight:600}svg{width:100%;height:auto}select{font:inherit;padding:6px;border:1px solid #b5c8bd;border-radius:7px}li{margin-bottom:9px}@media(max-width:600px){.grid{grid-template-columns:1fr 1fr}h1{font-size:27px}.card{padding:15px}.value{font-size:20px}}
+</style><main>
+<header><strong>PetCare · Equipo 08</strong><a id="camera" href="#">Ver cámara</a></header>
+<h1>Estado de la estación</h1><p id="status">Esperando datos del ESP32…</p>
+<div class="grid">
+<div class="card"><h2>Peso de alimento</h2><div class="value" id="weight">—</div></div>
+<div class="card"><h2>Temperatura</h2><div class="value" id="temp">—</div></div>
+<div class="card"><h2>Humedad</h2><div class="value" id="humidity">—</div></div>
+<div class="card"><h2>Presencia PIR</h2><div class="value" id="pir">—</div></div>
+<div class="card"><h2>Disponibilidad de agua</h2><div class="value" id="water">—</div></div>
+<div class="card"><h2>Estado del programa</h2><div class="value" id="fsm">—</div></div></div>
+<section><h2>Lecturas recientes</h2><label>Medición <select id="metric"><option value="temperature_c">Temperatura °C</option><option value="humidity_pct">Humedad %</option><option value="weight_g">Peso g</option></select></label>
+<svg viewBox="0 0 800 230" role="img" aria-label="Gráfica de las lecturas recientes"><path d="M50 20 V195 H780" fill="none" stroke="#c1cec8"/><path id="line" fill="none" stroke="#168577" stroke-width="3"/><text id="ymax" x="4" y="25" font-size="13"/><text id="ymin" x="4" y="195" font-size="13"/></svg>
+<p class="muted" id="range">No hay muestras.</p><p class="muted">Gráfica de las últimas 120 muestras. Al iniciar con Firebase configurado se recupera el histórico guardado. Los datos simulados se identifican; no son mediciones del montaje.</p></section>
+<section><h2>IA y confirmaciones</h2><p id="vision">Esperando visión.</p><ol id="events"></ol></section>
+<section><h2>Registro en Firebase</h2><p id="cloud">Sin estado.</p><p class="muted">La confirmación del ESP32 indica que el programa aplicó una orden; la comprobación del LED o del mecanismo se hace físicamente.</p></section>
+</main><script>
+const el=id=>document.getElementById(id);let last=null;
+el('camera').href=location.protocol+'//'+location.hostname+':8765/';
+const number=(v,unit)=>typeof v==='number'&&Number.isFinite(v)?v.toFixed(1)+' '+unit:'Sin lectura';
+function chart(items){const key=el('metric').value;const vals=items.map(x=>x.status?.[key]);const valid=vals.filter(v=>typeof v==='number'&&Number.isFinite(v));if(!valid.length){el('line').setAttribute('d','');el('range').textContent='Sin valores válidos para esta medición.';el('ymin').textContent='';el('ymax').textContent='';return}let lo=Math.min(...valid),hi=Math.max(...valid);if(lo===hi){lo-=1;hi+=1}let d='',open=false;vals.forEach((v,i)=>{if(typeof v!=='number'||!Number.isFinite(v)){open=false;return}const x=50+i*730/Math.max(vals.length-1,1),y=195-(v-lo)*175/(hi-lo);d+=(open?'L':'M')+x+' '+y+' ';open=true});el('line').setAttribute('d',d);el('ymin').textContent=lo.toFixed(1);el('ymax').textContent=hi.toFixed(1);el('range').textContent=valid.length+' valores · '+(items[0]?.received_at||'')+' — '+(items.at(-1)?.received_at||'')}
+function render(d){last=d;const t=d.telemetry,s=t?.status||{};el('status').textContent=(!d.available?'Sin telemetría reciente. ': 'Recibiendo datos. ')+(t?.simulated?'MODO SIMULADO. ':'')+(d.age_seconds!==null?'Última muestra hace '+d.age_seconds+' s.':'');el('weight').textContent=s.calibrated?number(s.weight_g,'g'):'Sin calibrar';el('temp').textContent=number(s.temperature_c,'°C');el('humidity').textContent=number(s.humidity_pct,'%');el('pir').textContent=typeof s.pir==='boolean'?(s.pir?'Movimiento':'Sin movimiento'):'Sin lectura';el('water').textContent=typeof s.water_available==='boolean'?(s.water_available?'Disponible':'Nivel bajo o sin sensor'):'Sin lectura';el('fsm').textContent=s.state||'Sin datos';el('vision').textContent=d.vision.available?(d.vision.dog_detected?'Perro confirmado.':'Sin perro confirmado.'):'Sin imagen reciente.';el('cloud').textContent=d.firebase.status+(d.firebase.updated_at?' · '+d.firebase.updated_at:'');el('events').replaceChildren();d.events.slice(-8).reverse().forEach(e=>{const li=document.createElement('li');li.textContent=(e.id||'Evento')+' · '+(e.message||e.estado||'');el('events').append(li)});chart(d.history)}
+async function refresh(){try{const r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error();render(await r.json())}catch{el('status').textContent='No hay conexión con el servidor de la PC.'}}el('metric').onchange=()=>last&&chart(last.history);refresh();setInterval(refresh,2000);
+</script></html>

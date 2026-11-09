@@ -26,7 +26,9 @@ class SimulationTests(unittest.TestCase):
         payload = {'simulated':True,'status':{'weight_g':75}}
         bridge._queue_message((bridge.base_topic+'/telemetry',payload))
         bridge.process_messages()
-        self.assertEqual(cloud.put.call_args.args[0],'petcare/equipo8/simulacion/demo/latest')
+        paths = [call.args[0] for call in cloud.put.call_args_list]
+        self.assertIn('petcare/equipo8/simulacion/demo/latest', paths)
+        self.assertTrue(all(path.startswith('petcare/equipo8/simulacion/demo/') for path in paths))
         self.assertTrue(cloud.put.call_args.args[1]['simulated'])
 
     def test_mqtt_v2_reason_code_subscribes_correct_topic(self):

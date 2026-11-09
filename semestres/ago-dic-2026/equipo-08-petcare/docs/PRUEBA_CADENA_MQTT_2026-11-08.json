@@ -1,0 +1,57 @@
+{
+  "simulated": true,
+  "started_at": "2026-11-09T02:42:33+00:00",
+  "checks": [
+    {
+      "test": "Suscripción PC al tópico de frames",
+      "passed": true
+    },
+    {
+      "test": "Suscripción puente a telemetría y ACK",
+      "passed": true
+    },
+    {
+      "test": "JPEG atraviesa MQTT sin alteración",
+      "passed": true
+    },
+    {
+      "test": "OpenCV decodifica el frame recibido",
+      "passed": true
+    },
+    {
+      "test": "Modelo real ejecuta inferencia en PC",
+      "passed": true
+    },
+    {
+      "test": "Decisión de ejemplo publica signal_dog",
+      "passed": true
+    },
+    {
+      "test": "ESP32 simulada recibe y confirma",
+      "passed": true
+    },
+    {
+      "test": "RGB simulado enciende blanco",
+      "passed": true
+    },
+    {
+      "test": "IA no activa servo ni bomba",
+      "passed": true
+    },
+    {
+      "test": "Puente correlaciona el ACK",
+      "passed": true
+    },
+    {
+      "test": "Señal termina sin otra orden",
+      "passed": true
+    },
+    {
+      "test": "No repite con el perro presente",
+      "passed": true
+    }
+  ],
+  "scope": "Broker real y JPEG sintético. Detección dog inyectada para probar decisiones; no es precisión de IA.",
+  "passed": true,
+  "finished_at": "2026-11-09T02:42:36+00:00"
+}

@@ -18,3 +18,9 @@ detener_video.flag
 firebase_sim_config.json
 database.rules.local.json
 simulacion_resultado.json
+mqtt_config.py
+server_mqtt_config.json
+config_local.py
+broker.local.conf
+broker.passwd
+broker.acl

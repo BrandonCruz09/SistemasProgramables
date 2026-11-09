@@ -158,10 +158,28 @@ class ServidorCamara:
         self.server = server
         print('PetCare: http://%s/ | video: /stream | foto: /foto' % ip)
         print('Detener: STOP de Thonny o Ctrl+C.')
+        mqtt_task = None
+        publisher = None
+        try:
+            import mqtt_config
+            if mqtt_config.ENABLED and mqtt_config.HOST:
+                from camara_mqtt import PublicadorFrames
+                publisher = PublicadorFrames(mqtt_config)
+                mqtt_task = asyncio.create_task(publisher.ejecutar(self.capturar))
+        except ImportError:
+            print('MQTT opcional no configurado; usando HTTP.')
         try:
             while True:
                 await asyncio.sleep(1)
         finally:
+            if mqtt_task:
+                mqtt_task.cancel()
+                try:
+                    await mqtt_task
+                except asyncio.CancelledError:
+                    pass
+            if publisher:
+                publisher.cerrar()
             server.close()
             await server.wait_closed()
 

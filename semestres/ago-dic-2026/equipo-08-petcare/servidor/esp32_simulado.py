@@ -85,7 +85,7 @@ class ESP32Simulado:
         while not self.commands.empty():
             data = self.commands.get_nowait()
             cid, action = str(data.get('id','')), data.get('action')
-            if not cid or action not in ('feed','water','stop_water'):
+            if not cid or action not in ('feed','water','stop_water','signal_dog'):
                 ok, message = False, 'Orden invalida'
             elif cid in self.seen:
                 ok, message = False, 'Comando duplicado; no se repitio'
@@ -93,6 +93,7 @@ class ESP32Simulado:
                 self.seen.add(cid)
                 if action == 'feed': ok, message = self.controller.request_feed(now)
                 elif action == 'water': ok, message = self.controller.request_pump(now)
+                elif action == 'signal_dog': ok, message = self.controller.request_signal(now)
                 else:
                     self.controller.stop_pump()
                     ok, message = True, 'Orden de detener bomba aplicada'

@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+from http_local import LocalHTTPServer
 import cv2
 import numpy as np
 
@@ -137,7 +138,7 @@ def create_server(state, host, port, html_path):
                     state.viewers -= 1
                 slots.release()
 
-    server = ThreadingHTTPServer((host, port), Handler)
+    server = LocalHTTPServer((host, port), Handler)
     server.daemon_threads = True
     server.stopping = threading.Event()
     return server

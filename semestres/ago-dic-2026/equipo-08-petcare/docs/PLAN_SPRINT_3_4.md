@@ -1,5 +1,7 @@
 # Plan de cierre del 8 al 15 de noviembre
 
+> **Ampliación de software posterior a este corte:** ya se prepararon JPEG por MQTT, decisión IA con señal RGB, ACK, rutas de Firebase y dashboard. Pruebas de software y nube simulada aprobadas; carga y prueba física pendientes. [Estado actualizado y pasos](INTEGRACION_MQTT_IA.md).
+
 Meta de trabajo: ensamblar y verificar lo existente para el 15 de noviembre de 2026. La indicación del curso admite el 30 como máximo; no usarlo para posponer la integración. El turno de demostración del equipo no está confirmado en este documento.
 
 ## Agenda propuesta

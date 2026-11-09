@@ -3,7 +3,9 @@
     "host": "127.0.0.1",
     "port": 1883,
     "username": "",
-    "password": ""
+    "password": "",
+    "base_topic": "petcare/equipo8",
+    "frame_topic": "petcare/equipo8/cam/frame"
   },
   "camera_url": "http://IP_DE_TU_CAMARA/foto",
   "camera_interval_seconds": 1.5,
@@ -29,5 +31,15 @@
   "web": {
     "host": "0.0.0.0",
     "port": 8765
+  },
+  "camera_transport": "http",
+  "automation": {
+    "dog_indicator_enabled": false,
+    "cooldown_seconds": 15
+  },
+  "dashboard": {
+    "enabled": false,
+    "host": "0.0.0.0",
+    "port": 8766
   }
 }

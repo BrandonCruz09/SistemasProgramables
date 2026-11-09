@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "petcare": {
+      "equipo8": {
+        "simulacion": {
+          ".read": "auth != null && auth.uid === 'REEMPLAZAR_POR_UID_DE_LA_PC'",
+          ".write": "auth != null && auth.uid === 'REEMPLAZAR_POR_UID_DE_LA_PC'"
+        }
+      }
+    }
+  }
+}
