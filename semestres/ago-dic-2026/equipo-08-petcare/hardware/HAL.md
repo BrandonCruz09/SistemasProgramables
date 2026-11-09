@@ -7,12 +7,12 @@ El 3 de noviembre se validó MQTT/Firebase con sensores y salidas simulados en P
 
 | Componente | Tipo | Pin ESP32 principal | Publicación / campo | Suscripción / acción | Unidad o rango | Estado |
 |---|---|---|---|---|---|---|
-| Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; capacidad nominal 5000 g, tara/factor pendientes | Sin calibrar |
+| Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; capacidad nominal 5000 g, tara/factor pendientes | Lectura RAW confirmada por el equipo; gramos pendientes |
 | DHT22 | Sensor | DATA 4 | `/telemetry`: `temperature_c`, `humidity_pct`, `dht_ok` | — | °C y %HR; rango real por verificar | Pendiente físico |
 | PIR | Sensor | OUT 27 | `/telemetry`: `pir` | — | booleano | Confirmar modelo/VCC |
-| Flotador | Sensor | 26 a GND, pull-up | `/telemetry`: `water_available` | — | booleano; LOW=agua en configuración | Verificar sentido |
-| SG90 | Actuador | PWM 25 | `/ack` y `status.state` | `/commands`: `feed` | 30° cerrado / 75° abierto, recorrido por ajustar | Pendiente con compuerta |
-| Bomba 5 V + MOSFET | Actuador provisional | Gate 23 | `/ack` y `status.state` | `/commands`: `water`, `stop_water` | pulso 1200 ms; límite 2000 ms | No conectar al montaje por gravedad |
+| Flotador | Sensor | 26 a GND, pull-up | `/telemetry`: `water_available` | — | booleano; LOW=agua en configuración | Sensor de nivel pendiente; verificar sentido al instalar |
+| MG995 | Actuador | PWM 33 | `/ack` y `status.state` | `/commands`: `feed` | consignas 30/75; no son ángulos medidos; ajustar recorrido | Pendiente con compuerta |
+| Bomba 3–5 V + módulo MOSFET | Actuador | SIG 23 | `/ack` y `status.state` | `/commands`: `water`, `stop_water` | pulso 1200 ms; límite 2000 ms | LED del módulo probado; bomba pendiente de diodo y cable |
 | LED RGB cátodo común | Actuador | R16, G17, B21 | Estado derivado de sensores | Sin tópico propio; lógica local | rojo/amarillo/azul/verde | Pendiente físico |
 | Buzzer activo | Actuador | 22 | Aviso de fin de alimento | Sin tópico propio; lógica local | ON/OFF, aviso 100 ms | Confirmar driver/consumo |
 | ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/stream` → PC; puente consulta `/api/status` y publica `/vision` | GET `/foto` o `/stream` | JPEG VGA 640×480, calidad 12 | Streaming probado; detección móvil de perro/persona confirmada por el equipo |
@@ -25,11 +25,11 @@ La cámara todavía usa HTTP: publicar imágenes JPEG por MQTT queda pendiente r
 ## Alimentación y montaje
 
 - DevKit por USB durante pruebas. HX711 y DHT22 a 3V3/GND; señales del ESP32 a 3.3 V.
-- SG90 rojo a +5 V externo, marrón a V−, naranja a GPIO25. V− unido a GND de DevKit; no unir V+ al VIN si DevKit está por USB.
+- MG995 rojo a +5 V externo, marrón/negro a V−, naranja/amarillo a GPIO33. V− unido a GND de DevKit; no unir V+ al VIN si DevKit está por USB.
 - La base ESP32CAM-MB programa la cámara por USB. No se requiere FTDI.
 - Confirmar VCC del PIR por modelo; no conectar una salida de 5 V directamente al ESP32.
 - Bomba mediante MOSFET lógico y diodo de rueda libre; nunca directo al GPIO.
-- Jarra azul: comida. Bote rojo con embudo: agua. El embudo no detiene el flujo: falta seleccionar el cierre y adaptar el control.
+- Jarra azul: comida. Bote rojo: agua. Montaje propuesto con bomba, sin salida inferior abierta; confirmar que la bomba sea sumergible. El embudo abierto no detiene el flujo.
 - Caja de coroplast con soportes rígidos para depósitos y celda; electrónica separada del agua.
 
 ## Dato → acción implementada
@@ -44,3 +44,7 @@ La cámara todavía usa HTTP: publicar imágenes JPEG por MQTT queda pendiente r
 | Presencia PIR, con agua y báscula calibrada | LED azul; no dispensar automáticamente |
 | Fin de alimento | Aviso de buzzer 100 ms |
 | Ctrl+C en firmware principal | Cerrar recursos y apagar salidas según `safe_shutdown()` |
+
+## Corte del 8 de noviembre
+
+Servo sin carga y LED del MOSFET reportados como funcionales por el equipo. No equivalen a compuerta cargada ni bombeo. [Montaje, resistencias y conexiones](MONTAJE_Y_CONEXIONES.md).

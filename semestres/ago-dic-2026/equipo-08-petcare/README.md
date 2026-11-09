@@ -7,7 +7,7 @@
 > **Equipo:** 08, según el padrón del repositorio del curso.
 > **Semestre:** ago-dic-2026
 > **Materia:** Sistemas Programables — ISC TecNM León
-> **Avance al 3 de noviembre:** video y detección probados desde el celular. Firebase Realtime Database y MQTT verificados con una ESP32 simulada; integración física pendiente.
+> **Avance al 8 de noviembre:** cámara y detección móvil confirmadas; lectura RAW de la báscula, movimiento del servo y LED del MOSFET reportados por el equipo. Firebase/MQTT tienen evidencia de simulación previa. Pendientes gramos, bombeo y cadena física completa IA → MQTT → actuador. [Reporte del corte](docs/AVANCE_2026-11-08.md).
 
 | Nombre | Matrícula | Rol | GitHub |
 |---|---|---|---|
@@ -46,18 +46,18 @@ LED y buzzer dependen de la lógica local, sin comando MQTT propio. El circuito 
 | 4 | DHT22 | Sensor ambiente | 1 | Por registrar |
 | 5 | PIR | Sensor presencia | 1 | Por registrar |
 | 6 | Flotador | Sensor nivel | 1 | Por registrar |
-| 7 | SG90 | Actuador compuerta | 1 instalado + 1 repuesto disponible | Por registrar |
-| 8 | Bomba 5 V + MOSFET + diodo | Actuador provisional de agua | 1 conjunto en diseño anterior | Pendiente decidir cambio a válvula |
+| 7 | MG995 | Actuador compuerta | 1; SG90 disponibles de pruebas anteriores | Por registrar |
+| 8 | Bomba 3–5 V + módulo MOSFET + diodo | Actuador de agua | Bomba y módulo disponibles; diodo pendiente | Por registrar |
 | 9 | LED RGB + 3 resistencias | Indicador | 1 conjunto | Por registrar |
 | 10 | Buzzer activo/driver según consumo | Indicador audible | 1 | Por registrar |
 | 11 | Fuente regulada 5 V / 5 A | Alimentación | 1 | Por registrar |
-| 12 | Coroplast, soportes, jarra azul, bote rojo con embudo y platos | Estructura/depósitos | Según medidas reales | Por registrar |
+| 12 | Coroplast, soportes, jarra azul, bote rojo y platos | Estructura/depósitos | Según medidas reales | Por registrar |
 
 No se inventan costos ni un total. La celda pesa alimento/plato, no al perro.
 
 ### Diagrama de conexiones
 
-![Diagrama de conexiones](hardware/diagrama.png)
+[Diagramas anteriores](hardware/diagrama.png) — referencia histórica. Para montar, usar la [guía actualizada y los seis acercamientos](hardware/MONTAJE_Y_CONEXIONES.md), con servo GPIO33.
 
 [Tabla HAL y conexiones del avance](hardware/HAL.md). Mapa de señales basado en el código: confirmar modelo de módulos y montaje real antes de alimentar. No es una foto de circuito validado. La plantilla vigente permite diagramas hechos en cualquier herramienta.
 
@@ -81,7 +81,7 @@ python -m pip install -r servidor/requirements.txt
 6. En la PC configurar `server_config.json` a partir del ejemplo; ajustar `camera_stream_url`. Ejecutar `descargar_modelo.py` y `vision_main.py` desde `servidor/`, o usar `iniciar_video.cmd`. Abrir `http://IP_DE_LA_PC:8765/` desde el celular en el mismo Wi-Fi. [Guía de video y detección](docs/VIDEO_Y_DETECCION.md).
 7. Para integrar MQTT, iniciar Mosquitto y luego `python servidor/petcare_server.py`. El puente consulta `vision_url` en la PC. Desde la DevKit, el broker es la IP de la PC, no `127.0.0.1`. Firebase permanece desactivado hasta configurar autenticación y reglas. El video funciona sin estos servicios.
 
-No conectar la salida de bomba al nuevo montaje por gravedad hasta elegir su actuador. La fuente externa y el USB no deben alimentar simultáneamente el mismo riel de 5 V sin aislamiento verificado.
+El montaje propuesto usa bomba y depósito cerrado por abajo; probar con diodo y corte de flujo verificado antes de integrarlo. La fuente externa y el USB no deben alimentar simultáneamente el mismo riel de 5 V sin aislamiento verificado.
 
 ### Librerías ESP32
 
@@ -147,11 +147,15 @@ Las rutas anteriores son las previstas para el hardware. La prueba usa `petcare/
 ## ⚠️ Retos técnicos encontrados
 
 1. Reinicio brownout al activar Wi-Fi. Se mantuvo la protección; la conexión USB actual permitió transmitir después. Falta prueba prolongada y alimentación final.
-2. Movimiento del SG90 depende de alimentación y fricción real. Se limita recorrido y se libera PWM en reposo; todavía falta probar la compuerta final.
+2. Movimiento del servo depende de alimentación y fricción real. Se limita recorrido y se libera PWM en reposo; todavía falta probar la compuerta final.
 3. La báscula requiere soporte rígido, tara y calibración; coroplast solo no garantiza medición estable.
-4. El cambio de depósito de agua a embudo exige un cierre controlado: el firmware de bomba no resuelve por sí solo un sistema por gravedad.
+4. El depósito rojo debe retener el agua cuando la bomba se apaga. No dejar embudo inferior abierto; verificar que no exista sifonado en el montaje real.
 5. La clasificación puede confundir perro/persona; falta medir falsos positivos con la cámara fija.
 6. Se corrigió identificación del repo a equipo 08. Firmware y servidor publicados usan `petcare/equipo8`; no mezclar con copias anteriores `equipo9`.
 
 ---
 Avance inicial para retroalimentación. No es entrega final ni declaración de sistema completo funcionando.
+
+## Organización del cierre
+
+[Plan del 8 al 15 de noviembre y diferencias con la rúbrica](docs/PLAN_SPRINT_3_4.md). [Banco de pruebas independiente](firmware/pruebas/README.md). [Reporte Word del corte](docs/PetCare_Avance_08_noviembre_2026.docx). La estructura exigida en la nueva rúbrica aún debe reconciliarse con `firmware/esp32`, `firmware/esp32cam` y el servidor actual; no se declara cumplida por tener código equivalente.

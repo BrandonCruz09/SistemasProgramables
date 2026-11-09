@@ -1,0 +1,37 @@
+Pruebas locales de software del 8 de noviembre de 2026
+Sintaxis correcta: 36 archivos Python.
+No es una prueba fisica ni de Firebase en vivo.
+
+MQTT conectado; escuchando telemetria y confirmaciones.
+Telemetria MQTT recibida; estado: desconocido
+Vision: disponible=False perro=None persona=None
+Visor conectado: 127.0.0.1
+Visor conectado: 127.0.0.1
+test_bomba_termina_apagada (test_banco_hardware.BancoTests.test_bomba_termina_apagada) ... ok
+test_duracion_invalida_no_activa (test_banco_hardware.BancoTests.test_duracion_invalida_no_activa) ... ok
+test_interrupcion_apaga_bomba (test_banco_hardware.BancoTests.test_interrupcion_apaga_bomba) ... ok
+test_servo_rechaza_pulso_fuera_de_limite (test_banco_hardware.BancoTests.test_servo_rechaza_pulso_fuera_de_limite) ... ok
+test_bowl_weight_blocks_extra_food (test_petcare.PetCareTests.test_bowl_weight_blocks_extra_food) ... ok
+test_empty_water_blocks_pump (test_petcare.PetCareTests.test_empty_water_blocks_pump) ... ok
+test_feed_opens_closes_and_releases_pwm (test_petcare.PetCareTests.test_feed_opens_closes_and_releases_pwm) ... ok
+test_feed_requires_calibrated_scale (test_petcare.PetCareTests.test_feed_requires_calibrated_scale) ... ok
+test_pump_is_interlocked_and_times_out (test_petcare.PetCareTests.test_pump_is_interlocked_and_times_out) ... ok
+test_accepts_only_known_command_with_id (test_petcare_cloud.PetCareCloudTests.test_accepts_only_known_command_with_id) ... ok
+test_motion_threshold (test_petcare_cloud.PetCareCloudTests.test_motion_threshold) ... ok
+test_mqtt_v2_reason_code_subscribes_correct_topic (test_simulacion.SimulationTests.test_mqtt_v2_reason_code_subscribes_correct_topic) ... ok
+test_simulated_payload_uses_its_own_database_path (test_simulacion.SimulationTests.test_simulated_payload_uses_its_own_database_path) ... ok
+test_simulator_rejects_hardware_topic (test_simulacion.SimulationTests.test_simulator_rejects_hardware_topic) ... ok
+test_bridge_marks_vision_unavailable_on_network_error (test_vision.VisionTests.test_bridge_marks_vision_unavailable_on_network_error) ... ok
+test_classes_threshold_and_clipping (test_vision.VisionTests.test_classes_threshold_and_clipping) ... ok
+test_confirmation_requires_consecutive_frames (test_vision.VisionTests.test_confirmation_requires_consecutive_frames) ... ok
+test_conflicting_classes_are_not_counted_twice (test_vision.VisionTests.test_conflicting_classes_are_not_counted_twice) ... ok
+test_http_page_status_and_two_readers (test_vision.VisionTests.test_http_page_status_and_two_readers) ... ok
+test_incomplete_and_oversized_frame (test_vision.VisionTests.test_incomplete_and_oversized_frame) ... ok
+test_jpeg_split_across_packets (test_vision.VisionTests.test_jpeg_split_across_packets) ... ok
+test_person_uses_a_higher_threshold (test_vision.VisionTests.test_person_uses_a_higher_threshold) ... ok
+test_stale_frame_does_not_report_absence_or_keep_positive (test_vision.VisionTests.test_stale_frame_does_not_report_absence_or_keep_positive) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 2.536s
+
+OK

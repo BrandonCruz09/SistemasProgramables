@@ -5,11 +5,11 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, SG90=25, bomba MOSFET=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, servo MG995=33, bomba MOSFET=23, buzzer=22, RGB=16/17/21
 # ============================================
 # PetCare | Equipo 08 | Sistemas Programables
-# Objetivo: supervisar sensores y accionar una compuerta SG90 y una bomba con MOSFET.
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, servo=25,
+# Objetivo: supervisar sensores y accionar una compuerta con servo posicional y una bomba con MOSFET.
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, servo=33,
 # MOSFET bomba=23, buzzer=22, LED RGB=16/17/21. Ver CONEXIONES_PROTOTIPO.txt.
 
 import time
