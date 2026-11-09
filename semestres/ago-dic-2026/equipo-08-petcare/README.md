@@ -1,5 +1,7 @@
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 
+> **Servicio final confirmado: Cloud Firestore.** Base creada en Spark sin facturación. Pasaron 49 pruebas unitarias y 22 comprobaciones de Firestore/MQTT con dispositivos simulados. El perfil de PC ya usa Firestore; carga y prueba física pendientes. [Configuración y evidencia](docs/FIRESTORE_2026-11-08.md).
+
 > **Ampliación de software posterior a este corte:** ya se prepararon JPEG por MQTT, decisión IA con señal RGB, ACK, rutas de Firebase y dashboard. Pruebas de software y nube simulada aprobadas; carga y prueba física pendientes. [Estado actualizado y pasos](docs/INTEGRACION_MQTT_IA.md).
 
 ![Estado](https://img.shields.io/badge/estado-en--desarrollo-yellow)
@@ -9,7 +11,7 @@
 > **Equipo:** 08, según el padrón del repositorio del curso.
 > **Semestre:** ago-dic-2026
 > **Materia:** Sistemas Programables — ISC TecNM León
-> **Avance al 8 de noviembre:** cámara y detección móvil confirmadas; lectura RAW, servo sin carga y LED del MOSFET reportados por el equipo. Ampliación de software: frames MQTT, respuesta RGB de IA, dashboard y registro RTDB. Pasaron 38 pruebas de software, 12 comprobaciones de cadena local y 20 con Firebase real y dispositivos simulados. Pendientes carga nueva, gramos, bombeo y cadena física completa. [Reporte del corte](docs/AVANCE_2026-11-08.md).
+> **Corte anterior del 8 de noviembre, previo al cambio a Firestore:** cámara y detección móvil confirmadas; lectura RAW, servo sin carga y LED del MOSFET reportados por el equipo. Ampliación de software: frames MQTT, respuesta RGB de IA, dashboard y registro RTDB. Pasaron 38 pruebas de software, 12 comprobaciones de cadena local y 20 con Firebase real y dispositivos simulados. Pendientes carga nueva, gramos, bombeo y cadena física completa. [Reporte del corte](docs/AVANCE_2026-11-08.md).
 
 | Nombre | Matrícula | Rol | GitHub |
 |---|---|---|---|

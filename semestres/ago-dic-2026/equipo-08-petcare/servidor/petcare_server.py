@@ -1,7 +1,7 @@
 # ============================================
 # Proyecto: PetCare — Equipo 08
 # Archivo: petcare_server.py
-# Objetivo: Puente MQTT/OpenCV/Firebase RTDB.
+# Objetivo: Puente MQTT/OpenCV/Firebase con Firestore o RTDB.
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
@@ -205,6 +205,11 @@ class PetCareBridge:
         self.ia_events_path = self.firebase_root + '/eventos_ia'
         self.current_path = self.firebase_root + '/estado_actual'
         self.dashboard = DashboardState()
+        self.last_cloud_telemetry = 0
+        self.last_cloud_vision = 0
+        self.firestore_mode = settings.get('firebase', {}).get('provider') == 'firestore'
+        if self.firestore_mode:
+            self.command_interval = max(30.0, self.command_interval)
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code == 0:
@@ -259,15 +264,18 @@ class PetCareBridge:
             if topic.endswith("/telemetry") and isinstance(payload, dict):
                 saved = {"received_at": utc_now(), **payload}
                 self.dashboard.update(saved)
-                self._firebase_call("telemetria", "put", self.telemetry_path, saved)
-                self._firebase_call('estado actual', 'patch', self.current_path,
-                                    {'telemetria': saved, 'updated_at': utc_now()})
+                cloud_now = time.monotonic()
+                if not self.firestore_mode or cloud_now-self.last_cloud_telemetry >= 60:
+                    self.last_cloud_telemetry = cloud_now
+                    self._firebase_call("telemetria", "put", self.telemetry_path, saved)
+                    self._firebase_call('estado actual', 'patch', self.current_path,
+                                        {'telemetria': saved, 'updated_at': utc_now()})
                 status = payload.get("status", {})
                 if not isinstance(status, dict):
                     status = {}
                 event = status.get("last_event")
                 now = time.monotonic()
-                if (event and event != self.last_event) or now - self.last_history_write >= 60:
+                if (not self.firestore_mode and event and event != self.last_event) or now - self.last_history_write >= 60:
                     self._firebase_call("historial", "post", self.events_path,
                                         {"received_at": utc_now(), "type": "telemetry", "data": saved})
                     self._firebase_call('lectura historica', 'put',
@@ -374,9 +382,11 @@ class PetCareBridge:
             self.last_vision_publish = now
             if self.client and self.client.is_connected():
                 self.client.publish(self.base_topic + "/vision", json.dumps(result), qos=0, retain=False)
-            self._firebase_call("vision", "put", self.vision_path, result)
-            self._firebase_call('estado vision', 'patch', self.current_path,
-                                {'vision': result, 'updated_at': utc_now()})
+            if not self.firestore_mode or now-self.last_cloud_vision >= 60:
+                self.last_cloud_vision = now
+                self._firebase_call("vision", "put", self.vision_path, result)
+                self._firebase_call('estado vision', 'patch', self.current_path,
+                                    {'vision': result, 'updated_at': utc_now()})
             print("Vision: disponible=%s perro=%s persona=%s" % key[:3])
 
     def poll_camera(self):
@@ -448,11 +458,19 @@ def main():
     firebase_settings = settings.get("firebase", {})
     firebase = None
     if firebase_settings.get("enabled"):
-        if not firebase_settings.get("database_url") or not firebase_settings.get("api_key"):
-            print("Firebase omitido: faltan database_url o api_key en server_config.json.")
+        provider = firebase_settings.get('provider', 'rtdb')
+        target = 'project_id' if provider == 'firestore' else 'database_url'
+        if not firebase_settings.get(target) or not firebase_settings.get("api_key"):
+            print("Firebase omitido: faltan parámetros locales de conexión.")
         else:
             try:
-                firebase = FirebaseREST(firebase_settings, folder)
+                if provider == 'firestore':
+                    from firestore_rest import FirestoreREST
+                    firebase = FirestoreREST(firebase_settings, folder)
+                elif provider == 'rtdb':
+                    firebase = FirebaseREST(firebase_settings, folder)
+                else:
+                    raise ValueError('Proveedor Firebase desconocido')
             except Exception as exc:
                 print("Firebase no disponible; MQTT/OpenCV local continuan:", exc)
     bridge = PetCareBridge(settings, firebase)

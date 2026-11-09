@@ -1,0 +1,98 @@
+{
+  "simulated": true,
+  "started_at": "2026-11-09T04:21:16+00:00",
+  "checks": [
+    {
+      "test": "Suscripción PC al tópico de frames",
+      "passed": true
+    },
+    {
+      "test": "Firestore guarda y devuelve datos",
+      "passed": true
+    },
+    {
+      "test": "Firestore bloquea lectura sin token",
+      "passed": true
+    },
+    {
+      "test": "Firestore bloquea escritura sin token",
+      "passed": true
+    },
+    {
+      "test": "Identidad no accede a otras rutas",
+      "passed": true
+    },
+    {
+      "test": "Renovar token conserva acceso",
+      "passed": true
+    },
+    {
+      "test": "PATCH conserva otros campos",
+      "passed": true
+    },
+    {
+      "test": "Consulta de historial funciona",
+      "passed": true
+    },
+    {
+      "test": "Suscripción puente a telemetría y ACK",
+      "passed": true
+    },
+    {
+      "test": "JPEG atraviesa MQTT sin alteración",
+      "passed": true
+    },
+    {
+      "test": "OpenCV decodifica el frame recibido",
+      "passed": true
+    },
+    {
+      "test": "Modelo real ejecuta inferencia en PC",
+      "passed": true
+    },
+    {
+      "test": "Decisión de ejemplo publica signal_dog",
+      "passed": true
+    },
+    {
+      "test": "ESP32 simulada recibe y confirma",
+      "passed": true
+    },
+    {
+      "test": "RGB simulado enciende blanco",
+      "passed": true
+    },
+    {
+      "test": "IA no activa servo ni bomba",
+      "passed": true
+    },
+    {
+      "test": "Puente correlaciona el ACK",
+      "passed": true
+    },
+    {
+      "test": "Firestore registra decision y ACK",
+      "passed": true
+    },
+    {
+      "test": "Telemetria MQTT queda en Firestore",
+      "passed": true
+    },
+    {
+      "test": "Estado actual conserva telemetria",
+      "passed": true
+    },
+    {
+      "test": "Señal termina sin otra orden",
+      "passed": true
+    },
+    {
+      "test": "No repite con el perro presente",
+      "passed": true
+    }
+  ],
+  "scope": "Firestore y broker reales; JPEG sintético. Detección dog inyectada para probar decisiones; no es precisión de IA.",
+  "firestore_root": "petcare/equipo8/simulacion/cadena-c793ae33",
+  "passed": true,
+  "finished_at": "2026-11-09T04:21:22+00:00"
+}

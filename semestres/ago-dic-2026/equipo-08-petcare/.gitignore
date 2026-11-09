@@ -24,3 +24,7 @@ config_local.py
 broker.local.conf
 broker.passwd
 broker.acl
+
+firestore.rules.local
+.firestore_budget.json
+server_firestore_config.json

@@ -29,7 +29,7 @@ También se conserva HTTP MJPEG para recuperar la configuración anterior. La IA
 | petcare/equipo8/ack | Confirmación del programa de la placa |
 | petcare/equipo8/telemetry | Lecturas, FSM y estado del indicador |
 
-**No se creó ni activó Firestore.** Se conservó Realtime Database, con las reglas previas que solo autorizan simulación. No se activó facturación. El perfil físico privado mantiene Firebase apagado hasta confirmar el servicio exigido y desplegar reglas para hardware autenticado. El panel local puede recibir telemetría sin nube; eso no prueba persistencia remota.
+**Actualización posterior del mismo día:** la docente exige Cloud Firestore. Ya se creó en Spark, se publicaron reglas restringidas a la identidad de la PC y se activó el proveedor Firestore en el perfil privado. Pasaron 22 comprobaciones de integración con dispositivos simulados. RTDB queda como antecedente. [Detalle vigente](FIRESTORE_2026-11-08.md).
 
 Las pruebas de nube del 8 de noviembre local aparecen con timestamp UTC del 9 de noviembre. No es evidencia del día siguiente: UTC y León tienen distinta fecha a esa hora.
 

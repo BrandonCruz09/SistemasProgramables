@@ -11,11 +11,12 @@
   "camera_interval_seconds": 1.5,
   "motion_threshold_percent": 1.8,
   "vision_publish_seconds": 10,
-  "command_interval_seconds": 2,
+  "command_interval_seconds": 30,
   "firebase": {
     "enabled": false,
-    "database_url": "https://TU-PROYECTO-default-rtdb.firebaseio.com",
-    "api_key": "PEGA_AQUI_TU_WEB_API_KEY"
+    "provider": "firestore",
+    "project_id": "TU-PROYECTO",
+    "api_key": "TU_WEB_API_KEY"
   },
   "camera_stream_url": "http://IP_DE_TU_CAMARA/stream",
   "vision_url": "http://127.0.0.1:8765/api/status",

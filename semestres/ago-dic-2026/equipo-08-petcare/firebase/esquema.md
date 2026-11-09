@@ -1,3 +1,5 @@
+> Actualización: este esquema RTDB es un antecedente. El servicio final es Cloud Firestore; consultar [configuración vigente](../docs/FIRESTORE_2026-11-08.md).
+
 # Esquema actual de Firebase Realtime Database
 
 Servicio verificado: RTDB, no Firestore. `reglas.json` es una plantilla restringida a simulación, con UID de ejemplo; no se despliega automáticamente y no habilita datos físicos.

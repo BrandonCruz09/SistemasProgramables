@@ -1,0 +1,6 @@
+Validación del 8 de noviembre de 2026, hora de León.
+49 pruebas unitarias: OK.
+22 comprobaciones Firestore/MQTT: aprobadas; ver JSON adjunto.
+Arranque con proveedor firestore: HTTP 8765 y 8766 responden, available=false.
+Dispositivos simulados. Sin carga de firmware ni prueba física en esta actualización.
+Plan Spark observado en consola. No se habilitó facturación.
