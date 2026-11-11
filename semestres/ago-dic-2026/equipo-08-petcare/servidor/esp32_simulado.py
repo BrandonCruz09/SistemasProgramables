@@ -21,7 +21,7 @@ from controlador import PetCareController
 
 class SensoresSimulados:
     def __init__(self):
-        self.values = {'calibrated': True, 'weight_g': 75.0, 'water_available': True,
+        self.values = {'calibrated': True, 'weight_g': 75.0, 'water_available': None, 'water_level_monitored': False,
                        'temperature_c': 24.5, 'humidity_pct': 55.0, 'pir': True,
                        'hx_ok': True, 'dht_ok': True}
 
@@ -92,7 +92,11 @@ class ESP32Simulado:
             else:
                 self.seen.add(cid)
                 if action == 'feed': ok, message = self.controller.request_feed(now)
-                elif action == 'water': ok, message = self.controller.request_pump(now)
+                elif action == 'water':
+                    if data.get('supervised') is True and data.get('session_id') == self.controller.snapshot()['session_id']:
+                        ok, message = self.controller.request_pump(now, source='mqtt_manual', command_id=cid)
+                    else:
+                        ok, message = False, 'Falta supervision o sesion vigente'
                 elif action == 'signal_dog': ok, message = self.controller.request_signal(now)
                 else:
                     self.controller.stop_pump()
@@ -101,6 +105,9 @@ class ESP32Simulado:
                    'state':self.controller.state, 'simulated':True}
             self.acks.append(ack)
             self.client.publish(self.topic+'/ack', json.dumps(ack), qos=1)
+        while self.controller.water_events:
+            event=dict(self.controller.water_events.pop(0), simulated=True)
+            self.client.publish(self.topic+'/water_events',json.dumps(event),qos=1)
         if time.monotonic()-self.last_publish >= 1:
             self.last_publish = time.monotonic()
             self.publish()

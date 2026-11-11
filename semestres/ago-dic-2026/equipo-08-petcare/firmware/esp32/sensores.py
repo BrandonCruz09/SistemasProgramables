@@ -5,7 +5,7 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, servo MG995=33, bomba MOSFET=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
 # ============================================
 # PetCare - lectura y filtrado ligero de sensores.
 import time
@@ -19,7 +19,8 @@ class SensorHub:
         import dht
         self._dht = dht.DHT22(Pin(config.PIN_DHT22))
         self._pir = Pin(config.PIN_PIR, Pin.IN, Pin.PULL_DOWN)
-        self._float = Pin(config.PIN_FLOAT_SWITCH, Pin.IN, Pin.PULL_UP)
+        self._float = (Pin(config.PIN_FLOAT_SWITCH, Pin.IN, Pin.PULL_UP)
+                       if config.WATER_LEVEL_SENSOR_ENABLED else None)
         self._hx = HX711(config.PIN_HX711_DOUT, config.PIN_HX711_SCK)
         self._last_poll = None
         self._last_dht = None
@@ -48,7 +49,7 @@ class SensorHub:
                 self._dht_ok = False
 
         try:
-            self._raw = self._hx.read_average(3, timeout_ms=40)
+            self._raw = self._hx.read_average(3, timeout_ms=150)
             self._hx_ok = True
             factor = config.CALIBRATION_FACTOR
             tare = config.TARE_RAW
@@ -68,10 +69,12 @@ class SensorHub:
         return self._snapshot()
 
     def _snapshot(self):
-        water_level = self._float.value()
+        water_level = self._float.value() if self._float is not None else None
         return {
             "pir": bool(self._pir.value()),
-            "water_available": water_level == config.FLOAT_WATER_PRESENT_LEVEL,
+            "water_available": (water_level == config.FLOAT_WATER_PRESENT_LEVEL
+                                if water_level is not None else None),
+            "water_level_monitored": self._float is not None,
             "temperature_c": self._temperature,
             "humidity_pct": self._humidity,
             "dht_ok": self._dht_ok,

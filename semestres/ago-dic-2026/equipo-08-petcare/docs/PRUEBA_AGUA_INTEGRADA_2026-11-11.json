@@ -1,0 +1,50 @@
+{
+  "started_at": "2026-11-11T14:04:25+00:00",
+  "simulated": true,
+  "root": "petcare/equipo8/simulacion/agua-7e5ff5dd7c",
+  "checks": [
+    {
+      "test": "Broker y suscripcion a eventos",
+      "passed": true
+    },
+    {
+      "test": "Nivel no medido y gramos pendientes",
+      "passed": true
+    },
+    {
+      "test": "Boton HTTP acepta servido supervisado",
+      "passed": true
+    },
+    {
+      "test": "ACK acepta agua manual",
+      "passed": true
+    },
+    {
+      "test": "Bomba simulada termina apagada",
+      "passed": true
+    },
+    {
+      "test": "Inicio y fin correlacionados",
+      "passed": true
+    },
+    {
+      "test": "Plazo simulado cercano a tres segundos",
+      "passed": true
+    },
+    {
+      "test": "Firestore devuelve started",
+      "passed": true
+    },
+    {
+      "test": "Firestore devuelve finished",
+      "passed": true
+    },
+    {
+      "test": "Eventos persistidos sin duplicados",
+      "passed": true
+    }
+  ],
+  "scope": "HTTP, MQTT y Firestore reales; sensores, rele y bomba simulados. No mide caudal.",
+  "passed": true,
+  "finished_at": "2026-11-11T14:04:30+00:00"
+}

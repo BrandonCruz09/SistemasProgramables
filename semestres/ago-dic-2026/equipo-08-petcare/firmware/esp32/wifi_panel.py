@@ -5,26 +5,30 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, servo MG995=33, bomba MOSFET=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
 # ============================================
 # PetCare - Wi-Fi opcional y panel web local, sin dependencias externas.
 import config
 
-HTML = """<!doctype html><html lang='es'><meta charset='utf-8'>
-<meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>PetCare | Equipo 08</title>
-<style>body{font:16px Arial;background:#eef5f7;color:#183746;margin:24px;max-width:720px}main{background:white;border-radius:16px;padding:20px;box-shadow:0 4px 20px #aac}button{padding:14px;margin:6px;border:0;border-radius:10px;background:#087e83;color:white;font-weight:bold}pre{white-space:pre-wrap;background:#edf4f6;padding:12px;border-radius:8px}</style>
-<main><h1>PetCare | Equipo 08</h1><p>Panel local de alimentacion e hidratacion</p>
-<button onclick=\"fetch('/feed',{method:'POST'}).then(refresh)\">Servir una racion</button>
-<button onclick=\"fetch('/pump',{method:'POST'}).then(refresh)\">Pulso de agua</button>
-<button onclick=\"fetch('/pump/stop',{method:'POST'}).then(refresh)\">Detener bomba</button>
-<pre id='status'>Cargando...</pre></main>
-<script>async function refresh(){try{let r=await fetch('/api');let d=await r.json();document.querySelector('#status').textContent=JSON.stringify(d,null,2)}catch(e){document.querySelector('#status').textContent='Sin conexion con PetCare'}}refresh();setInterval(refresh,2000)</script></html>"""
+HTML = """<!doctype html><html lang="es"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>PetCare</title>
+<style>body{font:18px system-ui;margin:24px;background:#edf5f4;color:#173b3b}button{padding:16px;margin:8px}pre{white-space:pre-wrap}button:disabled{opacity:.45}</style>
+<h1>PetCare</h1><p>Agua manual supervisada. Nivel y volumen no medidos.</p>
+<label><input type="checkbox" id="check"> Revise que hay agua en el deposito y espacio en el plato.</label><br>
+<button id="water" onclick="send('/pump')" disabled>Servir agua 3 segundos</button>
+<button onclick="send('/pump/stop')">Detener agua</button>
+<button id="food" onclick="send('/feed')" disabled>Servir alimento</button>
+<p id="message" role="status"></p><pre id="status"></pre>
+<script>let busy=false,ready=false,lock=0;
+function buttons(){document.getElementById('water').disabled=busy||!ready||Date.now()<lock||!document.getElementById('check').checked}
+document.getElementById('check').onchange=buttons;
+async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+13000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
+async function refresh(){try{let r=await fetch('/api');let s=await r.json();ready=s.state=='LISTO';document.getElementById('status').textContent=JSON.stringify(s,null,2);document.getElementById('food').disabled=!ready||!s.calibrated}catch(e){ready=false}buttons()}refresh();setInterval(refresh,1000);</script></html>"""
 
 
 def connect_wifi():
-    if not config.WIFI_SSID or not config.WIFI_PASSWORD:
-        print("Wi-Fi omitido: completa WIFI_SSID y WIFI_PASSWORD en config.py si deseas el panel.")
+    if not config.WIFI_SSID:
+        print("Wi-Fi omitido: completa WIFI_SSID en config_local.py si deseas el panel.")
         return None, None
     import network
     import time
@@ -84,12 +88,12 @@ class WebDashboard:
                 controller.stop_pump()
                 self._send(client, "200 OK", "text/plain; charset=utf-8", "Bomba detenida")
             elif path.startswith("/pump") and method == "POST":
-                ok, msg = controller.request_pump(now)
+                ok, msg = controller.request_pump(now, source='panel_esp32')
                 self._send(client, "200 OK" if ok else "409 Conflict", "text/plain; charset=utf-8", msg)
             else:
                 self._send(client, "200 OK", "text/html; charset=utf-8", HTML)
         except Exception:
-            pass
+            controller.stop_pump()
         finally:
             try:
                 client.close()

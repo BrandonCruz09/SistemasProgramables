@@ -1,5 +1,7 @@
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 
+> **Actualización del 11 de noviembre:** bomba con relé HW-383 en GPIO23, sin flotador, servido manual supervisado de 3 s y pausa de 10 s. Panel con órdenes y eventos de agua persistidos en PC y Firestore. 58 pruebas automatizadas y cadena HTTP/MQTT/Firestore con actuador simulado aprobadas. Bomba real confirmada por el equipo; ESP32 normal cargado y arranque Wi-Fi verificado. Integración física pendiente y regla MQTT de Windows por actualizar con permisos de administrador. [Guía de montaje y pasos](docs/GUIA_RELE_11NOV.txt).
+
 > **Servicio final confirmado: Cloud Firestore.** Base creada en Spark sin facturación. Pasaron 49 pruebas unitarias y 22 comprobaciones de Firestore/MQTT con dispositivos simulados. El perfil de PC ya usa Firestore; carga y prueba física pendientes. [Configuración y evidencia](docs/FIRESTORE_2026-11-08.md).
 
 > **Ampliación de software posterior a este corte:** ya se prepararon JPEG por MQTT, decisión IA con señal RGB, ACK, rutas de Firebase y dashboard. Pruebas de software y nube simulada aprobadas; carga y prueba física pendientes. [Estado actualizado y pasos](docs/INTEGRACION_MQTT_IA.md).
@@ -21,13 +23,13 @@
 
 ## 📌 Descripción General
 
-PetCare busca ayudar a quienes cuidan perros a supervisar el alimento disponible, suministrar agua de manera controlada y observar los platos desde la red local. Integra una báscula, detección de presencia y nivel, una compuerta y cámara en una carcasa económica de coroplast con compartimento seco. La automatización completa es un objetivo: este avance implementa acciones solicitadas por panel/MQTT y bloqueos básicos, no alimentación autónoma validada.
+PetCare busca ayudar a quienes cuidan perros a supervisar el alimento disponible, suministrar agua de manera controlada y observar los platos desde la red local. Integra una báscula, detección de presencia y temperatura/humedad, una compuerta y cámara en una carcasa económica de coroplast con compartimento seco. La automatización completa es un objetivo: este avance implementa acciones solicitadas por panel/MQTT y bloqueos básicos, no alimentación autónoma validada.
 
 ## 🏗️ Arquitectura del Sistema
 
 ![Arquitectura del sistema](hardware/arquitectura.png)
 
-La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; el modo JPEG por MQTT ya está preparado y probado en PC con transporte real y cámara simulada; falta cargarlo a la cámara física. El puente utiliza Firebase **Realtime Database**, coherente con el PDF de Unidad 4. El proyecto está en **Spark**, sin facturación vinculada. Se verificaron reglas y lectura/escritura reales para una identidad limitada a datos simulados. Firestore no está habilitado.
+La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet SSD y comparte el video con recuadros en el navegador del celular; el modo JPEG por MQTT ya está preparado y probado en PC con transporte real y cámara simulada; falta cargarlo a la cámara física. El perfil actual del puente utiliza **Cloud Firestore**. Los eventos de servido se guardan primero en SQLite en la PC y se reintentan en Firestore. Las pruebas nuevas usan una ruta aislada de simulación; no representan mediciones de agua real. No se modificó el plan de Firebase.
 
 ### Tópicos MQTT
 

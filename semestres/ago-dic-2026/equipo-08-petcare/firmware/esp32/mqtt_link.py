@@ -5,7 +5,7 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, flotador=26, servo MG995=33, bomba MOSFET=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
 # ============================================
 # PetCare - telemetria y comandos MQTT opcionales para MicroPython.
 # Requiere umqtt.simple. La conexion se omite si MQTT_HOST queda vacio.
@@ -22,6 +22,7 @@ class MQTTLink:
         self.client = None
         self.pending_command = None
         self.last_command_id = None
+        self.recent_ids = []
         self.last_connect = None
         self.last_publish = None
         self.disabled_message_printed = False
@@ -29,6 +30,7 @@ class MQTTLink:
         self.telemetry_topic = (self.base + "/telemetry").encode()
         self.command_topic = (self.base + "/commands").encode()
         self.ack_topic = (self.base + "/ack").encode()
+        self.water_topic = (self.base + '/water_events').encode()
 
     @staticmethod
     def _elapsed(now, then):
@@ -89,15 +91,21 @@ class MQTTLink:
         if not command_id:
             self._publish_ack("", action, False, "Falta id unico", controller.state)
             return
-        if command_id == self.last_command_id:
+        if command_id in self.recent_ids:
             self._publish_ack(command_id, action, False, "Comando duplicado; no se repitio", controller.state)
             return
         self.last_command_id = command_id
+        self.recent_ids.append(command_id)
+        self.recent_ids = self.recent_ids[-64:]
         try:
             if action == "feed":
                 ok, message = controller.request_feed(now)
             elif action == "water":
-                ok, message = controller.request_pump(now)
+                if (command.get('supervised') is not True or
+                        command.get('session_id') != controller.snapshot().get('session_id')):
+                    ok, message = False, 'Usa el boton manual con estado reciente del ESP32'
+                else:
+                    ok, message = controller.request_pump(now, source='mqtt_manual', command_id=command_id)
             elif action == "stop_water":
                 controller.stop_pump()
                 ok, message = True, "Orden de detener bomba aplicada"
@@ -108,6 +116,7 @@ class MQTTLink:
             self._publish_ack(command_id, action, ok, message, controller.state)
             print("MQTT comando:", command_id, action, "OK" if ok else "rechazado")
         except Exception as exc:
+            controller.stop_pump()
             self._publish_ack(command_id, action, False, "Error al aplicar comando: " + str(exc), controller.state)
 
     def poll(self, now, controller):
@@ -118,12 +127,19 @@ class MQTTLink:
             return
         retry_ms = getattr(config, "MQTT_RETRY_SECONDS", 10) * 1000
         if self.client is None:
-            if self._elapsed(now, self.last_connect) >= retry_ms:
+            if controller.state != controller.PUMPING and self._elapsed(now, self.last_connect) >= retry_ms:
                 self._connect(now)
             return
         try:
             self.client.check_msg()
             self._run_command(controller, now)
+            # Evitar publicaciones y esperas de PUBACK mientras bombea.
+            if controller.state == controller.PUMPING:
+                return
+            if controller.water_events:
+                event = controller.water_events[0]
+                self.client.publish(self.water_topic, json.dumps(event).encode(), qos=1, retain=False)
+                controller.water_events.pop(0)
             interval = getattr(config, "MQTT_TELEMETRY_SECONDS", 10) * 1000
             if self._elapsed(now, self.last_publish) >= interval:
                 payload = {"device": "esp32-devkit", "uptime_ms": now,
@@ -131,6 +147,7 @@ class MQTTLink:
                 self.client.publish(self.telemetry_topic, json.dumps(payload).encode())
                 self.last_publish = now
         except Exception as exc:
+            controller.stop_pump()
             print("MQTT desconectado; se intentara reconectar:", exc)
             self._drop()
 

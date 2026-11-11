@@ -28,3 +28,5 @@ broker.acl
 firestore.rules.local
 .firestore_budget.json
 server_firestore_config.json
+*.sqlite3
+*.sqlite3-journal

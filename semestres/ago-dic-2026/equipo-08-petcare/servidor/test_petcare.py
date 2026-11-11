@@ -10,6 +10,7 @@
 # Pruebas de logica para Windows/macOS/Linux: python test_petcare.py
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "firmware" / "esp32"))
 import config
@@ -84,8 +85,9 @@ class PetCareTests(unittest.TestCase):
     def test_empty_water_blocks_pump(self):
         c=self.make_controller(water=False)
         c.tick(0)
-        ok, _=c.request_pump(0)
-        self.assertFalse(ok); self.assertFalse(self.pump.active)
+        with patch.object(config, 'WATER_LEVEL_SENSOR_ENABLED', True):
+            ok, _=c.request_pump(0)
+            self.assertFalse(ok); self.assertFalse(self.pump.active)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

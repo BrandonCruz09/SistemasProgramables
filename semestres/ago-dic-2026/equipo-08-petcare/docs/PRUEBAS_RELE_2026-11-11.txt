@@ -1,0 +1,97 @@
+test_bomba_termina_apagada (test_banco_hardware.BancoTests.test_bomba_termina_apagada) ... ok
+test_duracion_invalida_no_activa (test_banco_hardware.BancoTests.test_duracion_invalida_no_activa) ... ok
+test_interrupcion_apaga_bomba (test_banco_hardware.BancoTests.test_interrupcion_apaga_bomba) ... ok
+test_servo_rechaza_pulso_fuera_de_limite (test_banco_hardware.BancoTests.test_servo_rechaza_pulso_fuera_de_limite) ... ok
+test_historial_recuperado_no_finge_telemetria_viva (test_dashboard.DashboardTests.test_historial_recuperado_no_finge_telemetria_viva) ... ok
+test_historico_limitado_y_dato_caducado (test_dashboard.DashboardTests.test_historico_limitado_y_dato_caducado) ... ok
+test_inicio_no_depende_de_dns_inversa (test_dashboard.DashboardTests.test_inicio_no_depende_de_dns_inversa) ... ok
+test_no_inventa_datos_al_arrancar (test_dashboard.DashboardTests.test_no_inventa_datos_al_arrancar) ... ok
+test_pagina_y_api_http (test_dashboard.DashboardTests.test_pagina_y_api_http) ... ok
+test_budget_survives_restart (test_firestore.FirestoreTests.test_budget_survives_restart) ... ok
+test_cloud_throttle_keeps_local_current (test_firestore.FirestoreTests.test_cloud_throttle_keeps_local_current) ... ok
+test_denied_is_not_empty_data (test_firestore.FirestoreTests.test_denied_is_not_empty_data) ... ok
+test_document_mapping (test_firestore.FirestoreTests.test_document_mapping) ... ok
+test_missing_database_is_error (test_firestore.FirestoreTests.test_missing_database_is_error) ... ok
+test_missing_document_is_empty (test_firestore.FirestoreTests.test_missing_document_is_empty) ... ok
+test_non_finite (test_firestore.FirestoreTests.test_non_finite) ... ok
+test_patch_preserves_other_fields (test_firestore.FirestoreTests.test_patch_preserves_other_fields) ... ok
+test_quota_backoff (test_firestore.FirestoreTests.test_quota_backoff) ... ok
+test_recent_is_bounded (test_firestore.FirestoreTests.test_recent_is_bounded) ... ok
+test_types (test_firestore.FirestoreTests.test_types) ... ok
+test_camara_rechaza_retenidos_y_jpeg_invalido (test_ia_mqtt.IATests.test_camara_rechaza_retenidos_y_jpeg_invalido) ... ok
+test_cliente_camara_usa_bytes_y_timeout (test_ia_mqtt.IATests.test_cliente_camara_usa_bytes_y_timeout) ... ok
+test_cliente_esp32_envia_identidad_y_claves_como_bytes (test_ia_mqtt.IATests.test_cliente_esp32_envia_identidad_y_claves_como_bytes) ... ok
+test_cooldown_y_clasificacion_dudosa (test_ia_mqtt.IATests.test_cooldown_y_clasificacion_dudosa) ... ok
+test_cuadro_repetido_no_rearma (test_ia_mqtt.IATests.test_cuadro_repetido_no_rearma) ... ok
+test_mqtt_link_real_deduplica_y_confirma (test_ia_mqtt.IATests.test_mqtt_link_real_deduplica_y_confirma) ... ok
+test_puente_envio_ack_y_firebase (test_ia_mqtt.IATests.test_puente_envio_ack_y_firebase) ... ok
+test_senal_no_mueve_motores_y_se_apaga (test_ia_mqtt.IATests.test_senal_no_mueve_motores_y_se_apaga) ... ok
+test_sin_imagen_o_vieja_no_dispara (test_ia_mqtt.IATests.test_sin_imagen_o_vieja_no_dispara) ... ok
+test_una_senal_por_presencia_y_rearme (test_ia_mqtt.IATests.test_una_senal_por_presencia_y_rearme) ... ok
+test_bowl_weight_blocks_extra_food (test_petcare.PetCareTests.test_bowl_weight_blocks_extra_food) ... ok
+test_empty_water_blocks_pump (test_petcare.PetCareTests.test_empty_water_blocks_pump) ... ok
+test_feed_opens_closes_and_releases_pwm (test_petcare.PetCareTests.test_feed_opens_closes_and_releases_pwm) ... ok
+test_feed_requires_calibrated_scale (test_petcare.PetCareTests.test_feed_requires_calibrated_scale) ... ok
+test_pump_is_interlocked_and_times_out (test_petcare.PetCareTests.test_pump_is_interlocked_and_times_out) ... ok
+test_accepts_only_known_command_with_id (test_petcare_cloud.PetCareCloudTests.test_accepts_only_known_command_with_id) ... ok
+test_motion_threshold (test_petcare_cloud.PetCareCloudTests.test_motion_threshold) ... ok
+test_mqtt_v2_reason_code_subscribes_correct_topic (test_simulacion.SimulationTests.test_mqtt_v2_reason_code_subscribes_correct_topic) ... ok
+test_simulated_payload_uses_its_own_database_path (test_simulacion.SimulationTests.test_simulated_payload_uses_its_own_database_path) ... ok
+test_simulator_rejects_hardware_topic (test_simulacion.SimulationTests.test_simulator_rejects_hardware_topic) ... ok
+test_bridge_marks_vision_unavailable_on_network_error (test_vision.VisionTests.test_bridge_marks_vision_unavailable_on_network_error) ... ok
+test_classes_threshold_and_clipping (test_vision.VisionTests.test_classes_threshold_and_clipping) ... ok
+test_confirmation_requires_consecutive_frames (test_vision.VisionTests.test_confirmation_requires_consecutive_frames) ... ok
+test_conflicting_classes_are_not_counted_twice (test_vision.VisionTests.test_conflicting_classes_are_not_counted_twice) ... ok
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+Telemetria MQTT recibida; estado: IDLE
+MQTT camara conectado; publicando JPEG en b'petcare/equipo8/cam/frame'
+MQTT conectado a :1883
+MQTT comando: ia-test signal_dog OK
+Frame 1 -> IA perro -> MQTT signal_dog: ia-5ab7899e1fd241c4bf7e6e2f
+IA -> MQTT -> ACK: ia-5ab7899e1fd241c4bf7e6e2f True
+Confirmacion del ESP32: ia-5ab7899e1fd241c4bf7e6e2f
+MQTT conectado; escuchando telemetria y confirmaciones.
+Telemetria MQTT recibida; estado: desconocido
+Vision: disponible=False perro=None persona=None
+Visor conectado: 127.0.0.1
+Visor conectado: 127.0.0.1
+test_http_page_status_and_two_readers (test_vision.VisionTests.test_http_page_status_and_two_readers) ... ok
+test_incomplete_and_oversized_frame (test_vision.VisionTests.test_incomplete_and_oversized_frame) ... ok
+test_jpeg_split_across_packets (test_vision.VisionTests.test_jpeg_split_across_packets) ... ok
+test_person_uses_a_higher_threshold (test_vision.VisionTests.test_person_uses_a_higher_threshold) ... ok
+test_stale_frame_does_not_report_absence_or_keep_positive (test_vision.VisionTests.test_stale_frame_does_not_report_absence_or_keep_positive) ... ok
+test_bridge_manual_water_never_retains_and_throttles (test_water_relay.WaterRelayTests.test_bridge_manual_water_never_retains_and_throttles) ... ok
+test_dashboard_rejects_missing_confirmation_and_stale_device (test_water_relay.WaterRelayTests.test_dashboard_rejects_missing_confirmation_and_stale_device) ... ok
+test_http_button_token_and_command (test_water_relay.WaterRelayTests.test_http_button_token_and_command) ... ok
+test_log_retry_dedup_and_restart (test_water_relay.WaterRelayTests.test_log_retry_dedup_and_restart) ... ok
+test_manual_stop_and_shutdown (test_water_relay.WaterRelayTests.test_manual_stop_and_shutdown) ... ok
+test_mqtt_water_requires_current_session_and_supervision (test_water_relay.WaterRelayTests.test_mqtt_water_requires_current_session_and_supervision) ... ok
+test_no_float_unknown_level_and_single_pulse (test_water_relay.WaterRelayTests.test_no_float_unknown_level_and_single_pulse) ... ok
+test_pending_log_blocks_more_water_without_discard (test_water_relay.WaterRelayTests.test_pending_log_blocks_more_water_without_discard) ... ok
+test_relay_high_at_boot_and_timer_cuts_low_pulse (test_water_relay.WaterRelayTests.test_relay_high_at_boot_and_timer_cuts_low_pulse) ... ok
+
+----------------------------------------------------------------------
+Ran 58 tests in 4.119s
+
+OK
+MQTT comando: bad water rechazado
+MQTT comando: good water OK
+MQTT comando: other stop_water OK

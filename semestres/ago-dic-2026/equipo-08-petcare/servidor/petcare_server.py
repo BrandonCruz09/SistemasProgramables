@@ -20,6 +20,8 @@ from pathlib import Path
 from urllib.parse import quote
 from ia_policy import DogSignalPolicy
 from dashboard import DashboardState, start_dashboard
+from water_log import WaterLog
+from uuid import uuid4
 
 BASE_TOPIC = "petcare/equipo8"
 TELEMETRY_PATH = "petcare/equipo8/latest"
@@ -205,6 +207,8 @@ class PetCareBridge:
         self.ia_events_path = self.firebase_root + '/eventos_ia'
         self.current_path = self.firebase_root + '/estado_actual'
         self.dashboard = DashboardState()
+        self.water_log = WaterLog(settings.get('water_log_path', ':memory:'))
+        self.last_manual_water = -100
         self.last_cloud_telemetry = 0
         self.last_cloud_vision = 0
         self.firestore_mode = settings.get('firebase', {}).get('provider') == 'firestore'
@@ -213,7 +217,8 @@ class PetCareBridge:
 
     def on_connect(self, client, userdata, flags, reason_code, properties):
         if reason_code == 0:
-            client.subscribe([(self.base_topic + "/telemetry", 0), (self.base_topic + "/ack", 0)])
+            client.subscribe([(self.base_topic + "/telemetry", 0), (self.base_topic + "/ack", 0),
+                              (self.base_topic + '/water_events', 1)])
             print("MQTT conectado; escuchando telemetria y confirmaciones.")
         else:
             print("MQTT: el broker rechazo la conexion:", reason_code)
@@ -261,7 +266,12 @@ class PetCareBridge:
                 topic, payload = self.messages.get_nowait()
             except queue.Empty:
                 break
-            if topic.endswith("/telemetry") and isinstance(payload, dict):
+            if topic == self.base_topic + '/water_events' and isinstance(payload, dict):
+                saved = dict(payload, received_at=utc_now(), simulated='/simulacion/' in self.base_topic)
+                if self.water_log.add(self.firebase_root, saved):
+                    with self.dashboard.lock:
+                        self.dashboard.events.append(dict(saved, message='Agua: '+str(saved.get('reason',''))))
+            elif topic.endswith("/telemetry") and isinstance(payload, dict):
                 saved = {"received_at": utc_now(), **payload}
                 self.dashboard.update(saved)
                 cloud_now = time.monotonic()
@@ -301,6 +311,38 @@ class PetCareBridge:
                                          "device_state": payload.get("state", ""),
                                          "acknowledged_at": utc_now()})
                 print("Confirmacion del ESP32:", payload.get("id"), payload.get("message", ""))
+        self.water_log.flush(self.firebase)
+        with self.dashboard.lock:
+            self.dashboard.water_log = self.water_log.summary()
+
+    def process_manual_commands(self):
+        try:
+            command = self.dashboard.commands.get_nowait()
+        except queue.Empty:
+            return
+        action = command['action']
+        now = time.monotonic()
+        message = None
+        data = self.dashboard.snapshot()
+        if now-command['queued_at'] > 5:
+            message = 'Orden vencida; vuelve a pulsar el boton'
+        elif not self.client or not self.client.is_connected():
+            message = 'MQTT desconectado; orden descartada'
+        elif action != 'stop_water' and (not data['available'] or data['age_seconds'] > 15):
+            message = 'ESP32 sin datos recientes; orden descartada'
+        elif action == 'water' and now-self.last_manual_water < 13:
+            message = 'Espera a que termine el servido y su pausa de seguridad'
+        if message is None:
+            payload = {k:v for k,v in command.items() if k != 'queued_at'}
+            payload['id'] = 'manual-'+uuid4().hex
+            result = self.client.publish(self.base_topic+'/commands',json.dumps(payload),qos=0,retain=False)
+            if result.rc == 0:
+                if action == 'water': self.last_manual_water = now
+                message = 'Orden enviada: '+action+'; falta ACK del ESP32'
+            else:
+                message = 'No se pudo enviar la orden'
+        with self.dashboard.lock:
+            self.dashboard.events.append({'message':message,'received_at':utc_now()})
 
     def process_vision(self, result):
         """Actuar solo sobre cuadros recientes, sin alimentar por detección."""
@@ -345,6 +387,10 @@ class PetCareBridge:
                                 {"status": "rechazado", "result": "id o accion no validos"})
             return
         command_id, action = parsed
+        if action == 'water':
+            self._firebase_call('agua manual', 'patch', self.command_path,
+                {'status':'rechazado','result':'Usa Servir agua en el panel local supervisado'})
+            return
         if command_id == self.last_seen_command:
             return
         payload = json.dumps({"id": command_id, "action": action}, separators=(",", ":"))
@@ -431,6 +477,7 @@ class PetCareBridge:
         print("Camara:", self.camera_url or "no configurada")
         print("Firebase:", "conectado" if self.firebase else "sin configurar")
         while True:
+            self.process_manual_commands()
             self.process_messages()
             self.poll_command()
             self.poll_camera()
@@ -452,6 +499,7 @@ def main():
     parser.add_argument('--config', type=Path, default=folder / 'server_config.json')
     args = parser.parse_args()
     settings = json.loads(args.config.read_text(encoding='utf-8-sig'))
+    settings.setdefault('water_log_path', str(folder/'water_events.sqlite3'))
     mqtt_settings = settings.get("mqtt", {})
     host = mqtt_settings.get("host", "127.0.0.1")
     port = int(mqtt_settings.get("port", 1883))
