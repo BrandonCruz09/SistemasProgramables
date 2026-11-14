@@ -72,7 +72,7 @@ def run():
             response=requests.post(url+'/api/command',headers=headers,json={'action':'water','supervised':True},timeout=3)
             check('Boton HTTP acepta servido supervisado',response.status_code==202)
             bridge.process_manual_commands()
-            deadline=time.monotonic()+20
+            deadline=time.monotonic()+40
             while True:
                 bridge.process_messages()
                 if bridge.water_log.summary()['total_events']>=2 and bridge.water_log.summary()['pending_cloud']==0:break
@@ -83,7 +83,7 @@ def run():
             rows=bridge.water_log.db.execute('SELECT path,payload FROM water ORDER BY rowid').fetchall()
             start,end=[json.loads(row[1]) for row in rows]
             check('Inicio y fin correlacionados',start['run_id']==end['run_id'] and end['phase']=='finished')
-            check('Plazo simulado cercano a tres segundos',3000<=end['duration_ms']<3400)
+            check('Plazo simulado cercano a quince segundos',15000<=end['duration_ms']<15500)
             for path,payload in rows:
                 payload=json.loads(payload)
                 saved=db.get(path)
@@ -99,7 +99,7 @@ def run():
             if bridge:bridge.water_log.close()
             if broker:broker.terminate();broker.wait(5)
             report['finished_at']=utc_now()
-            (folder.parent/'docs/PRUEBA_AGUA_INTEGRADA_2026-11-11.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+            (folder.parent/'docs/PRUEBA_AGUA_INTEGRADA_2026-11-13.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     return report
 
 

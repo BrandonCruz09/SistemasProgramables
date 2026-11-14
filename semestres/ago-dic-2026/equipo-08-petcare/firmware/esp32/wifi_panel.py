@@ -15,14 +15,14 @@ HTML = """<!doctype html><html lang="es"><meta charset="utf-8">
 <style>body{font:18px system-ui;margin:24px;background:#edf5f4;color:#173b3b}button{padding:16px;margin:8px}pre{white-space:pre-wrap}button:disabled{opacity:.45}</style>
 <h1>PetCare</h1><p>Agua manual supervisada. Nivel y volumen no medidos.</p>
 <label><input type="checkbox" id="check"> Revise que hay agua en el deposito y espacio en el plato.</label><br>
-<button id="water" onclick="send('/pump')" disabled>Servir agua 3 segundos</button>
+<button id="water" onclick="send('/pump')" disabled>Prueba de agua 15 s (objetivo 500 ml, sin calibrar)</button>
 <button onclick="send('/pump/stop')">Detener agua</button>
 <button id="food" onclick="send('/feed')" disabled>Servir alimento</button>
 <p id="message" role="status"></p><pre id="status"></pre>
 <script>let busy=false,ready=false,lock=0;
 function buttons(){document.getElementById('water').disabled=busy||!ready||Date.now()<lock||!document.getElementById('check').checked}
 document.getElementById('check').onchange=buttons;
-async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+13000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
+async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+25000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
 async function refresh(){try{let r=await fetch('/api');let s=await r.json();ready=s.state=='LISTO';document.getElementById('status').textContent=JSON.stringify(s,null,2);document.getElementById('food').disabled=!ready||!s.calibrated}catch(e){ready=false}buttons()}refresh();setInterval(refresh,1000);</script></html>"""
 
 

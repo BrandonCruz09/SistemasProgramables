@@ -116,7 +116,7 @@ class PetCareController:
         except Exception as exc:
             self.last_event = "Error al activar bomba: " + str(exc)
             return False, self.last_event
-        duration = min(3000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
+        duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
         self._water_seq += 1
         self._water_run = {'run_id': self._boot_id + '-' + str(self._water_seq),
                            'started_ms': now_ms, 'requested_ms': duration,

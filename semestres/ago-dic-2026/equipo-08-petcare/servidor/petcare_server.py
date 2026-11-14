@@ -330,7 +330,7 @@ class PetCareBridge:
             message = 'MQTT desconectado; orden descartada'
         elif action != 'stop_water' and (not data['available'] or data['age_seconds'] > 15):
             message = 'ESP32 sin datos recientes; orden descartada'
-        elif action == 'water' and now-self.last_manual_water < 13:
+        elif action == 'water' and now-self.last_manual_water < 25:
             message = 'Espera a que termine el servido y su pausa de seguridad'
         if message is None:
             payload = {k:v for k,v in command.items() if k != 'queued_at'}

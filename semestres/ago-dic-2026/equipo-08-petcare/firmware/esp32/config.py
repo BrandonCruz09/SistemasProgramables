@@ -52,10 +52,14 @@ SERVO_MAX_PULSE_US = 2000
 SERVO_OPEN_TIME_MS = 900
 SERVO_SETTLE_MS = 350
 
+# Prueba supervisada: objetivo 500 ml, referencia nominal 120 L/h.
+# Caudal real NO calibrado; no afirmar que cada pulso entrega 500 ml.
+WATER_TARGET_ML = 500
+PUMP_REFERENCE_FLOW_L_H = 120
 # Limites de seguridad
 BOWL_MAX_WEIGHT_G = 250.0
-PUMP_PULSE_MS = 3000
-PUMP_MAX_ON_MS = 3000
+PUMP_PULSE_MS = 15000
+PUMP_MAX_ON_MS = 15000
 PUMP_COOLDOWN_MS = 10000
 SENSOR_POLL_MS = 800
 DHT_POLL_MS = 2500

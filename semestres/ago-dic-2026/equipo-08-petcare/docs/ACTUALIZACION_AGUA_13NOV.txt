@@ -1,0 +1,15 @@
+ACTUALIZACION 13 DE NOVIEMBRE - LEER ANTES DE LA GUIA DEL DIA 11
+Objetivo elegido: 500 ml desde tazon vacio.
+Tiempo de prueba: 15 segundos; limite 15 segundos; pausa posterior 10 segundos.
+Es una estimacion con referencia nominal 120 L/h de una bomba similar, NO una calibracion de la bomba del usuario.
+Fuente: https://www.mouser.com/datasheet/2/1398/Soldered_101844_mini_water_pump-3532437.pdf
+La foto no identifica fabricante/modelo. volume_ml sigue null. Supervisar y detener antes de rebosar.
+Los archivos locales se actualizaron; no se cargaron a la placa porque Windows no detecta puerto serie.
+La guia/Word del 11 conserva datos historicos: esta nota sustituye sus tiempos de 3 s y su IP escolar.
+MQTT actual: PC 192.168.1.120; firewall ya permite esa IP con LocalSubnet. No hace falta repetir CORREGIR_IP_MQTT.cmd mientras coincida.
+Las configuraciones Wi-Fi de los dos paquetes AUN dicen Alumnos-TecNM-D-UF. Hay que sustituirlas por el SSID y clave de la red domestica de 2.4 GHz antes de cargar.
+La PC puede seguir en WifiTronKira_5G si ambas bandas comparten LAN y no hay aislamiento.
+Arranque: INICIAR_PC.cmd, despues main.py en cada placa; panel http://192.168.1.120:8766/ y video :8765/.
+No se probaron placas ni celular en esta red en esta actualizacion.
+
+VALIDACION SOFTWARE: 58 pruebas automatizadas aprobadas. HTTP y MQTT reales con ESP32 simulado: pulso 15 s, apagado, inicio y fin recuperados desde Firestore real. Arranque de servicios PC y ambos paneles HTTP comprobado, sin telemetria fisica.

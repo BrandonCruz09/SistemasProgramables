@@ -57,7 +57,7 @@ class PumpRelay:
     def on(self):
         self.off()
         from machine import Timer
-        duration = min(3000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
+        duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
         if duration <= 0:
             raise ValueError('Duracion de bomba invalida')
         try:

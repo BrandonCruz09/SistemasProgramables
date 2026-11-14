@@ -1,3 +1,5 @@
+> Actualizacion 13 de noviembre: prueba manual de agua de 15 s, objetivo 500 ml desde vacio SIN caudal calibrado. [Detalle vigente](docs/ACTUALIZACION_AGUA_13NOV.txt). Pendiente cargar placas.
+
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 
 > **Actualización del 11 de noviembre:** bomba con relé HW-383 en GPIO23, sin flotador, servido manual supervisado de 3 s y pausa de 10 s. Panel con órdenes y eventos de agua persistidos en PC y Firestore. 58 pruebas automatizadas y cadena HTTP/MQTT/Firestore con actuador simulado aprobadas. Bomba real confirmada por el equipo; ESP32 normal cargado y arranque Wi-Fi verificado. Integración física pendiente y regla MQTT de Windows por actualizar con permisos de administrador. [Guía de montaje y pasos](docs/GUIA_RELE_11NOV.txt).
