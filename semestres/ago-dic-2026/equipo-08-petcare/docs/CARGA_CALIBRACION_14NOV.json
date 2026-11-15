@@ -1,0 +1,42 @@
+[
+  {
+    "archivo": "config.py",
+    "sha256": "92870c2996047b742b2fdccefa9718bd7d37d97906974de2e446ea4ddbc13b84",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "calibracion_pesa.py",
+    "sha256": "ae9f5d10a8cd3e2a2456fb1947f2533f367805051596b5bd24e2013dfa4d305a",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "sensores.py",
+    "sha256": "40a9560611531214ea626cce9d93f1731353826a85668e759b1bf49daefc7e01",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "hx711.py",
+    "sha256": "12d9f7d70f68bb13114139c00e22166789fd684c33244e745cc05ad8abbe98b9",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "main.py",
+    "sha256": "4b30ad3e89a797648d083aaa9c94705afc1582ae2ea35e41480ffe1836fb5e83",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "calibracion_pesa_prueba.json",
+    "sha256": "dc1f5e7df0a499270056a564c8b2d5f790ab806c4704cf79e688b3d002e582cb",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "tara_tazon.json",
+    "sha256": "ef8c9f6236bf13da6141d9f118b0f8ba15029320efc57a10b585c51254faf48e",
+    "lectura_coincide": true
+  },
+  {
+    "archivo": "calibrar_bascula.py",
+    "sha256": "60d5bb1b13e5ef87a4989dc7ada0940ebc3388e05741c2f35f2ddb536f05879b",
+    "lectura_coincide": true
+  }
+]

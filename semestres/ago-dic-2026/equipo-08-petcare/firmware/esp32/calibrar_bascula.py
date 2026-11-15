@@ -7,7 +7,7 @@
 # Semestre: ago-dic-2026
 # Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
 # ============================================
-# Ejecuta este archivo una sola vez para obtener TARE_RAW y CALIBRATION_FACTOR.
+# Ejecuta solo si necesitas reemplazar la calibracion guardada en los JSON.
 # El plato debe estar montado en la celda durante toda la calibracion.
 from sensores import calibrar_bascula
 calibrar_bascula()

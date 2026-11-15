@@ -26,6 +26,7 @@ class HX711:
 
     def read_raw(self, timeout_ms=80):
         """Lee 24 bits con ganancia 128; termina con timeout si el modulo no responde."""
+        from machine import disable_irq, enable_irq
         start = time.ticks_ms()
         while self.dout.value():
             if self._ticks_diff(time.ticks_ms(), start) >= timeout_ms:
@@ -34,16 +35,31 @@ class HX711:
 
         value = 0
         for _ in range(24):
-            self.sck.value(1)
-            value = (value << 1) | self.dout.value()
-            self.sck.value(0)
+            # Un pulso alto largo apagaria el HX711; protegerlo de interrupciones.
+            irq = disable_irq()
+            try:
+                self.sck.value(1)
+                time.sleep_us(1)
+                bit = self.dout.value()
+            finally:
+                self.sck.value(0)
+                enable_irq(irq)
+            value = (value << 1) | bit
+            time.sleep_us(1)
 
         # Pulso 25: siguiente conversion con ganancia 128, canal A.
-        self.sck.value(1)
-        self.sck.value(0)
+        irq = disable_irq()
+        try:
+            self.sck.value(1)
+            time.sleep_us(1)
+        finally:
+            self.sck.value(0)
+            enable_irq(irq)
 
         if value & 0x800000:
             value -= 0x1000000
+        if abs(value) >= 8388000:
+            raise ValueError('HX711 saturado: revisar celda y conexiones')
         return value
 
     def read_average(self, samples=3, timeout_ms=80):

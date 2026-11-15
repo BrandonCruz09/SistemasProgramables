@@ -31,8 +31,7 @@ PIN_LED_R = 16
 PIN_LED_G = 17
 PIN_LED_B = 21
 
-# Celda de carga: deja None hasta calibrarla con el plato vacio y un peso conocido.
-# El factor puede ser positivo o negativo segun como conectes A+ y A-.
+# Se cargan los archivos de calibracion al final, despues del perfil privado.
 CALIBRATION_FACTOR = None
 TARE_RAW = None
 
@@ -88,3 +87,11 @@ try:
     from config_local import *
 except ImportError:
     pass
+
+from calibracion_pesa import cargar
+_pesa = cargar()
+CALIBRATION_FACTOR = _pesa['factor']
+TARE_RAW = _pesa['tara']
+CALIBRATION_APPROXIMATE = _pesa['aproximada']
+CALIBRATION_REFERENCE_G = _pesa['referencia_g']
+CALIBRATION_ERROR = _pesa['error']

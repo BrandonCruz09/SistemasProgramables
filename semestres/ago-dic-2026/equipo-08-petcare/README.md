@@ -1,4 +1,6 @@
-> Actualizacion 13 de noviembre: prueba manual de agua de 15 s, objetivo 500 ml desde vacio SIN caudal calibrado. [Detalle vigente](docs/ACTUALIZACION_AGUA_13NOV.txt). Pendiente cargar placas.
+> **Actualización del 14 de noviembre:** calibración de la pesa integrada y cargada al ESP32. Captura física de 12 lecturas; último peso 22.46 g. MQTT de PC, guardado y consulta en Firestore real y API del panel comprobados con esa captura: 22 verificaciones aprobadas. La prueba usó USB desde el ESP32; no prueba aún Wi-Fi integral ni compuerta. DHT sin respuesta en esta captura. [Resultados y siguientes pasos](docs/CALIBRACION_FIRESTORE_14NOV.md).
+
+> Agua: prueba manual de 15 s, objetivo 500 ml desde vacío SIN caudal calibrado. [Detalle vigente](docs/ACTUALIZACION_AGUA_13NOV.txt).
 
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 
@@ -53,9 +55,9 @@ El RGB admite ahora `signal_dog` por MQTT: blanco durante 1.5 s y retorno a la s
 | 3 | Celda 5 kg + HX711 | Sensor | 1 conjunto | Por registrar |
 | 4 | DHT22 | Sensor ambiente | 1 | Por registrar |
 | 5 | PIR | Sensor presencia | 1 | Por registrar |
-| 6 | Flotador | Sensor nivel | 1 | Por registrar |
+| 6 | Flotador | Retirado del alcance | 0 | No se comprará |
 | 7 | MG995 | Actuador compuerta | 1; SG90 disponibles de pruebas anteriores | Por registrar |
-| 8 | Bomba 3–5 V + módulo MOSFET + diodo | Actuador de agua | Bomba y módulo disponibles; diodo pendiente | Por registrar |
+| 8 | Bomba 3–5 V + relé HW-383 + diodo | Actuador de agua | 1 conjunto, probado por el equipo | Por registrar |
 | 9 | LED RGB + 3 resistencias | Indicador | 1 conjunto | Por registrar |
 | 10 | Buzzer activo/driver según consumo | Indicador audible | 1 | Por registrar |
 | 11 | Fuente regulada 5 V / 5 A | Alimentación | 1 | Por registrar |
@@ -84,10 +86,10 @@ python -m pip install -r servidor/requirements.txt
 1. **Cámara en Thonny:** usar base ESP32CAM-MB por USB de datos. Elegir MicroPython ESP32 y el puerto detectado. Requiere firmware con módulo `camera`; no sustituirlo por firmware genérico ni borrarlo sin respaldo.
 2. Ejecutar `firmware/esp32cam/probar_camara.py`. Debe terminar con tres JPEG válidos y devolver `>>>`.
 3. Copiar `wifi_config.example.py` como `wifi_config.py`, completar la red local y guardar en la **cámara** junto con `camara_wifi.py` y `main.py` de `firmware/esp32cam/`. El programa arranca al energizar. Abrir `/foto` o `/stream` en la IP que imprime; cerrar el video directo antes de iniciar el servidor PC. Las claves están excluidas de Git.
-4. **DevKit:** conectar componentes según HAL, sin energizar mientras se cablea. Copiar los `.py` de `firmware/esp32/` a la placa. Calibrar con `calibrar_bascula.py` y completar tara/factor en `config.py`. Probar servo sin carga antes del conjunto.
-5. Completar red y broker en `config.py` solo localmente; no subir claves. Si MQTT está vacío, el equipo ejecuta supervisión local. Instalar `umqtt.simple` en la DevKit para habilitar MQTT. Ejecutar `main.py`; STOP de Thonny detiene el ciclo.
+4. **DevKit:** conectar componentes según HAL, sin energizar mientras se cablea. Copiar los `.py` de `firmware/esp32/` y los archivos `calibracion_pesa_prueba.json` y `tara_tazon.json` a la raíz de la placa. Los JSON contienen valores del montaje del equipo; no son universales. La calibración actual ya está cargada: no repetirla ni reemplazarla por valores vacíos. `calibrar_bascula.py` permite reemplazarla manualmente si cambia el montaje; guarda ambos JSON y requiere reiniciar MicroPython.
+5. Completar red y broker en `config_local.py`, excluido de Git. Si MQTT está vacío, el equipo ejecuta supervisión local. Instalar `umqtt.simple` en la DevKit si no está disponible. Ejecutar `main.py` únicamente cuando se puedan mover los actuadores; STOP de Thonny detiene el ciclo.
 6. En la PC configurar `server_config.json` a partir del ejemplo; ajustar `camera_stream_url`. Ejecutar `descargar_modelo.py` y `vision_main.py` desde `servidor/`, o usar `iniciar_video.cmd`. Abrir `http://IP_DE_LA_PC:8765/` desde el celular en el mismo Wi-Fi. [Guía de video y detección](docs/VIDEO_Y_DETECCION.md).
-7. Para integrar MQTT, iniciar Mosquitto y luego `python servidor/petcare_server.py`. El puente consulta `vision_url` en la PC. Desde la DevKit, el broker es la IP de la PC, no `127.0.0.1`. Firebase permanece desactivado hasta configurar autenticación y reglas. El video funciona sin estos servicios.
+7. Para integrar MQTT, iniciar Mosquitto y el puente con el perfil privado `server_mqtt_config.json`, que en la PC del equipo ya usa Cloud Firestore. El puente consulta `vision_url` en la PC. Desde la DevKit, el broker es la IP de la PC, no `127.0.0.1`. Las copias públicas requieren completar su propia configuración y autenticación. El video funciona sin estos servicios.
 
 El montaje propuesto usa bomba y depósito cerrado por abajo; probar con diodo y corte de flujo verificado antes de integrarlo. La fuente externa y el USB no deben alimentar simultáneamente el mismo riel de 5 V sin aislamiento verificado.
 
@@ -137,11 +139,11 @@ Evidencia disponible y límites: [avance del 2 de noviembre](docs/AVANCE_2026-11
 ## 📋 HAL — Hardware Abstraction Layer
 
 [Ver tabla completa: pines, tópicos, unidades, estado y dato → acción](hardware/HAL.md).
-Los valores de calibración y mediciones reales están pendientes; no se presentan rangos nominales como lecturas.
+La tara es −428929.16 y el factor 285.80386 cuentas/g. La referencia nominal de 163 g permite una calibración aproximada; falta comparar con una masa bruta medida independientemente. Se conserva la validación previa del cero y la referencia, y se añade una captura del firmware integrado.
 
 ## 🔥 Esquema Firebase
 
-El puente actual usa **Realtime Database vía REST**, con autenticación anónima y token local excluido de Git:
+El puente actual usa **Cloud Firestore vía REST**, con autenticación y token local excluido de Git. Las rutas lógicas principales son:
 
 ```text
 /petcare/equipo8/latest   → última telemetría
@@ -150,7 +152,7 @@ El puente actual usa **Realtime Database vía REST**, con autenticación anónim
 /petcare/equipo8/events   → eventos y confirmaciones
 ```
 
-Las rutas anteriores son las previstas para el hardware. La prueba usa `petcare/equipo8/simulacion/ID_EJECUCION`, con `simulated: true`, e incorpora `probe` y `report`. Se verificaron datos y confirmaciones en Firebase real; la báscula y los actuadores siguen sin prueba conjunta física. Las reglas autorizan únicamente el UID de la PC en esa carpeta y bloquean el resto. La página local de video no es un dashboard de Firebase. No se incluye una cuenta de servicio ni reglas públicas abiertas.
+El adaptador agrega el documento `estado` cuando la ruta termina en colección. También mantiene `estado_actual` y `lecturas`. La prueba del 14 de noviembre guardó una captura física en `petcare/equipo8/pruebas/pesa-8e435d6844`, con `simulated: false` y `transport_to_pc: USB_serial`. Se verificaron peso, unidad, indicadores de sensores, fecha e historial. Las peticiones sin autenticación fueron rechazadas. El transporte Wi-Fi de las placas y los actuadores siguen sin prueba conjunta en este corte. No se incluye una cuenta de servicio ni reglas públicas abiertas.
 
 ## ⚠️ Retos técnicos encontrados
 

@@ -79,6 +79,9 @@ class SensorHub:
             "humidity_pct": self._humidity,
             "dht_ok": self._dht_ok,
             "weight_g": self._weight,
+            "weight_unit": "g",
+            "calibration_approximate": config.CALIBRATION_APPROXIMATE,
+            "calibration_reference_g": config.CALIBRATION_REFERENCE_G,
             "raw": self._raw,
             "hx_ok": self._hx_ok,
             "calibrated": config.CALIBRATION_FACTOR not in (None, 0) and config.TARE_RAW is not None,
@@ -86,8 +89,9 @@ class SensorHub:
 
 
 def calibrar_bascula():
-    """Imprime las lecturas para obtener TARE_RAW y CALIBRATION_FACTOR."""
-    from machine import Pin
+    """Guarda una nueva referencia solo cuando se ejecuta esta rutina manual."""
+    import json
+    import math
     hx = HX711(config.PIN_HX711_DOUT, config.PIN_HX711_SCK)
     print("PetCare: calibracion HX711")
     print("Deja el plato vacio montado, sin tocarlo.")
@@ -95,11 +99,22 @@ def calibrar_bascula():
     tare = hx.read_average(15, timeout_ms=200)
     print("TARE_RAW =", tare)
     known = float(input("Coloca una pesa conocida y escribe su masa en gramos (ej. 100): "))
-    if known <= 0:
+    if not math.isfinite(known) or known <= 0:
         raise ValueError("La masa conocida debe ser mayor que cero")
     print("Esperando que la lectura se estabilice...")
     time.sleep_ms(1500)
     loaded = hx.read_average(15, timeout_ms=200)
     factor = (loaded - tare) / known
+    if not math.isfinite(factor) or abs(loaded - tare) < 100:
+        raise ValueError("Cambio de peso insuficiente; no se guardo calibracion")
     print("CALIBRATION_FACTOR =", factor)
-    print("Copia ambos valores a config.py y vuelve a ejecutar main.py.")
+    if input("Escribe GUARDAR para reemplazar la calibracion anterior: ").strip() != "GUARDAR":
+        print("Se conserva la calibracion anterior.")
+        return
+    datos = {"TARE_RAW": tare, "CALIBRATION_FACTOR": factor,
+             "masa_referencia_g": known, "referencia_aproximada": True}
+    with open("calibracion_pesa_prueba.json", "w") as archivo:
+        json.dump(datos, archivo)
+    with open("tara_tazon.json", "w") as archivo:
+        json.dump({"TARE_RAW": tare}, archivo)
+    print("Guardado. Reinicia MicroPython para cargar los nuevos valores.")

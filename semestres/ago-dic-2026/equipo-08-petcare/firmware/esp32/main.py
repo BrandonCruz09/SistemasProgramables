@@ -43,7 +43,11 @@ def main():
             dashboard = WebDashboard()
             dashboard.start()
         print('Agua manual supervisada: sin sensor de nivel y sin volumen calibrado.')
-        print('Alimento bloqueado hasta calibrar la pesa. Ctrl+C para salir.')
+        if config.CALIBRATION_ERROR:
+            print('Alimento bloqueado: falta calibracion valida.', config.CALIBRATION_ERROR)
+        else:
+            print('Pesa en gramos. Referencia aproximada:', config.CALIBRATION_APPROXIMATE)
+        print('Ctrl+C para salir.')
         last_print = time.ticks_ms()
         while True:
             now = time.ticks_ms()

@@ -1,0 +1,9 @@
+{
+  "referencia_declarada_g": 163,
+  "referencia_aproximada": true,
+  "lecturas_g": [163.29644, 163.02352, 163.02635, 163.07708, 163.18446],
+  "tara_raw": -428929.16,
+  "factor": 285.80386,
+  "ajustes_modificados": false,
+  "nota": "Comprobacion de repetibilidad con el mismo paquete. No certifica exactitud respecto a una masa patron."
+}

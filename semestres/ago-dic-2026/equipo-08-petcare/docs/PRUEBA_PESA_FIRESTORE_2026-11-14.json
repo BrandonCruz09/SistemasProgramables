@@ -1,0 +1,329 @@
+{
+  "started_at": "2026-11-15T03:33:19+00:00",
+  "root": "petcare/equipo8/pruebas/pesa-8e435d6844",
+  "checks": [
+    {
+      "test": "Suscripcion MQTT lista",
+      "passed": true
+    },
+    {
+      "test": "Firestore conserva peso numerico medido",
+      "passed": true
+    },
+    {
+      "test": "Campo raw sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo hx_ok sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo calibrated sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo weight_unit sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo calibration_approximate sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo calibration_reference_g sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo temperature_c sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo humidity_pct sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo dht_ok sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo pir sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo water_available sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Campo water_level_monitored sin alteracion",
+      "passed": true
+    },
+    {
+      "test": "Origen real y recorrido USB declarados",
+      "passed": true
+    },
+    {
+      "test": "Timestamp de recepcion guardado",
+      "passed": true
+    },
+    {
+      "test": "Estado actual contiene la misma telemetria",
+      "passed": true
+    },
+    {
+      "test": "Historial conserva captura",
+      "passed": true
+    },
+    {
+      "test": "Lectura sin autenticacion bloqueada",
+      "passed": true
+    },
+    {
+      "test": "Escritura sin autenticacion bloqueada",
+      "passed": true
+    },
+    {
+      "test": "Panel HTTP muestra el mismo peso",
+      "passed": true
+    },
+    {
+      "test": "Sin ordenes de actuadores",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "scope": "SensorHub real en ESP32 -> USB -> PC -> MQTT real -> puente -> Firestore real. No prueba Wi-Fi de la placa ni activa salidas.",
+  "capture": {
+    "samples": [
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422340.336,
+        "weight_g": 23.053616,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422444.66,
+        "weight_g": 22.944122,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422479.636,
+        "weight_g": 22.830738,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422454.336,
+        "weight_g": 22.777938,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422445.668,
+        "weight_g": 22.7501,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422525.668,
+        "weight_g": 22.6466368,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422531.0,
+        "weight_g": 22.568604,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422565.668,
+        "weight_g": 22.477604,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422508.336,
+        "weight_g": 22.474062,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422491.0,
+        "weight_g": 22.489788,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422528.0,
+        "weight_g": 22.46196,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422508.66,
+        "weight_g": 22.462784,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      }
+    ],
+    "tare_raw": -428929.16,
+    "factor": 285.80386,
+    "payload": {
+      "status": {
+        "water_available": null,
+        "water_level_monitored": false,
+        "temperature_c": null,
+        "humidity_pct": null,
+        "weight_unit": "g",
+        "calibration_approximate": true,
+        "calibration_reference_g": 163.0,
+        "raw": -422508.66,
+        "weight_g": 22.462784,
+        "hx_ok": true,
+        "dht_ok": false,
+        "calibrated": true,
+        "pir": false
+      },
+      "device": "esp32-devkit",
+      "transport_to_pc": "USB_serial",
+      "simulated": false,
+      "source": "esp32_usb_sensorhub",
+      "actuators_initialized": false
+    }
+  },
+  "stored": {
+    "transport_to_pc": "USB_serial",
+    "actuators_initialized": false,
+    "simulated": false,
+    "source": "esp32_usb_sensorhub",
+    "device": "esp32-devkit",
+    "received_at": "2026-11-15T03:33:20+00:00",
+    "status": {
+      "calibration_reference_g": 163.0,
+      "temperature_c": null,
+      "weight_unit": "g",
+      "hx_ok": true,
+      "water_level_monitored": false,
+      "pir": false,
+      "calibration_approximate": true,
+      "water_available": null,
+      "dht_ok": false,
+      "raw": -422508.66,
+      "calibrated": true,
+      "weight_g": 22.462784,
+      "humidity_pct": null
+    }
+  },
+  "firestore_document": "petcare/equipo8/pruebas/pesa-8e435d6844/estado/latest",
+  "finished_at": "2026-11-15T03:33:22+00:00"
+}
