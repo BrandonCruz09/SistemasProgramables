@@ -31,6 +31,13 @@ PIN_LED_R = 16
 PIN_LED_G = 17
 PIN_LED_B = 21
 
+# OLED de Nebula Dash. Pines libres; no cambiar RGB21 ni buzzer22.
+OLED_ENABLED = True
+OLED_SDA = 26
+OLED_SCL = 25
+OLED_ADDRESS = 0x3C
+OLED_REFRESH_MS = 800
+
 # Se cargan los archivos de calibracion al final, despues del perfil privado.
 CALIBRATION_FACTOR = None
 TARE_RAW = None
@@ -39,15 +46,11 @@ TARE_RAW = None
 # Valor 0 significa agua disponible. Si tu flotador funciona al reves, cambia a 1.
 FLOAT_WATER_PRESENT_LEVEL = 0
 
-# Servo MG995: consignas heredadas; ajustar con la compuerta real.
-# Estos valores no son grados medidos. Se mantienen pulsos de 1000 a 2000 us.
-# El ensayo local 800 a 3000 us no es una calibracion ni se aplica aqui.
-SERVO_CLOSED_ANGLE = 30
-SERVO_OPEN_ANGLE = 75
-SERVO_MIN_ANGLE = 20
-SERVO_MAX_ANGLE = 90
-SERVO_MIN_PULSE_US = 1000
-SERVO_MAX_PULSE_US = 2000
+# Posiciones observadas por el equipo en la compuerta instalada.
+SERVO_CLOSED_US = 1850
+SERVO_OPEN_US = 800
+SERVO_MIN_PULSE_US = 800
+SERVO_MAX_PULSE_US = 1850
 SERVO_OPEN_TIME_MS = 900
 SERVO_SETTLE_MS = 350
 

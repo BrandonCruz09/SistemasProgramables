@@ -19,6 +19,7 @@ from actuadores import ServoSG90, PumpRelay, ActiveBuzzer, RGBLed
 from controlador import PetCareController
 from wifi_panel import connect_wifi, WebDashboard
 from mqtt_link import MQTTLink
+from pantalla_peso import PantallaPeso
 
 
 def main():
@@ -31,12 +32,14 @@ def main():
     pump = PumpRelay()
     controller = dashboard = mqtt_link = None
     servo = buzzer = led = None
+    screen = None
     try:
         sensors = SensorHub()
         servo = ServoSG90()
         buzzer = ActiveBuzzer()
         led = RGBLed()
         controller = PetCareController(sensors, servo, pump, buzzer, led)
+        screen = PantallaPeso()
         mqtt_link = MQTTLink()
         _wlan, _ip = connect_wifi()
         if _ip:
@@ -55,6 +58,8 @@ def main():
             if dashboard:
                 dashboard.poll(controller)
             mqtt_link.poll(time.ticks_ms(), controller)
+            # La bomba conserva su ultima lectura y lo indica en la pantalla.
+            screen.update(status, controller.state, time.ticks_ms())
             if time.ticks_diff(now, last_print) >= config.STATUS_PRINT_MS:
                 last_print = now
                 print('Estado:', controller.state, '| PIR:', status.get('pir'),
@@ -75,6 +80,7 @@ def main():
                 if buzzer: buzzer.off()
                 if led: led.set_color('off')
         finally:
+            if screen: screen.close()
             if dashboard: dashboard.close()
             if mqtt_link: mqtt_link.close()
         print('Salidas apagadas.')

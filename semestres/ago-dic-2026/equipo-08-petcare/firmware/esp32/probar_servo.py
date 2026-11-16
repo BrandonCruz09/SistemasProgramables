@@ -14,14 +14,14 @@ from actuadores import ServoSG90
 
 servo = ServoSG90()
 try:
-    print("Prueba servo: centro, abrir, cerrar y liberar")
-    for label, angle in (("centro", 55), ("abrir", config.SERVO_OPEN_ANGLE),
-                         ("cerrar", config.SERVO_CLOSED_ANGLE)):
-        print(label, angle, "grados")
-        servo.move_to(angle)
-        time.sleep_ms(700)
-        servo.release()
-        time.sleep_ms(400)
-    print("Fin: si solo zumba, corta la alimentacion y revisa fuente/GND/mecanismo.")
+    print("Ciclo de compuerta GPIO33: cerrado 1850 us, abierto 800 us")
+    input("Deja libre el mecanismo. Enter inicia; Ctrl+C cancela: ")
+    for label, pulse in (("cerrar", config.SERVO_CLOSED_US),
+                         ("abrir", config.SERVO_OPEN_US),
+                         ("cerrar", config.SERVO_CLOSED_US)):
+        print(label, pulse, "us")
+        servo.move_us(pulse)
+        time.sleep_ms(1000)
+    print("Fin del ciclo. Verifica el movimiento fisicamente.")
 finally:
     servo.release()

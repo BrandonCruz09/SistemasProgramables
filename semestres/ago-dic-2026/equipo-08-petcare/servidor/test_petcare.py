@@ -27,7 +27,7 @@ class FakeSensors:
 
 class FakeServo:
     def __init__(self): self.angles=[]; self.released=0
-    def move_to(self, angle): self.angles.append(angle)
+    def move_us(self, angle): self.angles.append(angle)
     def release(self): self.released += 1
 
 class FakePump:
@@ -63,7 +63,7 @@ class PetCareTests(unittest.TestCase):
         ok, _=c.request_feed(0)
         self.assertTrue(ok)
         c.tick(config.SERVO_OPEN_TIME_MS)
-        self.assertEqual(self.servo.angles, [config.SERVO_OPEN_ANGLE, config.SERVO_CLOSED_ANGLE])
+        self.assertEqual(self.servo.angles, [config.SERVO_OPEN_US, config.SERVO_CLOSED_US])
         c.tick(config.SERVO_OPEN_TIME_MS + config.SERVO_SETTLE_MS)
         self.assertEqual(c.state, c.IDLE)
         self.assertGreaterEqual(self.servo.released, 1)

@@ -80,8 +80,11 @@ class VisionWorker:
 
 def local_address(camera_url):
     try:
+        hostname = urlsplit(camera_url).hostname
+        if not hostname:
+            return 'IP_DE_LA_PC'
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            sock.connect((urlsplit(camera_url).hostname, 80))
+            sock.connect((hostname, 80))
             return sock.getsockname()[0]
     except OSError:
         return 'IP_DE_LA_PC'
@@ -116,7 +119,7 @@ def main():
     camera.start()
     worker.start()
     http_thread.start()
-    print('PetCare: http://%s:%d/' % (local_address(url), server.server_port), flush=True)
+    print('PetCare: http://%s:%d/' % (settings.get('hardware_broker_host') or local_address(url), server.server_port), flush=True)
     print('Abre esa direccion en el celular conectado al mismo Wi-Fi.', flush=True)
     print('Ctrl+C detiene el servidor. Las detecciones no accionan la compuerta.', flush=True)
     print('Entrada de imagen:', transport, '| La respuesta LED requiere iniciar tambien mqtt_bridge.py.', flush=True)

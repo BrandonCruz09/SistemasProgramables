@@ -87,12 +87,12 @@ class PetCareController:
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
         if not self.status.get("calibrated") or self.status.get("weight_g") is None:
-            return False, "Calibra HX711 y completa config.py antes de dispensar"
+            return False, "Revisa HX711 y los archivos de calibracion antes de dispensar"
         if self.status["weight_g"] >= config.BOWL_MAX_WEIGHT_G:
             self.last_event = "Dispensado bloqueado: el plato ya tiene suficiente peso"
             return False, self.last_event
         try:
-            self.servo.move_to(config.SERVO_OPEN_ANGLE)
+            self.servo.move_us(config.SERVO_OPEN_US)
         except Exception as exc:
             self.last_event = "Error al activar servo: " + str(exc)
             return False, self.last_event
@@ -151,7 +151,7 @@ class PetCareController:
 
         if self.state == self.FEED_OPEN and self._diff(now_ms, self.deadline) >= 0:
             try:
-                self.servo.move_to(config.SERVO_CLOSED_ANGLE)
+                self.servo.move_us(config.SERVO_CLOSED_US)
                 self.state = self.FEED_CLOSE
                 self.deadline = self._add(now_ms, config.SERVO_SETTLE_MS)
                 self.last_event = "Compuerta cerrada; estabilizando servo"
@@ -213,7 +213,7 @@ class PetCareController:
         self.buzzer.off()
         try:
             if self.state == self.FEED_OPEN:
-                self.servo.move_to(config.SERVO_CLOSED_ANGLE)
+                self.servo.move_us(config.SERVO_CLOSED_US)
                 time.sleep_ms(config.SERVO_SETTLE_MS)
         except Exception:
             pass

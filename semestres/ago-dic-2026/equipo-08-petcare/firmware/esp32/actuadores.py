@@ -18,17 +18,14 @@ class ServoSG90:
         self._pin = Pin(pin, Pin.OUT)
         self._pwm = None
 
-    def move_to(self, angle):
+    def move_us(self, pulse_us):
         from machine import PWM
-        angle = max(config.SERVO_MIN_ANGLE, min(config.SERVO_MAX_ANGLE, int(angle)))
+        if isinstance(pulse_us, bool) or not isinstance(pulse_us, int):
+            raise ValueError('El pulso debe ser un entero en microsegundos')
+        if not config.SERVO_MIN_PULSE_US <= pulse_us <= config.SERVO_MAX_PULSE_US:
+            raise ValueError('Pulso fuera del recorrido validado de la compuerta')
         if self._pwm is None:
             self._pwm = PWM(self._pin, freq=50, duty_u16=0)
-        angle_span = config.SERVO_MAX_ANGLE - config.SERVO_MIN_ANGLE
-        if angle_span <= 0:
-            raise ValueError("Revisa SERVO_MIN_ANGLE y SERVO_MAX_ANGLE")
-        position = (angle - config.SERVO_MIN_ANGLE) / angle_span
-        pulse_span = config.SERVO_MAX_PULSE_US - config.SERVO_MIN_PULSE_US
-        pulse_us = config.SERVO_MIN_PULSE_US + (pulse_span * position)
         self._pwm.duty_ns(int(pulse_us * 1000))
 
     def release(self):

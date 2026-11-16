@@ -38,7 +38,7 @@ class SalidaSimulada:
 
     def on(self): self.active = True
     def off(self): self.active = False
-    def move_to(self, angle): self.angles.append(angle)
+    def move_us(self, angle): self.angles.append(angle)
     def release(self): self.releases += 1
     def set_color(self, color): self.color = color
 

@@ -21,6 +21,10 @@ from petcare_server import PetCareBridge
 
 
 class VisionTests(unittest.TestCase):
+    def test_mqtt_camera_does_not_require_http_url(self):
+        from vision_main import local_address
+        self.assertEqual(local_address(''), 'IP_DE_LA_PC')
+
     def test_person_uses_a_higher_threshold(self):
         rows = np.array([[0,15,.76,0,0,.5,.5], [0,12,.76,.5,.5,1,1]])
         result = decode_detections(rows, 640, 480, .55, {'person':.80, 'dog':.60})

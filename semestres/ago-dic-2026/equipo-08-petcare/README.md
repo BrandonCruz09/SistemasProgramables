@@ -1,3 +1,5 @@
+> **Preparación del 15 de noviembre:** programa completo con OLED SSD1306 (SDA26/SCL25), peso calibrado y compuerta cerrada a 1850 us / abierta a 800 us. Cámara en vivo dentro del panel. 73 pruebas de software y 7 verificaciones locales de video/MQTT aprobadas. Archivos preparados para cargar; montaje completo aún pendiente de prueba física. [Guía de carga y conexiones](docs/MONTAJE_LISTO_15NOV.md).
+
 > **Actualización del 14 de noviembre:** calibración de la pesa integrada y cargada al ESP32. Captura física de 12 lecturas; último peso 22.46 g. MQTT de PC, guardado y consulta en Firestore real y API del panel comprobados con esa captura: 22 verificaciones aprobadas. La prueba usó USB desde el ESP32; no prueba aún Wi-Fi integral ni compuerta. DHT sin respuesta en esta captura. [Resultados y siguientes pasos](docs/CALIBRACION_FIRESTORE_14NOV.md).
 
 > Agua: prueba manual de 15 s, objetivo 500 ml desde vacío SIN caudal calibrado. [Detalle vigente](docs/ACTUALIZACION_AGUA_13NOV.txt).
@@ -55,7 +57,7 @@ El RGB admite ahora `signal_dog` por MQTT: blanco durante 1.5 s y retorno a la s
 | 3 | Celda 5 kg + HX711 | Sensor | 1 conjunto | Por registrar |
 | 4 | DHT22 | Sensor ambiente | 1 | Por registrar |
 | 5 | PIR | Sensor presencia | 1 | Por registrar |
-| 6 | Flotador | Retirado del alcance | 0 | No se comprará |
+| 6 | OLED SSD1306 128×64 de Nebula Dash | Pantalla de gramos | 1 reutilizada | Sin compra adicional |
 | 7 | MG995 | Actuador compuerta | 1; SG90 disponibles de pruebas anteriores | Por registrar |
 | 8 | Bomba 3–5 V + relé HW-383 + diodo | Actuador de agua | 1 conjunto, probado por el equipo | Por registrar |
 | 9 | LED RGB + 3 resistencias | Indicador | 1 conjunto | Por registrar |

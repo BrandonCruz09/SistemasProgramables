@@ -1,0 +1,36 @@
+{
+  "simulated": true,
+  "actuators_used": false,
+  "firestore_used": false,
+  "checks": [
+    {
+      "test": "Servicio HTTP 8765",
+      "passed": true
+    },
+    {
+      "test": "Servicio HTTP 8766",
+      "passed": true
+    },
+    {
+      "test": "JPEG por MQTT procesado por el modelo real",
+      "passed": true
+    },
+    {
+      "test": "Video HTTP multipart con JPEG",
+      "passed": true
+    },
+    {
+      "test": "Panel recibe gramos simulados",
+      "passed": true
+    },
+    {
+      "test": "Pagina contiene video integrado",
+      "passed": true
+    },
+    {
+      "test": "Camara sin cuadros pasa a no disponible",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

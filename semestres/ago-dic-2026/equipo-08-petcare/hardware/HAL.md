@@ -1,6 +1,6 @@
 # Tabla HAL — PetCare, equipo 08
 
-Actualizada el 14 de noviembre: [calibración y evidencia Firestore](../docs/CALIBRACION_FIRESTORE_14NOV.md). [Guía de relé y montaje](../docs/GUIA_RELE_11NOV.txt).
+Actualizada el 15 de noviembre: [OLED, compuerta y carga](../docs/MONTAJE_LISTO_15NOV.md). Evidencia previa: [calibración y evidencia Firestore](../docs/CALIBRACION_FIRESTORE_14NOV.md). [Guía de relé y montaje](../docs/GUIA_RELE_11NOV.txt).
 
 > **Ampliación de software posterior a este corte:** ya se prepararon JPEG por MQTT, decisión IA con señal RGB, ACK, rutas de Firebase y dashboard. Pruebas de software y nube simulada aprobadas; carga y prueba física pendientes. [Estado actualizado y pasos](../docs/INTEGRACION_MQTT_IA.md).
 
@@ -14,10 +14,11 @@ El 3 de noviembre se validó MQTT/Firebase con sensores y salidas simulados en P
 | Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; nominal 5000 g; tara −428929.16, factor 285.80386 | Calibración aproximada integrada; captura física enviada a Firestore por PC |
 | DHT22 | Sensor | DATA 4 | `/telemetry`: `temperature_c`, `humidity_pct`, `dht_ok` | — | °C y %HR; rango real por verificar | Sin respuesta en captura del 14 de noviembre; revisar conexión |
 | PIR | Sensor | OUT 27 | `/telemetry`: `pir` | — | booleano | Confirmar modelo/VCC |
-| Flotador retirado del alcance | — | GPIO26 libre | `water_available=null`, `water_level_monitored=false` | — | Nivel no medido | No se instalará |
-| MG995 | Actuador | PWM 33 | `/ack` y `status.state` | `/commands`: `feed` | consignas 30/75; no son ángulos medidos; ajustar recorrido | Pendiente con compuerta |
+| Flotador retirado del alcance | — | Sin pin; GPIO26 ahora es SDA de OLED | `water_available=null`, `water_level_monitored=false` | — | Nivel no medido | No se instalará |
+| MG995 | Actuador | PWM 33 | `/ack` y `status.state` | `/commands`: `feed` | abierta 800 us / cerrada 1850 us; 50 Hz | Posiciones observadas por el equipo; falta validar con croquetas |
 | Bomba 3–5 V + relé HW-383 K1 | Actuador | IN1 23, activo LOW | `/ack`, `/water_events`, `status.state` | `/commands`: `water`, `stop_water` | consigna 15000 ms; pausa 10000 ms; sin volumen calibrado | Bomba y relé confirmados por el equipo; firmware integrado pendiente físico |
 | LED RGB cátodo común | Actuador | R16, G17, B21 | Estado derivado de sensores | `/commands`: `signal_dog`; resto local | blanco 1.5 s por IA; después estado local | Pendiente físico |
+| OLED SSD1306 128×64 | Pantalla | SDA26 / SCL25, VCC3V3 | Peso local del mismo SensorHub | — | g, actualización nominal 800 ms | Preparada; pendiente conexión física |
 | Buzzer activo | Actuador | 22 | Aviso de fin de alimento | Sin tópico propio; lógica local | ON/OFF, aviso 100 ms | Confirmar driver/consumo |
 | ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/stream` → PC; puente consulta `/api/status` y publica `/vision` | GET `/foto` o `/stream` | JPEG VGA 640×480, calidad 12 | Streaming probado; detección móvil de perro/persona confirmada por el equipo |
 
