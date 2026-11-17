@@ -57,7 +57,8 @@ def main():
             status = controller.tick(now)
             if dashboard:
                 dashboard.poll(controller)
-            mqtt_link.poll(time.ticks_ms(), controller)
+            if _wlan is not None and _wlan.isconnected():
+                mqtt_link.poll(time.ticks_ms(), controller)
             # La bomba conserva su ultima lectura y lo indica en la pantalla.
             screen.update(status, controller.state, time.ticks_ms())
             if time.ticks_diff(now, last_print) >= config.STATUS_PRINT_MS:

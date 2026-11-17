@@ -32,17 +32,36 @@ def connect_wifi():
         return None, None
     import network
     import time
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    if not wlan.isconnected():
-        wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD)
-        start = time.ticks_ms()
-        while not wlan.isconnected() and time.ticks_diff(time.ticks_ms(), start) < config.WIFI_CONNECT_TIMEOUT_MS:
-            time.sleep_ms(200)
-    if wlan.isconnected():
-        ip = wlan.ifconfig()[0]
-        print("Panel PetCare: http://%s/" % ip)
-        return wlan, ip
+    wlan = None
+    for intento in range(2):
+        try:
+            wlan = network.WLAN(network.STA_IF)
+            if not wlan.isconnected():
+                # Cancelar la conexion que puede sobrevivir al reinicio de Thonny.
+                if wlan.active():
+                    wlan.disconnect()
+                wlan.active(False)
+                time.sleep_ms(300)
+                wlan.active(True)
+                time.sleep_ms(300)
+                wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD)
+                start = time.ticks_ms()
+                while not wlan.isconnected() and time.ticks_diff(time.ticks_ms(), start) < config.WIFI_CONNECT_TIMEOUT_MS:
+                    time.sleep_ms(200)
+            if wlan.isconnected():
+                ip = wlan.ifconfig()[0]
+                print("Panel PetCare: http://%s/" % ip)
+                return wlan, ip
+        except OSError as exc:
+            print('Wi-Fi: intento', intento + 1, 'fallido:', exc)
+        finally:
+            # Si fallo, detener los reintentos del driver antes del siguiente.
+            if wlan is not None:
+                try:
+                    if not wlan.isconnected():
+                        wlan.active(False)
+                except OSError:
+                    pass
     print("No se conecto al Wi-Fi; PetCare seguira funcionando por USB.")
     return None, None
 
