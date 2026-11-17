@@ -24,7 +24,7 @@ HTML = """<!doctype html><html lang="es"><meta charset="utf-8">
 function buttons(){let blocked=busy||!ready||Date.now()<lock||!document.getElementById('check').checked;document.getElementById('water').disabled=blocked;document.getElementById('waterTest').disabled=blocked}
 document.getElementById('check').onchange=buttons;
 async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+25000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
-async function refresh(){try{let r=await fetch('/api');let s=await r.json();ready=s.state=='LISTO';document.getElementById('status').textContent=JSON.stringify(s,null,2);document.getElementById('food').disabled=!ready||!s.calibrated}catch(e){ready=false}buttons()}refresh();setInterval(refresh,1000);</script></html>"""
+async function refresh(){try{let r=await fetch('/api');let s=await r.json();ready=s.state=='LISTO'&&s.actions_allowed!==false;document.getElementById('status').textContent=JSON.stringify(s,null,2);document.getElementById('food').disabled=!ready||!s.calibrated||!s.hx_ok||!s.servo_enabled}catch(e){ready=false}buttons()}refresh();setInterval(refresh,1000);</script></html>"""
 
 
 def connect_wifi():

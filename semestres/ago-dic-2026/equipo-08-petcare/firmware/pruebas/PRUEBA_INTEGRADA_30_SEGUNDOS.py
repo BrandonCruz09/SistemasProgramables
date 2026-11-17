@@ -1,6 +1,8 @@
 # PetCare: ejecuta el programa completo en modo de prueba supervisada.
 # Sin ESP32-CAM ni buzzer. Tres ciclos, separados por 30 segundos.
 import config
+if not config.SERVO_MOVEMENT_ENABLED:
+    raise ValueError('Prueba pausada tras temblor del servo. Revalidar montaje antes de habilitar ciclos.')
 if (config.SERVO_OPEN_US, config.SERVO_CLOSED_US) != (1550, 1690):
     raise ValueError('Carga config.py con apertura 1550 y cierre 1690 antes de probar.')
 print('PETCARE - PRUEBA INTEGRADA')
@@ -11,10 +13,6 @@ print('Primer ciclo 30 s despues de arrancar; despues tres ciclos en total.')
 print('Stop o Ctrl+C interrumpe. Si la compuerta fuerza su apoyo, apaga la fuente.')
 if input('Con la fuente encendida y todo listo, escribe LISTO y Enter: ').strip().upper() == 'LISTO':
     from main import main
-    config.SERVO_MOVEMENT_ENABLED = True
-    try:
-        main(prueba_periodica=True)
-    finally:
-        config.SERVO_MOVEMENT_ENABLED = False
+    main(prueba_periodica=True)
 else:
     print('Prueba cancelada sin mover actuadores.')

@@ -55,7 +55,7 @@ class PantallaPeso:
                             display.fill_rect(x*2, 17+y*2, 2, 2, 1)
             else:
                 display.text(text[:16], 0, 20)
-            label = 'LECTURA EN PAUSA' if state == 'BOMBA_ACTIVA' else state
+            label = 'LECTURA EN PAUSA' if status.get('readings_paused') or state == 'BOMBA_ACTIVA' else state
             display.text(label[:16], 0, 42)
             display.text('Ref. aproximada' if status.get('calibration_approximate') else 'Peso neto', 0, 55)
             display.show()

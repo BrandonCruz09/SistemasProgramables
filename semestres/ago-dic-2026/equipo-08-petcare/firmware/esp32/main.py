@@ -22,7 +22,16 @@ from mqtt_link import MQTTLink
 from pantalla_peso import PantallaPeso
 
 
-def main(prueba_periodica=False):
+def intentar_cierre(name, action):
+    try:
+        action()
+    except Exception as exc:
+        print('Error al detener', name, repr(exc))
+
+
+def main(prueba_periodica=False, solo_lectura=False, max_runtime_ms=None):
+    if solo_lectura and prueba_periodica:
+        raise ValueError('El diagnostico de sensores no admite ciclos de actuadores')
     print("\nPetCare | Equipo 08")
     for name in config.TEAM:
         print(" - " + name)
@@ -36,20 +45,26 @@ def main(prueba_periodica=False):
     try:
         sensors = SensorHub()
         servo = ServoSG90()
-        if prueba_periodica:
+        if prueba_periodica or not config.BUZZER_ENABLED:
             from prueba_periodica import BuzzerOmitido
             buzzer = BuzzerOmitido()
         else:
             buzzer = ActiveBuzzer()
         led = RGBLed()
         controller = PetCareController(sensors, servo, pump, buzzer, led)
+        controller.actions_allowed = not solo_lectura
         screen = PantallaPeso()
         mqtt_link = MQTTLink()
-        mqtt_link.accept_actions = not prueba_periodica
+        mqtt_link.accept_actions = not (prueba_periodica or solo_lectura)
         _wlan, _ip = connect_wifi()
         if _ip:
             dashboard = WebDashboard()
-            dashboard.start()
+            try:
+                dashboard.start()
+            except Exception as exc:
+                print('Panel no disponible; sensores continuan:', repr(exc))
+                intentar_cierre('panel', dashboard.close)
+                dashboard = None
         print('Agua manual supervisada: sin sensor de nivel y sin volumen calibrado.')
         if config.CALIBRATION_ERROR:
             print('Alimento bloqueado: falta calibracion valida.', config.CALIBRATION_ERROR)
@@ -57,6 +72,8 @@ def main(prueba_periodica=False):
             print('Pesa en gramos. Referencia aproximada:', config.CALIBRATION_APPROXIMATE)
         print('Ctrl+C para salir.')
         last_print = time.ticks_ms()
+        started = last_print
+        network_retry = last_print
         plan = None
         if prueba_periodica:
             from prueba_periodica import PruebaPeriodica
@@ -67,35 +84,51 @@ def main(prueba_periodica=False):
             status = controller.tick(now)
             if plan:
                 plan.tick(time.ticks_ms())
-            if dashboard:
-                dashboard.poll(controller, allow_actions=not prueba_periodica)
-            if _wlan is not None and _wlan.isconnected():
-                mqtt_link.poll(time.ticks_ms(), controller)
+            moving = controller.state in (controller.FEED_OPEN, controller.FEED_CLOSE)
+            # Dejar correr el plazo del servo sin esperas de red.
+            if not moving and time.ticks_diff(now, network_retry) >= 0:
+                try:
+                    if dashboard:
+                        dashboard.poll(controller, allow_actions=not (prueba_periodica or solo_lectura))
+                    if _wlan is not None and _wlan.isconnected():
+                        mqtt_link.poll(time.ticks_ms(), controller)
+                except Exception as exc:
+                    print('Red: reintento en 10 s; sensores continuan:', repr(exc))
+                    network_retry = time.ticks_add(now, 10000)
             # La bomba conserva su ultima lectura y lo indica en la pantalla.
-            screen.update(status, controller.state, time.ticks_ms())
+            if not moving:
+                screen.update(status, controller.state, time.ticks_ms())
             if time.ticks_diff(now, last_print) >= config.STATUS_PRINT_MS:
                 last_print = now
                 print('Estado:', controller.state, '| PIR:', status.get('pir'),
                       '| RAW:', status.get('raw'), '| peso g:', status.get('weight_g'),
                       '| temperatura:', status.get('temperature_c'),
                       '| humedad:', status.get('humidity_pct'), '| agua: no medida')
+                if not status.get('dht_ok'):
+                    print('DHT:', status.get('dht_error') or 'esperando primera lectura')
+                if not status.get('hx_ok'):
+                    print('Pesa:', status.get('hx_error') or status.get('sensor_error'))
+            if max_runtime_ms is not None and time.ticks_diff(now, started) >= max_runtime_ms:
+                print('Comprobacion de tiempo limitado terminada.')
+                break
             time.sleep_ms(25)
     except KeyboardInterrupt:
         print('Parada solicitada desde Thonny.')
+    except Exception as exc:
+        print('Fallo del programa; se detienen salidas:', repr(exc))
+        import sys
+        sys.print_exception(exc)
     finally:
         # Primero las salidas; despues la red, que podria tardar en cerrar.
-        pump.off()
-        try:
-            if controller:
-                controller.safe_shutdown()
-            else:
-                if servo: servo.release()
-                if buzzer: buzzer.off()
-                if led: led.set_color('off')
-        finally:
-            if screen: screen.close()
-            if dashboard: dashboard.close()
-            if mqtt_link: mqtt_link.close()
+        intentar_cierre('bomba', pump.off)
+        if controller:
+            intentar_cierre('controlador', controller.safe_shutdown)
+        if servo: intentar_cierre('servo', servo.release)
+        if buzzer: intentar_cierre('buzzer', buzzer.off)
+        if led: intentar_cierre('RGB', lambda: led.set_color('off'))
+        if screen: intentar_cierre('OLED', screen.close)
+        if dashboard: intentar_cierre('panel', dashboard.close)
+        if mqtt_link: intentar_cierre('MQTT', mqtt_link.close)
         print('Salidas apagadas.')
 
 

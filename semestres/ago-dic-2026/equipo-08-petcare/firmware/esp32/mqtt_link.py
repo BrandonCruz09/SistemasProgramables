@@ -123,6 +123,8 @@ class MQTTLink:
             self._publish_ack(command_id, action, False, "Error al aplicar comando: " + str(exc), controller.state)
 
     def poll(self, now, controller):
+        if controller.state in (controller.FEED_OPEN, controller.FEED_CLOSE):
+            return
         if not getattr(config, "MQTT_HOST", ""):
             if not self.disabled_message_printed:
                 print("MQTT desactivado: completa MQTT_HOST en config.py para usar el puente PC.")

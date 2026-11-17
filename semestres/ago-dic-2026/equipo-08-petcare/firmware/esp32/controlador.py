@@ -10,6 +10,7 @@
 # PetCare - maquina de estados para servir alimento y activar la bomba.
 # El ciclo principal no usa esperas largas: Thonny puede interrumpirlo con Stop.
 import time
+import math
 import config
 
 
@@ -18,6 +19,7 @@ class PetCareController:
     FEED_OPEN = "COMPUERTA_ABIERTA"
     FEED_CLOSE = "COMPUERTA_CERRANDO"
     PUMPING = "BOMBA_ACTIVA"
+    FAULT = "ERROR_ACTUADOR"
 
     def __init__(self, sensors, servo, pump, buzzer, led):
         self.sensors = sensors
@@ -41,6 +43,29 @@ class PetCareController:
             self._boot_id = str(id(self))
         self._water_run = None
         self._pump_ready_at = None
+        self._last_sensor_ms = None
+        self.fault = None
+        self.aux_errors = {}
+        self.actions_allowed = True
+
+    def _optional(self, name, action, *args):
+        try:
+            action(*args)
+            self.aux_errors.pop(name, None)
+        except Exception as exc:
+            message = repr(exc)
+            if self.aux_errors.get(name) != message:
+                print(name, message)
+            self.aux_errors[name] = message
+
+    def _actuator_fault(self, message):
+        self.fault = message
+        self.last_event = message
+        self.state = self.FAULT
+        self._optional('bomba', self.pump.off)
+        self._optional('servo', self.servo.release)
+        self._optional('buzzer', self.buzzer.off)
+        print(message)
 
     def _water_event(self, phase, now_ms, reason):
         run = self._water_run
@@ -65,7 +90,7 @@ class PetCareController:
     def request_signal(self, now_ms):
         # Indicador breve de IA. No mueve la compuerta ni enciende la bomba.
         self._signal_until = self._add(now_ms, 1500)
-        self.led.set_color('white')
+        self._optional('RGB', self.led.set_color, 'white')
         self.last_event = 'IA: perro confirmado; orden RGB blanca durante 1500 ms'
         return True, self.last_event
 
@@ -84,12 +109,19 @@ class PetCareController:
             return a + delta
 
     def request_feed(self, now_ms):
+        if not self.actions_allowed:
+            return False, 'Modo diagnostico: servido bloqueado'
         if not getattr(config, 'SERVO_MOVEMENT_ENABLED', True):
             self.last_event = 'Compuerta bloqueada: revisar recorrido fisico antes de habilitar'
             return False, self.last_event
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
-        if not self.status.get("calibrated") or self.status.get("weight_g") is None:
+        weight = self.status.get('weight_g')
+        if (not self.status.get("calibrated") or not self.status.get('hx_ok')
+                or isinstance(weight, bool) or not isinstance(weight, (int, float))
+                or not math.isfinite(weight) or self._last_sensor_ms is None
+                or self._diff(now_ms, self._last_sensor_ms) > config.WEIGHT_MAX_AGE_MS
+                or (self.status.get('weight_age_ms') or 0) > config.WEIGHT_MAX_AGE_MS):
             return False, "Revisa HX711 y los archivos de calibracion antes de dispensar"
         if self.status["weight_g"] >= config.BOWL_MAX_WEIGHT_G:
             self.last_event = "Dispensado bloqueado: el plato ya tiene suficiente peso"
@@ -97,7 +129,7 @@ class PetCareController:
         try:
             self.servo.move_us(config.SERVO_OPEN_US)
         except Exception as exc:
-            self.last_event = "Error al activar servo: " + str(exc)
+            self._actuator_fault("Error al activar servo: " + repr(exc))
             return False, self.last_event
         self.state = self.FEED_OPEN
         self.deadline = self._add(now_ms, config.SERVO_OPEN_TIME_MS)
@@ -105,6 +137,8 @@ class PetCareController:
         return True, self.last_event
 
     def request_pump(self, now_ms, source='manual', command_id=None, test=False):
+        if not self.actions_allowed:
+            return False, 'Modo diagnostico: servido bloqueado'
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
         if self._pump_ready_at is not None and self._diff(now_ms, self._pump_ready_at) < 0:
@@ -120,7 +154,7 @@ class PetCareController:
             else:
                 self.pump.on()
         except Exception as exc:
-            self.last_event = "Error al activar bomba: " + str(exc)
+            self._actuator_fault("Error al activar bomba: " + repr(exc))
             return False, self.last_event
         duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
         if test:
@@ -147,31 +181,19 @@ class PetCareController:
         # la ultima lectura para no retrasar el apagado con HX711 o DHT.
         if self.state == self.PUMPING and self._diff(now_ms, self.deadline) >= 0:
             self._finish_water(now_ms, 'tiempo_cumplido')
-        try:
-            if self.state != self.PUMPING or config.WATER_LEVEL_SENSOR_ENABLED:
-                self.status = self.sensors.read(now_ms)
-        except Exception as exc:
-            self.status = {"sensor_error": str(exc), "water_available": False, "calibrated": False}
-            self.last_event = "Error de lectura de sensores: " + str(exc)
-            self.pump.off()
-            if self.state == self.PUMPING:
-                self._finish_water(now_ms, 'error_sensor')
-
         if self.state == self.FEED_OPEN and self._diff(now_ms, self.deadline) >= 0:
             try:
                 self.servo.move_us(config.SERVO_CLOSED_US)
                 self.state = self.FEED_CLOSE
                 self.deadline = self._add(now_ms, config.SERVO_SETTLE_MS)
-                self.last_event = "Compuerta cerrada; estabilizando servo"
+                self.last_event = "Orden de cierre enviada; estabilizando servo"
             except Exception as exc:
-                self.servo.release()
-                self.state = self.IDLE
-                self.last_event = "No se pudo cerrar la compuerta: " + str(exc)
+                self._actuator_fault("No se pudo ordenar cierre: " + repr(exc))
 
         elif self.state == self.FEED_CLOSE and self._diff(now_ms, self.deadline) >= 0:
             self.state = self.IDLE
             self.last_event = "Racion terminada; PWM mantiene la compuerta cerrada"
-            self.buzzer.on()
+            self._optional('buzzer', self.buzzer.on)
             self._last_beep_until = self._add(now_ms, 100)
 
         elif self.state == self.PUMPING:
@@ -180,8 +202,23 @@ class PetCareController:
             elif self._diff(now_ms, self.deadline) >= 0:
                 self._finish_water(now_ms, 'tiempo_cumplido')
 
+        # No bloquear los plazos de la compuerta con DHT/HX711.
+        reading_allowed = self.state in (self.IDLE, self.FAULT)
+        if reading_allowed or (self.state == self.PUMPING and config.WATER_LEVEL_SENSOR_ENABLED):
+            try:
+                self.status = self.sensors.read(now_ms)
+                self._last_sensor_ms = now_ms
+            except Exception as exc:
+                self.status = {'sensor_error': repr(exc), 'hx_ok': False,
+                               'water_available': False, 'calibrated': False,
+                               'weight_g': None, 'dht_ok': False}
+                self.last_event = 'Error de lectura de sensores: ' + repr(exc)
+                if self.state == self.PUMPING:
+                    self._finish_water(now_ms, 'error_sensor')
+        self.status['readings_paused'] = not reading_allowed
+
         if self._last_beep_until is not None and self._diff(now_ms, self._last_beep_until) >= 0:
-            self.buzzer.off()
+            self._optional('buzzer', self.buzzer.off)
             self._last_beep_until = None
         if self._signal_until is not None and self._diff(now_ms, self._signal_until) >= 0:
             self._signal_until = None
@@ -193,18 +230,24 @@ class PetCareController:
             color = 'white'
         elif config.WATER_LEVEL_SENSOR_ENABLED and not self.status.get("water_available"):
             color = "red"
-        elif not self.status.get("calibrated"):
+        elif self.fault:
+            color = 'red'
+        elif not self.status.get("calibrated") or not self.status.get('hx_ok'):
             color = "yellow"
         elif self.status.get("pir"):
             color = "blue"
         else:
             color = "green"
-        self.led.set_color(color)
+        self._optional('RGB', self.led.set_color, color)
 
     def snapshot(self):
         data = dict(self.status)
         data["state"] = self.state
         data["last_event"] = self.last_event
+        data['actuator_fault'] = self.fault
+        data['aux_errors'] = dict(self.aux_errors)
+        data['servo_enabled'] = config.SERVO_MOVEMENT_ENABLED
+        data['actions_allowed'] = self.actions_allowed
         data['ia_signal_active'] = self._signal_until is not None
         data['water_mode'] = 'manual_supervisado'
         data['water_level_monitored'] = config.WATER_LEVEL_SENSOR_ENABLED
@@ -216,14 +259,9 @@ class PetCareController:
 
     def safe_shutdown(self):
         self._signal_until = None
-        self.stop_pump()
-        self.buzzer.off()
-        try:
-            if self.state == self.FEED_OPEN:
-                self.servo.move_us(config.SERVO_CLOSED_US)
-                time.sleep_ms(config.SERVO_SETTLE_MS)
-        except Exception:
-            pass
-        self.servo.release()
-        self.led.set_color("off")
+        # Una parada no debe ordenar otro movimiento de una compuerta trabada.
+        self._optional('bomba', self.stop_pump)
+        self._optional('buzzer', self.buzzer.off)
+        self._optional('servo', self.servo.release)
+        self._optional('RGB', self.led.set_color, 'off')
         self.state = self.IDLE

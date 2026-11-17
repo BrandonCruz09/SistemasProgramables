@@ -24,19 +24,23 @@ class ServoSG90:
             raise ValueError('El pulso debe ser un entero en microsegundos')
         if not config.SERVO_MIN_PULSE_US <= pulse_us <= config.SERVO_MAX_PULSE_US:
             raise ValueError('Pulso fuera del recorrido validado de la compuerta')
-        if self._pwm is None:
-            duty = (pulse_us * 65535 + 10000) // 20000
-            self._pwm = PWM(self._pin, freq=50, duty_u16=duty)
-        self._pwm.duty_ns(int(pulse_us * 1000))
+        try:
+            if self._pwm is None:
+                duty = (pulse_us * 65535 + 10000) // 20000
+                self._pwm = PWM(self._pin, freq=50, duty_u16=duty)
+            self._pwm.duty_ns(int(pulse_us * 1000))
+        except Exception:
+            self.release()
+            raise
 
     def release(self):
         # Solo en parada o error: el montaje puede moverse al retirar la senal.
-        if self._pwm is not None:
-            try:
+        try:
+            if self._pwm is not None:
                 self._pwm.deinit()
-            finally:
-                self._pwm = None
-        self._pin.value(0)
+        finally:
+            self._pwm = None
+            self._pin.value(0)
 
 
 class PumpRelay:

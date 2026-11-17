@@ -22,7 +22,7 @@ class FakeSensors:
         self.weight = weight
         self.water = water
     def read(self, _now):
-        return {"calibrated": self.calibrated, "weight_g": self.weight,
+        return {"calibrated": self.calibrated, "weight_g": self.weight, 'hx_ok': True,
                 "water_available": self.water, "pir": False}
 
 class FakeServo:
@@ -45,6 +45,11 @@ class FakeLed:
     def set_color(self, color): self.color=color
 
 class PetCareTests(unittest.TestCase):
+    def setUp(self):
+        patcher = patch.object(config, 'SERVO_MOVEMENT_ENABLED', True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_bloqueo_de_compuerta_no_envia_movimiento(self):
         c = self.make_controller()
         c.tick(0)

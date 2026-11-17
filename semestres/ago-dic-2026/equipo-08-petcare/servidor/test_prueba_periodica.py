@@ -16,6 +16,11 @@ class Pump(test_petcare.FakePump):
 
 
 class PeriodicaTests(unittest.TestCase):
+    def setUp(self):
+        patcher = patch.object(config, 'SERVO_MOVEMENT_ENABLED', True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def make(self, weight=0):
         c = test_petcare.PetCareTests().make_controller(weight=weight)
         c.pump = Pump()

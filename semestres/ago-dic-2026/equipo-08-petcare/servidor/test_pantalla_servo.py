@@ -12,6 +12,11 @@ from pantalla_peso import PantallaPeso, texto_peso
 
 
 class MontajeTests(unittest.TestCase):
+    def setUp(self):
+        patcher = patch.object(config, 'SERVO_MOVEMENT_ENABLED', True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_pulsos_de_compuerta_y_rechazo_de_3000(self):
         pin = Mock(); pwm = Mock()
         pin_cls = Mock(return_value=pin)

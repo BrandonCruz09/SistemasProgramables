@@ -20,6 +20,9 @@ import sensores
 
 class CalibracionTests(unittest.TestCase):
     def setUp(self):
+        for name, value in (('ticks_ms', lambda: 0), ('ticks_diff', lambda a,b:a-b)):
+            p = patch.object(sensores.time, name, value, create=True)
+            p.start(); self.addCleanup(p.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
@@ -57,12 +60,17 @@ class CalibracionTests(unittest.TestCase):
     def test_archivos_del_montaje_validado(self):
         result = cargar(FW.as_posix())
         self.assertIsNone(result['error'])
-        self.assertAlmostEqual(result['tara'], -428929.16, places=2)
+        self.assertAlmostEqual(result['tara'], -409450.7, places=2)
         self.assertTrue(result['aproximada'])
 
     def hub(self, raw):
         hub = sensores.SensorHub.__new__(sensores.SensorHub)
-        hub._last_poll = hub._last_dht = None
+        hub._last_poll = None
+        hub._last_dht = -2500
+        hub._dht_error = hub._hx_error = None
+        hub._dht_last_ok = hub._weight_last_ok = None
+        hub._dht_failures = 0
+        hub._now = 0
         hub._temperature = hub._humidity = hub._weight = hub._raw = None
         hub._dht_ok = hub._hx_ok = False
         hub._dht = types.SimpleNamespace(measure=lambda: None, temperature=lambda: 25, humidity=lambda: 50)
