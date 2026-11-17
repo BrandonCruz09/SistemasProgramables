@@ -28,7 +28,7 @@ class PeriodicaTests(unittest.TestCase):
         c.status['hx_ok'] = True
         return c
 
-    def test_tres_ciclos_y_nada_al_arrancar(self):
+    def test_no_repite_ciclos_si_agua_bloqueada_por_pwm(self):
         c = self.make()
         p = PruebaPeriodica(c, 0)
         for t in (0, 29999):
@@ -37,11 +37,11 @@ class PeriodicaTests(unittest.TestCase):
         for start in (30000, 60000, 90000):
             for t in (start, start+900, start+1250, start+3000, start+6000):
                 c.tick(t); p.tick(t)
-        self.assertEqual(p.phase, 'terminada')
-        self.assertEqual(c.pump.calls, [3000, 3000, 3000])
-        self.assertEqual(c.servo.angles, [1550,1690]*3)
+        self.assertEqual(p.phase, 'error')
+        self.assertEqual(c.pump.calls, [])
+        self.assertEqual(c.servo.angles, [1350,1690])
         c.tick(150000); p.tick(150000)
-        self.assertEqual(len(c.pump.calls), 3)
+        self.assertEqual(len(c.pump.calls), 0)
 
     def test_tara_desplazada_impide_iniciar(self):
         with self.assertRaises(ValueError): PruebaPeriodica(self.make(67), 0)
@@ -52,7 +52,8 @@ class PeriodicaTests(unittest.TestCase):
 
     def test_detener_agua_cancela_ciclos_siguientes(self):
         c = self.make(); p = PruebaPeriodica(c, 0)
-        for t in (30000,30900,31250,33000): c.tick(t); p.tick(t)
+        c.request_pump(33000, test=True)
+        p.phase = 'agua'
         c.stop_pump(34000); c.tick(34000); p.tick(34000)
         self.assertEqual(p.phase, 'error')
         c.tick(60000); p.tick(60000)

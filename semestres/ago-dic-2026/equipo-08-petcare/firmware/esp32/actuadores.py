@@ -59,7 +59,7 @@ class PumpRelay:
     def on(self, duration_ms=None):
         self.off()
         from machine import Timer
-        duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
+        duration = min(5000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
         if duration_ms is not None:
             if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
                 raise ValueError('Duracion debe ser un entero en ms')

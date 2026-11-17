@@ -15,15 +15,15 @@ HTML = """<!doctype html><html lang="es"><meta charset="utf-8">
 <style>body{font:18px system-ui;margin:24px;background:#edf5f4;color:#173b3b}button{padding:16px;margin:8px}pre{white-space:pre-wrap}button:disabled{opacity:.45}</style>
 <h1>PetCare</h1><p>Agua manual supervisada. Nivel y volumen no medidos.</p>
 <label><input type="checkbox" id="check"> Revise que hay agua en el deposito y espacio en el plato.</label><br>
-<button id="water" onclick="send('/pump')" disabled>Prueba de agua 15 s (objetivo 500 ml, sin calibrar)</button>
+<button id="water" onclick="send('/pump')" disabled>Servir agua 5 segundos</button>
 <button id="waterTest" onclick="send('/pump/test')" disabled>Probar agua 3 segundos</button>
 <button onclick="send('/pump/stop')">Detener agua</button>
-<button id="food" onclick="send('/feed')" disabled>Probar compuerta / servir alimento una vez</button>
-<p id="message" role="status"></p><pre id="status"></pre>
+<button id="food" onclick="send('/feed')" disabled>Completar tazon hasta 300 g</button>
+<button onclick="send('/feed/stop')">Cancelar alimento</button><button onclick="send('/signal')">Probar luz RGB</button><p>Las paradas remotas pueden esperar al final del pulso. Peso objetivo total: 300 g; puede haber exceso por croquetas en caida.</p><p id="message" role="status"></p><pre id="status"></pre>
 <script>let busy=false,ready=false,lock=0;
 function buttons(){let blocked=busy||!ready||Date.now()<lock||!document.getElementById('check').checked;document.getElementById('water').disabled=blocked;document.getElementById('waterTest').disabled=blocked}
 document.getElementById('check').onchange=buttons;
-async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+25000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
+async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+15000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
 async function refresh(){try{let r=await fetch('/api');let s=await r.json();ready=s.state=='LISTO'&&s.actions_allowed!==false;document.getElementById('status').textContent=JSON.stringify(s,null,2);document.getElementById('food').disabled=!ready||!s.calibrated||!s.hx_ok||!s.servo_enabled}catch(e){ready=false}buttons()}refresh();setInterval(refresh,1000);</script></html>"""
 
 
@@ -99,15 +99,21 @@ class WebDashboard:
             path = parts[1] if len(parts) > 1 else "/"
             now = __import__("time").ticks_ms()
             if (not allow_actions and method == 'POST'
-                    and path != '/pump/stop'):
+                    and path not in ('/pump/stop', '/feed/stop')):
                 self._send(client, '409 Conflict', 'text/plain; charset=utf-8',
                            'Prueba periodica en curso. Solo se permite detener agua.')
                 return
             if path.startswith("/api"):
                 body = __import__("json").dumps(controller.snapshot())
                 self._send(client, "200 OK", "application/json", body)
-            elif path.startswith("/feed") and method == "POST":
-                ok, msg = controller.request_feed(now)
+            elif path == '/feed/stop' and method == 'POST':
+                ok, msg = controller.stop_food(now)
+                self._send(client, '200 OK' if ok else '409 Conflict', 'text/plain; charset=utf-8', msg)
+            elif path == '/signal' and method == 'POST':
+                ok, msg = controller.request_signal(now)
+                self._send(client, '200 OK', 'text/plain; charset=utf-8', msg)
+            elif path == '/feed' and method == 'POST':
+                ok, msg = controller.request_food(now)
                 self._send(client, "200 OK" if ok else "409 Conflict", "text/plain; charset=utf-8", msg)
             elif path.startswith("/pump/stop") and method == "POST":
                 controller.stop_pump()

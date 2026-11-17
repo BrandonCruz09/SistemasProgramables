@@ -70,7 +70,7 @@ class RecuperacionTests(unittest.TestCase):
         c.request_feed(0)
         c.sensors.read = Mock(side_effect=OSError('sensor lento'))
         c.tick(900)
-        self.assertEqual(c.servo.angles, [1550,1690])
+        self.assertEqual(c.servo.angles, [1350,1690])
         c.sensors.read.assert_not_called()
         c.tick(1250)
         self.assertFalse(c.status['hx_ok'])
@@ -88,7 +88,7 @@ class RecuperacionTests(unittest.TestCase):
         c = self.controller(); c.request_feed(0)
         c.buzzer.off = Mock(side_effect=OSError('buzzer'))
         c.safe_shutdown()
-        self.assertEqual(c.servo.angles, [1550])
+        self.assertEqual(c.servo.angles, [1350])
         self.assertEqual(c.servo.released, 1)
         self.assertFalse(c.pump.active)
 
@@ -114,7 +114,7 @@ class RecuperacionTests(unittest.TestCase):
     def test_rechaza_posiciones_anteriores_peligrosas(self):
         with patch.dict(sys.modules, {'machine': types.SimpleNamespace(Pin=Mock(), PWM=Mock())}):
             servo = ServoSG90()
-            for value in (800,1340,1390,3000,1700,1549):
+            for value in (800,1340,3000,1700,1349):
                 with self.assertRaises(ValueError): servo.move_us(value)
 
 

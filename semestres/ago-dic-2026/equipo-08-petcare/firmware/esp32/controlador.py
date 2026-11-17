@@ -47,6 +47,17 @@ class PetCareController:
         self.fault = None
         self.aux_errors = {}
         self.actions_allowed = True
+        self.servo_holding = False
+        self.food_target = None
+        self.food_cycles = 0
+        self.food_started = None
+        self.food_weigh_at = None
+        self.food_last_weight = None
+        self.food_no_progress = 0
+        self.food_result = 'Sin servido solicitado'
+
+    def action_in_progress(self):
+        return self.state in (self.FEED_OPEN, self.FEED_CLOSE, self.PUMPING)
 
     def _optional(self, name, action, *args):
         try:
@@ -59,6 +70,8 @@ class PetCareController:
             self.aux_errors[name] = message
 
     def _actuator_fault(self, message):
+        self.food_target = None
+        self.food_result = message
         self.fault = message
         self.last_event = message
         self.state = self.FAULT
@@ -108,7 +121,9 @@ class PetCareController:
         except AttributeError:
             return a + delta
 
-    def request_feed(self, now_ms):
+    def request_feed(self, now_ms, _batch=False):
+        if self.food_target is not None and not _batch:
+            return False, 'Ya hay un servido de 300 g en curso'
         if not self.actions_allowed:
             return False, 'Modo diagnostico: servido bloqueado'
         if not getattr(config, 'SERVO_MOVEMENT_ENABLED', True):
@@ -128,6 +143,7 @@ class PetCareController:
             return False, self.last_event
         try:
             self.servo.move_us(config.SERVO_OPEN_US)
+            self.servo_holding = True
         except Exception as exc:
             self._actuator_fault("Error al activar servo: " + repr(exc))
             return False, self.last_event
@@ -136,11 +152,93 @@ class PetCareController:
         self.last_event = "Compuerta de alimento abierta por tiempo limitado"
         return True, self.last_event
 
+    def _food_weight(self, now_ms):
+        value = self.status.get('weight_control_g', self.status.get('weight_g'))
+        age = self.status.get('weight_age_ms', 0)
+        if (not self.status.get('calibrated') or not self.status.get('hx_ok')
+                or isinstance(value, bool) or not isinstance(value, (int, float))
+                or not math.isfinite(value) or value < -5
+                or self._last_sensor_ms is None
+                or self._diff(now_ms, self._last_sensor_ms) > config.WEIGHT_MAX_AGE_MS
+                or age is None or age > config.WEIGHT_MAX_AGE_MS):
+            raise ValueError('Pesa sin lectura valida y reciente; revisar montaje y tara')
+        return value
+
+    def request_food(self, now_ms):
+        if not self.actions_allowed or self.fault or self.state != self.IDLE or self.food_target is not None:
+            return False, 'Equipo ocupado o bloqueado'
+        if not config.SERVO_MOVEMENT_ENABLED:
+            return False, 'Servo bloqueado hasta validar fisicamente el montaje'
+        try:
+            weight = self._food_weight(now_ms)
+        except Exception as exc:
+            self.food_result = str(exc)
+            return False, self.food_result
+        if weight >= config.FOOD_TARGET_G:
+            self.food_result = 'El tazon ya alcanza 300 g; no se sirve mas'
+            return False, self.food_result
+        self.food_target = config.FOOD_TARGET_G
+        self.food_cycles = self.food_no_progress = 0
+        self.food_started = now_ms
+        self.food_last_weight = weight
+        self.food_weigh_at = now_ms
+        self.food_result = 'Servido solicitado: total objetivo 300 g en el tazon'
+        return True, self.food_result
+
+    def stop_food(self, now_ms):
+        self.food_target = None
+        self.food_result = 'Servido de alimento cancelado'
+        if self.state == self.FEED_OPEN:
+            try:
+                self.servo.move_us(config.SERVO_CLOSED_US)
+                self.state = self.FEED_CLOSE
+                self.deadline = self._add(now_ms, config.SERVO_SETTLE_MS)
+            except Exception as exc:
+                self._actuator_fault('Error al cerrar durante parada: ' + repr(exc))
+                return False, self.last_event
+        return True, self.food_result
+
+    def _food_tick(self, now_ms):
+        if self.food_target is None or self.state != self.IDLE:
+            return
+        if self._diff(now_ms, self.food_weigh_at) < 0:
+            return
+        try:
+            weight = self._food_weight(now_ms)
+            if weight >= self.food_target:
+                self.food_result = 'Objetivo alcanzado: %.1f g; servido detenido' % weight
+                self.food_target = None
+                return
+            if (self.food_cycles >= config.FOOD_MAX_CYCLES
+                    or self._diff(now_ms, self.food_started) >= config.FOOD_MAX_RUN_MS):
+                raise ValueError('Limite de tandas o tiempo; revisar salida de croquetas')
+            if self.food_cycles:
+                if weight < self.food_last_weight - 5:
+                    raise ValueError('Peso disminuyo; no continuar mientras comen o mueven el tazon')
+                self.food_no_progress = self.food_no_progress + 1 if weight - self.food_last_weight < 1 else 0
+                if self.food_no_progress >= config.FOOD_NO_PROGRESS_CYCLES:
+                    raise ValueError('No aumenta el peso; revisar deposito o atasco')
+            ok, message = self.request_feed(now_ms, _batch=True)
+            if not ok:
+                raise ValueError(message)
+            pulse = config.FOOD_FINE_PULSE_MS if self.food_target - weight < 30 else config.FOOD_PULSE_MS
+            self.deadline = self._add(now_ms, pulse)
+            self.food_cycles += 1
+            self.food_last_weight = weight
+            self.food_result = 'Tanda %s; peso previo %.1f g / 300 g' % (self.food_cycles, weight)
+        except Exception as exc:
+            self.food_target = None
+            self.food_result = 'Servido detenido: ' + str(exc)
+
     def request_pump(self, now_ms, source='manual', command_id=None, test=False):
         if not self.actions_allowed:
             return False, 'Modo diagnostico: servido bloqueado'
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
+        if self.food_target is not None:
+            return False, 'Primero terminar o cancelar el servido de alimento'
+        if self.servo_holding:
+            return False, 'Agua bloqueada: servo mantiene PWM; validar alimentacion conjunta antes de integrar'
         if self._pump_ready_at is not None and self._diff(now_ms, self._pump_ready_at) < 0:
             return False, 'Espera 10 segundos entre servidos de agua'
         if len(self.water_events) > 30:
@@ -156,7 +254,7 @@ class PetCareController:
         except Exception as exc:
             self._actuator_fault("Error al activar bomba: " + repr(exc))
             return False, self.last_event
-        duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
+        duration = min(5000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
         if test:
             duration = min(duration, 3000)
         self._water_seq += 1
@@ -179,8 +277,12 @@ class PetCareController:
     def tick(self, now_ms):
         # Atender el plazo ANTES de leer sensores. Durante el pulso se conserva
         # la ultima lectura para no retrasar el apagado con HX711 o DHT.
-        if self.state == self.PUMPING and self._diff(now_ms, self.deadline) >= 0:
-            self._finish_water(now_ms, 'tiempo_cumplido')
+        if self.state == self.PUMPING:
+            if self._diff(now_ms, self.deadline) >= 0 or not self.pump.active:
+                try:
+                    self._finish_water(now_ms, 'tiempo_cumplido' if self._diff(now_ms, self.deadline) >= 0 else 'salida_desactivada')
+                except Exception as exc:
+                    self._actuator_fault('No se pudo apagar bomba: ' + repr(exc))
         if self.state == self.FEED_OPEN and self._diff(now_ms, self.deadline) >= 0:
             try:
                 self.servo.move_us(config.SERVO_CLOSED_US)
@@ -192,6 +294,8 @@ class PetCareController:
 
         elif self.state == self.FEED_CLOSE and self._diff(now_ms, self.deadline) >= 0:
             self.state = self.IDLE
+            if self.food_target is not None:
+                self.food_weigh_at = self._add(now_ms, config.FOOD_WEIGH_WAIT_MS)
             self.last_event = "Racion terminada; PWM mantiene la compuerta cerrada"
             self._optional('buzzer', self.buzzer.on)
             self._last_beep_until = self._add(now_ms, 100)
@@ -216,6 +320,7 @@ class PetCareController:
                 if self.state == self.PUMPING:
                     self._finish_water(now_ms, 'error_sensor')
         self.status['readings_paused'] = not reading_allowed
+        self._food_tick(now_ms)
 
         if self._last_beep_until is not None and self._diff(now_ms, self._last_beep_until) >= 0:
             self._optional('buzzer', self.buzzer.off)
@@ -247,6 +352,12 @@ class PetCareController:
         data['actuator_fault'] = self.fault
         data['aux_errors'] = dict(self.aux_errors)
         data['servo_enabled'] = config.SERVO_MOVEMENT_ENABLED
+        data['servo_holding_pwm'] = self.servo_holding
+        data['food_target_g'] = config.FOOD_TARGET_G
+        data['food_active'] = self.food_target is not None
+        data['food_cycles'] = self.food_cycles
+        data['food_result'] = self.food_result
+        data['water_duration_ms'] = config.PUMP_PULSE_MS
         data['actions_allowed'] = self.actions_allowed
         data['ia_signal_active'] = self._signal_until is not None
         data['water_mode'] = 'manual_supervisado'
@@ -258,10 +369,12 @@ class PetCareController:
         return data
 
     def safe_shutdown(self):
+        self.food_target = None
         self._signal_until = None
         # Una parada no debe ordenar otro movimiento de una compuerta trabada.
         self._optional('bomba', self.stop_pump)
         self._optional('buzzer', self.buzzer.off)
         self._optional('servo', self.servo.release)
         self._optional('RGB', self.led.set_color, 'off')
-        self.state = self.IDLE
+        self.actions_allowed = False
+        self.state = self.FAULT if self.fault else self.IDLE

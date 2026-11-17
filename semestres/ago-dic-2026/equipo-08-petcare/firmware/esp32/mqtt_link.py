@@ -27,6 +27,7 @@ class MQTTLink:
         self.last_publish = None
         self.disabled_message_printed = False
         self.accept_actions = True
+        self.deferred_acks = []
         self.base = getattr(config, "MQTT_BASE_TOPIC", "petcare/equipo8")
         self.telemetry_topic = (self.base + "/telemetry").encode()
         self.command_topic = (self.base + "/commands").encode()
@@ -42,9 +43,9 @@ class MQTTLink:
             return
         try:
             data = json.loads(message.decode())
-            if not self.accept_actions and isinstance(data, dict) and data.get('action') != 'stop_water':
+            if not self.accept_actions and isinstance(data, dict) and data.get('action') not in ('stop_water', 'stop_food'):
                 return
-            if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water", "signal_dog"):
+            if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water", "stop_food", "signal_dog"):
                 self.pending_command = data
         except Exception:
             print("MQTT: comando JSON invalido; ignorado")
@@ -102,7 +103,10 @@ class MQTTLink:
         self.recent_ids = self.recent_ids[-64:]
         try:
             if action == "feed":
-                ok, message = controller.request_feed(now)
+                if command.get('session_id') != controller.snapshot().get('session_id'):
+                    ok, message = False, 'Sesion antigua; actualiza la pagina'
+                else:
+                    ok, message = controller.request_food(now)
             elif action == "water":
                 if (command.get('supervised') is not True or
                         command.get('session_id') != controller.snapshot().get('session_id')):
@@ -112,12 +116,17 @@ class MQTTLink:
             elif action == "stop_water":
                 controller.stop_pump()
                 ok, message = True, "Orden de detener bomba aplicada"
+            elif action == 'stop_food':
+                ok, message = controller.stop_food(now)
             elif action == 'signal_dog':
                 ok, message = controller.request_signal(now)
             else:
                 ok, message = False, "Accion no permitida"
-            self._publish_ack(command_id, action, ok, message, controller.state)
-            print("MQTT comando:", command_id, action, "OK" if ok else "rechazado")
+            ack = (command_id, action, ok, message, controller.state)
+            if controller.action_in_progress():
+                self.deferred_acks.append(ack)
+            else:
+                self._publish_ack(*ack)
         except Exception as exc:
             controller.stop_pump()
             self._publish_ack(command_id, action, False, "Error al aplicar comando: " + str(exc), controller.state)
@@ -139,8 +148,11 @@ class MQTTLink:
             self.client.check_msg()
             self._run_command(controller, now)
             # Evitar publicaciones y esperas de PUBACK mientras bombea.
-            if controller.state == controller.PUMPING:
+            if controller.state in (controller.PUMPING, controller.FEED_OPEN, controller.FEED_CLOSE):
                 return
+            if self.deferred_acks:
+                self._publish_ack(*self.deferred_acks[0])
+                self.deferred_acks.pop(0)
             if controller.water_events:
                 event = controller.water_events[0]
                 self.client.publish(self.water_topic, json.dumps(event).encode(), qos=1, retain=False)

@@ -81,24 +81,29 @@ def main(prueba_periodica=False, solo_lectura=False, max_runtime_ms=None):
             plan = PruebaPeriodica(controller, last_print)
         while True:
             now = time.ticks_ms()
-            status = controller.tick(now)
+            try:
+                status = controller.tick(now)
+            except Exception as exc:
+                controller._actuator_fault('Error de control: ' + repr(exc))
+                status = controller.snapshot()
             if plan:
                 plan.tick(time.ticks_ms())
-            moving = controller.state in (controller.FEED_OPEN, controller.FEED_CLOSE)
-            # Dejar correr el plazo del servo sin esperas de red.
+            moving = controller.action_in_progress()
+            # No hacer operaciones de red durante plazos de servo o bomba.
             if not moving and time.ticks_diff(now, network_retry) >= 0:
                 try:
                     if dashboard:
                         dashboard.poll(controller, allow_actions=not (prueba_periodica or solo_lectura))
-                    if _wlan is not None and _wlan.isconnected():
+                    if not controller.action_in_progress() and _wlan is not None and _wlan.isconnected():
                         mqtt_link.poll(time.ticks_ms(), controller)
                 except Exception as exc:
                     print('Red: reintento en 10 s; sensores continuan:', repr(exc))
                     network_retry = time.ticks_add(now, 10000)
-            # La bomba conserva su ultima lectura y lo indica en la pantalla.
+            moving = controller.action_in_progress()
+            # Recalcular: una orden web/MQTT puede haber iniciado una accion.
             if not moving:
-                screen.update(status, controller.state, time.ticks_ms())
-            if time.ticks_diff(now, last_print) >= config.STATUS_PRINT_MS:
+                controller._optional('OLED', screen.update, status, controller.state, time.ticks_ms())
+            if not moving and time.ticks_diff(now, last_print) >= config.STATUS_PRINT_MS:
                 last_print = now
                 print('Estado:', controller.state, '| PIR:', status.get('pir'),
                       '| RAW:', status.get('raw'), '| peso g:', status.get('weight_g'),

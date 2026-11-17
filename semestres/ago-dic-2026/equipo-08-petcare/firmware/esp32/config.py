@@ -48,22 +48,28 @@ FLOAT_WATER_PRESENT_LEVEL = 0
 
 # Posiciones observadas por el equipo en la compuerta instalada.
 SERVO_CLOSED_US = 1690
-SERVO_OPEN_US = 1550  # Ajuste solicitado; recorrido fisico pendiente de comprobar.
-SERVO_MIN_PULSE_US = 1550
+SERVO_OPEN_US = 1350  # Ultimo ajuste solicitado; falta revalidar el conjunto alimentado.
+SERVO_MIN_PULSE_US = 1350
 SERVO_MAX_PULSE_US = 1690
 SERVO_MOVEMENT_ENABLED = False  # Revalidar montaje tras el temblor; no rearmar automaticamente.
 BUZZER_ENABLED = False  # Aun no conectado.
 SERVO_OPEN_TIME_MS = 900
 SERVO_SETTLE_MS = 350
 
-# Prueba supervisada: objetivo 500 ml, referencia nominal 120 L/h.
-# Caudal real NO calibrado; no afirmar que cada pulso entrega 500 ml.
-WATER_TARGET_ML = 500
-PUMP_REFERENCE_FLOW_L_H = 120
+# Agua por tiempo; volumen real pendiente de medir.
+WATER_TARGET_ML = None
+PUMP_REFERENCE_FLOW_L_H = None
 # Limites de seguridad
-BOWL_MAX_WEIGHT_G = 250.0
-PUMP_PULSE_MS = 15000
-PUMP_MAX_ON_MS = 15000
+BOWL_MAX_WEIGHT_G = 300.0
+FOOD_TARGET_G = 300.0
+FOOD_PULSE_MS = 250
+FOOD_FINE_PULSE_MS = 100
+FOOD_WEIGH_WAIT_MS = 1200
+FOOD_MAX_CYCLES = 30
+FOOD_MAX_RUN_MS = 90000
+FOOD_NO_PROGRESS_CYCLES = 3
+PUMP_PULSE_MS = 5000
+PUMP_MAX_ON_MS = 5000
 PUMP_COOLDOWN_MS = 10000
 SENSOR_POLL_MS = 800
 DHT_POLL_MS = 2500

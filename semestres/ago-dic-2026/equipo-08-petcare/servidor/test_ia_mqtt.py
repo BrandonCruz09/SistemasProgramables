@@ -93,6 +93,7 @@ class IATests(unittest.TestCase):
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         link=module.MQTTLink(); link.client=Mock()
         control=Mock();control.state='LISTO';control.request_signal.return_value=(True,'RGB')
+        control.action_in_progress.return_value = False
         msg=b'{"id":"ia-test","action":"signal_dog"}'
         for now in (0, 50):
             link._on_message(link.command_topic,msg);link._run_command(control,now)

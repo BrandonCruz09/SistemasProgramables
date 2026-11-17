@@ -35,14 +35,21 @@ class DashboardState:
         self.command_token = secrets.token_hex(16)
 
     def request_command(self, action, supervised=False):
-        if action not in ('feed', 'water', 'stop_water'):
+        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog'):
             return False, 'Accion desconocida'
         data = self.snapshot()
-        if action != 'stop_water':
+        if action not in ('stop_water', 'stop_food'):
             if not data['available'] or data['age_seconds'] > 15:
                 return False, 'No hay datos recientes del ESP32'
             if data['telemetry']['status'].get('state') != 'LISTO':
                 return False, 'El equipo esta ocupado'
+            status = data['telemetry']['status']
+            if status.get('actions_allowed') is False:
+                return False, 'Modo diagnostico; actuadores bloqueados'
+            if action == 'feed' and (status.get('servo_enabled') is not True or not status.get('hx_ok') or not status.get('calibrated') or status.get('food_active')):
+                return False, 'Revisa servo y pesa antes de servir alimento'
+            if action == 'water' and (status.get('servo_holding_pwm') or status.get('food_active')):
+                return False, 'Agua bloqueada mientras se valida la alimentacion del servo'
         if action == 'water' and supervised is not True:
             return False, 'Confirma que hay agua y espacio en el plato'
         try:

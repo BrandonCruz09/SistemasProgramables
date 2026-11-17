@@ -130,6 +130,10 @@ class SensorHub:
             "dht_age_ms": (max(0, time.ticks_diff(self._now, self._dht_last_ok))
                            if self._dht_last_ok is not None else None),
             "weight_g": self._weight,
+            "weight_control_g": ((self._raw - config.TARE_RAW) / config.CALIBRATION_FACTOR
+                                 if self._hx_ok and self._raw is not None
+                                 and config.CALIBRATION_FACTOR not in (None, 0)
+                                 and config.TARE_RAW is not None else None),
             "weight_unit": "g",
             "calibration_approximate": config.CALIBRATION_APPROXIMATE,
             "calibration_reference_g": config.CALIBRATION_REFERENCE_G,

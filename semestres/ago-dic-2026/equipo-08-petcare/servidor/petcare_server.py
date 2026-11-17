@@ -28,7 +28,7 @@ TELEMETRY_PATH = "petcare/equipo8/latest"
 VISION_PATH = "petcare/equipo8/vision"
 COMMAND_PATH = "petcare/equipo8/command"
 EVENTS_PATH = "petcare/equipo8/events"
-ALLOWED_COMMANDS = {"feed", "water", "stop_water"}
+ALLOWED_COMMANDS = {"feed", "water", "stop_water", "stop_food", "signal_dog"}
 
 
 def sanitize_command(data):
@@ -328,9 +328,9 @@ class PetCareBridge:
             message = 'Orden vencida; vuelve a pulsar el boton'
         elif not self.client or not self.client.is_connected():
             message = 'MQTT desconectado; orden descartada'
-        elif action != 'stop_water' and (not data['available'] or data['age_seconds'] > 15):
+        elif action not in ('stop_water', 'stop_food') and (not data['available'] or data['age_seconds'] > 15):
             message = 'ESP32 sin datos recientes; orden descartada'
-        elif action == 'water' and now-self.last_manual_water < 25:
+        elif action == 'water' and now-self.last_manual_water < 15:
             message = 'Espera a que termine el servido y su pausa de seguridad'
         if message is None:
             payload = {k:v for k,v in command.items() if k != 'queued_at'}
