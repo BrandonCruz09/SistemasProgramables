@@ -24,6 +24,7 @@ class CompuertaPruebaTests(unittest.TestCase):
 
     def test_arranque_y_ciclo_sin_confirmar_no_mueven(self):
         self.servo.ciclo()
+        self.servo.ciclo(con_alivio=True)
         self.hardware.PWM.assert_not_called()
 
     def test_ciclo_limitado_y_liberacion(self):
@@ -31,8 +32,15 @@ class CompuertaPruebaTests(unittest.TestCase):
         self.servo.mover = Mock()
         self.servo.ciclo()
         self.assertEqual([c.args for c in self.servo.mover.call_args_list],
-                         [(800, 900), (1850, 350), (1700, 250), (1850, 500)])
+                         [(1600, 900), (1850, 3000)])
         self.pin.value.assert_called_with(0)
+
+    def test_alivio_solo_por_opcion_explicita(self):
+        self.servo.ajustes_confirmados = True
+        self.servo.mover = Mock()
+        self.servo.ciclo(con_alivio=True)
+        self.assertEqual([c.args for c in self.servo.mover.call_args_list],
+                         [(1600, 900), (1850, 350), (1767, 250), (1850, 500)])
 
     def test_cancelacion_no_intenta_otro_cierre(self):
         self.servo.pwm = Mock()
@@ -45,17 +53,17 @@ class CompuertaPruebaTests(unittest.TestCase):
         self.assertIsNone(self.servo.pwm)
 
     def test_limites_y_sentido_inverso(self):
-        for bad in (799, 1851, 3000, True, 800.5):
+        for bad in (800, 1499, 1851, 3000, True, 1600.5):
             with self.assertRaises(ValueError):
                 self.servo.validar(bad)
-        self.assertEqual(self.mod.secuencia_cierre(1850, 800),
-                         ((800, 350), (950, 250), (800, 500)))
+        self.assertEqual(self.mod.secuencia_cierre(1850, 1600),
+                         ((1600, 350), (1683, 250), (1600, 500)))
 
     def test_ajuste_invalido_no_cambia_posiciones(self):
         with patch('builtins.input', side_effect=['900', '3000']):
             with self.assertRaises(ValueError):
                 self.servo.ajustar()
-        self.assertEqual((self.servo.abierto, self.servo.cerrado), (800, 1850))
+        self.assertEqual((self.servo.abierto, self.servo.cerrado), (1600, 1850))
 
 
 if __name__ == '__main__':
