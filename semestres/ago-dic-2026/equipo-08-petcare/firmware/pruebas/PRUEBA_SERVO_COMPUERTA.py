@@ -4,12 +4,13 @@ from machine import Pin, PWM
 import time
 
 PIN_SERVO = 33
-ABIERTO_US = 1600
-CERRADO_US = 1850
-MIN_US = 1500
+ABIERTO_US = 1390
+CERRADO_US = 1690
+MIN_US = 1300
 MAX_US = 1850
-ALIVIO_US = 150
+ALIVIO_US = 1400
 CIERRE_PRUEBA_MS = 3000
+ESPERA_APERTURA_MS = 600  # Tiempo para observar el movimiento; NO es el pulso.
 
 
 def secuencia_cierre(abierto, cerrado):
@@ -38,14 +39,14 @@ class PruebaCompuerta:
     @staticmethod
     def validar(pulso):
         if type(pulso) is not int or not MIN_US <= pulso <= MAX_US:
-            raise ValueError('Usa un entero entre 1500 y 1850 us; no fuerces los topes.')
+            raise ValueError('Usa un entero entre %s y %s us; no fuerces los topes.' % (MIN_US, MAX_US))
 
     def mover(self, pulso, duracion_ms):
         self.validar(pulso)
         if not 0 < duracion_ms <= CIERRE_PRUEBA_MS:
             raise ValueError('Duracion fuera del limite de esta prueba')
         if self.pwm is None:
-            self.pwm = PWM(self.pin, freq=50, duty_u16=0)
+            self.pwm = PWM(self.pin, freq=50, duty_ns=pulso * 1000)
         print('Orden:', pulso, 'us durante', duracion_ms, 'ms')
         self.pwm.duty_ns(pulso * 1000)
         # Esperas breves para responder a Ctrl+C durante la prueba.
@@ -57,10 +58,11 @@ class PruebaCompuerta:
         try:
             for pulso, duracion in pasos:
                 self.mover(pulso, duracion)
-        finally:
+        except BaseException:
             self.liberar()
-        print('AHORA SE RETIRO PWM. No se envio ninguna orden de abrir.')
-        print('Si la tapa regresa justo ahora, anotalo: falta comprobar su soporte mecanico.')
+            raise
+        print('POSICION MANTENIDA: la senal PWM sigue activa en', pasos[-1][0], 'us.')
+        print('Stop o 0 retira la senal. Si zumba o se traba, apaga la fuente.')
 
     def ciclo(self, con_alivio=False):
         if not self.ajustes_confirmados:
@@ -85,25 +87,26 @@ class PruebaCompuerta:
             raise ValueError('Deja al menos 100 us entre las dos posiciones.')
         self.abierto, self.cerrado = nuevo_a, nuevo_c
         self.ajustes_confirmados = False
-        print('Ajustes temporales; vuelve a probar 1 y 2. No se movio el servo.')
+        print('Ajustes temporales; vuelve a probar 1 y 2. Se mantiene la ultima posicion ordenada.')
 
     def menu(self):
         print('\nPETCARE - PRUEBA DE COMPUERTA - GPIO33 - 50 Hz')
         print('Primero sin croquetas. Ctrl+C o Stop retira PWM sin intentar cerrar.')
         print('No mide fuerza, atasco ni posicion real. Retirar PWM no corta los 5 V.')
+        print('Abrir y cerrar CONSERVAN la senal. 600 ms es espera, no posicion.')
         try:
             while True:
                 print('\nABIERTO:', self.abierto, 'us | CERRADO:', self.cerrado, 'us')
-                print('1 Abrir | 2 Cerrar 3 segundos | 3 Ciclo normal | 4 Confirmar posiciones')
+                print('1 Abrir y mantener | 2 Cerrar y mantener | 3 Ciclo normal | 4 Confirmar posiciones')
                 print('5 Ajustar pulsos | 6 Alivio opcional con reapertura | 0 Salir')
                 opcion = input('Opcion y Enter: ').strip()
                 try:
                     if opcion == '0':
                         break
                     elif opcion == '1':
-                        self.ejecutar(((self.abierto, 600),))
+                        self.ejecutar(((self.abierto, ESPERA_APERTURA_MS),))
                     elif opcion == '2':
-                        print('CERRANDO:', self.cerrado, 'us durante 3 segundos; observa si se regresa.')
+                        print('CERRANDO:', self.cerrado, 'us. Espera 3 segundos y conserva la senal.')
                         self.ejecutar(((self.cerrado, CIERRE_PRUEBA_MS),))
                     elif opcion == '3':
                         self.ciclo()
@@ -117,7 +120,6 @@ class PruebaCompuerta:
                     else:
                         print('Escribe una opcion del 0 al 6; Enter solo no mueve nada.')
                 except ValueError as exc:
-                    self.liberar()
                     print(exc)
         except KeyboardInterrupt:
             print('\nPrueba detenida. Revisa la compuerta antes de poner croquetas.')

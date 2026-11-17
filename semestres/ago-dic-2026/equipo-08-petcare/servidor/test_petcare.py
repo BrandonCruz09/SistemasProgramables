@@ -57,7 +57,7 @@ class PetCareTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(self.servo.angles, [])
 
-    def test_feed_opens_closes_and_releases_pwm(self):
+    def test_feed_opens_closes_and_holds_pwm(self):
         c=self.make_controller()
         c.tick(0)
         ok, _=c.request_feed(0)
@@ -66,6 +66,8 @@ class PetCareTests(unittest.TestCase):
         self.assertEqual(self.servo.angles, [config.SERVO_OPEN_US, config.SERVO_CLOSED_US])
         c.tick(config.SERVO_OPEN_TIME_MS + config.SERVO_SETTLE_MS)
         self.assertEqual(c.state, c.IDLE)
+        self.assertEqual(self.servo.released, 0)
+        c.safe_shutdown()
         self.assertGreaterEqual(self.servo.released, 1)
 
     def test_bowl_weight_blocks_extra_food(self):

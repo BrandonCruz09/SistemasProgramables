@@ -14,7 +14,8 @@ from actuadores import ServoSG90
 
 servo = ServoSG90()
 try:
-    print("Ciclo de compuerta GPIO33: cerrado 1850 us, abierto 800 us")
+    print("Ciclo de compuerta GPIO33: cerrado", config.SERVO_CLOSED_US,
+          "us, abierto", config.SERVO_OPEN_US, "us")
     input("Deja libre el mecanismo. Enter inicia; Ctrl+C cancela: ")
     for label, pulse in (("cerrar", config.SERVO_CLOSED_US),
                          ("abrir", config.SERVO_OPEN_US),

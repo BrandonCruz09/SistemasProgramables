@@ -19,10 +19,10 @@ class MontajeTests(unittest.TestCase):
         with patch.dict(sys.modules, {'machine': types.SimpleNamespace(Pin=pin_cls, PWM=pwm_cls)}):
             servo = ServoSG90()
             servo.move_us(config.SERVO_CLOSED_US)
-            self.assertEqual(pwm.duty_ns.call_args.args, (1850000,))
+            self.assertEqual(pwm.duty_ns.call_args.args, (1690000,))
             servo.move_us(config.SERVO_OPEN_US)
-            self.assertEqual(pwm.duty_ns.call_args.args, (800000,))
-            for bad in (3000, 799, True, float('nan')):
+            self.assertEqual(pwm.duty_ns.call_args.args, (1390000,))
+            for bad in (3000, 800, 1299, True, float('nan')):
                 with self.assertRaises(ValueError): servo.move_us(bad)
             servo.release(); pwm.deinit.assert_called_once()
             self.assertEqual(pin.value.call_args.args, (0,))
@@ -31,7 +31,7 @@ class MontajeTests(unittest.TestCase):
         c = test_petcare.PetCareTests().make_controller()
         c.tick(0); c.request_feed(0)
         c.tick(config.SERVO_OPEN_TIME_MS)
-        self.assertEqual(c.servo.angles, [800, 1850])
+        self.assertEqual(c.servo.angles, [1390, 1690])
         c.tick(config.SERVO_OPEN_TIME_MS + config.SERVO_SETTLE_MS)
         self.assertEqual(c.state, 'LISTO')
 

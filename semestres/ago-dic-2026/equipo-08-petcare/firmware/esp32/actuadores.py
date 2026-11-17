@@ -25,11 +25,11 @@ class ServoSG90:
         if not config.SERVO_MIN_PULSE_US <= pulse_us <= config.SERVO_MAX_PULSE_US:
             raise ValueError('Pulso fuera del recorrido validado de la compuerta')
         if self._pwm is None:
-            self._pwm = PWM(self._pin, freq=50, duty_u16=0)
+            self._pwm = PWM(self._pin, freq=50, duty_ns=int(pulse_us * 1000))
         self._pwm.duty_ns(int(pulse_us * 1000))
 
     def release(self):
-        # Sin PWM en reposo se evitan zumbidos y correcciones constantes del servo.
+        # Solo en parada o error: el montaje puede moverse al retirar la senal.
         if self._pwm is not None:
             try:
                 self._pwm.deinit()

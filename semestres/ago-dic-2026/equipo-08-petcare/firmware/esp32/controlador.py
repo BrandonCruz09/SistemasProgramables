@@ -161,9 +161,8 @@ class PetCareController:
                 self.last_event = "No se pudo cerrar la compuerta: " + str(exc)
 
         elif self.state == self.FEED_CLOSE and self._diff(now_ms, self.deadline) >= 0:
-            self.servo.release()
             self.state = self.IDLE
-            self.last_event = "Racion terminada; servo sin PWM en reposo"
+            self.last_event = "Racion terminada; PWM mantiene la compuerta cerrada"
             self.buzzer.on()
             self._last_beep_until = self._add(now_ms, 100)
 
