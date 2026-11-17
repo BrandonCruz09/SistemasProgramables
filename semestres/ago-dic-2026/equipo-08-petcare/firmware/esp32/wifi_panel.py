@@ -83,7 +83,7 @@ class WebDashboard:
         self.server.listen(1)
         self.server.settimeout(0)
 
-    def poll(self, controller):
+    def poll(self, controller, allow_actions=True):
         if self.server is None:
             return
         try:
@@ -98,6 +98,11 @@ class WebDashboard:
             method = parts[0] if len(parts) > 0 else "GET"
             path = parts[1] if len(parts) > 1 else "/"
             now = __import__("time").ticks_ms()
+            if (not allow_actions and method == 'POST'
+                    and path != '/pump/stop'):
+                self._send(client, '409 Conflict', 'text/plain; charset=utf-8',
+                           'Prueba periodica en curso. Solo se permite detener agua.')
+                return
             if path.startswith("/api"):
                 body = __import__("json").dumps(controller.snapshot())
                 self._send(client, "200 OK", "application/json", body)

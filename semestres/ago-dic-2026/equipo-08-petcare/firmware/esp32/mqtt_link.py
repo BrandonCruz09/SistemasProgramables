@@ -26,6 +26,7 @@ class MQTTLink:
         self.last_connect = None
         self.last_publish = None
         self.disabled_message_printed = False
+        self.accept_actions = True
         self.base = getattr(config, "MQTT_BASE_TOPIC", "petcare/equipo8")
         self.telemetry_topic = (self.base + "/telemetry").encode()
         self.command_topic = (self.base + "/commands").encode()
@@ -41,6 +42,8 @@ class MQTTLink:
             return
         try:
             data = json.loads(message.decode())
+            if not self.accept_actions and isinstance(data, dict) and data.get('action') != 'stop_water':
+                return
             if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water", "signal_dog"):
                 self.pending_command = data
         except Exception:

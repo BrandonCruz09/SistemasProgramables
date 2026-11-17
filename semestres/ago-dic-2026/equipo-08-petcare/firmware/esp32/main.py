@@ -22,7 +22,7 @@ from mqtt_link import MQTTLink
 from pantalla_peso import PantallaPeso
 
 
-def main():
+def main(prueba_periodica=False):
     print("\nPetCare | Equipo 08")
     for name in config.TEAM:
         print(" - " + name)
@@ -36,11 +36,16 @@ def main():
     try:
         sensors = SensorHub()
         servo = ServoSG90()
-        buzzer = ActiveBuzzer()
+        if prueba_periodica:
+            from prueba_periodica import BuzzerOmitido
+            buzzer = BuzzerOmitido()
+        else:
+            buzzer = ActiveBuzzer()
         led = RGBLed()
         controller = PetCareController(sensors, servo, pump, buzzer, led)
         screen = PantallaPeso()
         mqtt_link = MQTTLink()
+        mqtt_link.accept_actions = not prueba_periodica
         _wlan, _ip = connect_wifi()
         if _ip:
             dashboard = WebDashboard()
@@ -52,11 +57,18 @@ def main():
             print('Pesa en gramos. Referencia aproximada:', config.CALIBRATION_APPROXIMATE)
         print('Ctrl+C para salir.')
         last_print = time.ticks_ms()
+        plan = None
+        if prueba_periodica:
+            from prueba_periodica import PruebaPeriodica
+            controller.tick(last_print)
+            plan = PruebaPeriodica(controller, last_print)
         while True:
             now = time.ticks_ms()
             status = controller.tick(now)
+            if plan:
+                plan.tick(time.ticks_ms())
             if dashboard:
-                dashboard.poll(controller)
+                dashboard.poll(controller, allow_actions=not prueba_periodica)
             if _wlan is not None and _wlan.isconnected():
                 mqtt_link.poll(time.ticks_ms(), controller)
             # La bomba conserva su ultima lectura y lo indica en la pantalla.
@@ -87,4 +99,5 @@ def main():
         print('Salidas apagadas.')
 
 
-main()
+if __name__ == '__main__':
+    main()
