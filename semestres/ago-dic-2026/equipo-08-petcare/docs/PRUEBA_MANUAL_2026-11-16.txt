@@ -1,0 +1,43 @@
+Prueba manual v2 - 16 noviembre 2026
+
+Condicion: ESP32 por USB; fuente externa de servo y bomba apagada,
+confirmada por el usuario. Estas verificaciones no prueban caudal,
+movimiento fisico, alimentacion ni contactos del rele.
+
+Archivo: firmware/pruebas/PRUEBA_MANUAL_SERVO_BOMBA.py
+Apertura manual 1350 us; cierre 1690 us; GPIO33 a 50 Hz.
+Bomba GPIO23 activa LOW; orden de corte a 3000 ms.
+No modifica calibracion ni valores de apertura del programa integrado.
+
+Validacion en ESP32 real por consola serie, sin nuevas entradas despues
+de activar la salida:
+  Primer corte registrado: 3004 ms.
+  Segundo corte registrado: 3001 ms.
+  Orden de bomba rechazada mientras servo mantenia PWM.
+  Orden de servo rechazada mientras bomba estaba activa.
+  Final: GPIO23=1, GPIO33=0.
+
+Comparacion del temporizador previo esperando input(): callback a 3001 ms.
+No se demostro que input() causara el incidente reportado.
+
+Comprobacion adicional, fuente externa apagada:
+  Sin GPIO duplicados entre componentes habilitados.
+  DHT4, PIR27, HX711 DT19/SCK18, servo33, rele23, buzzer22,
+  RGB16/17/21, OLED SDA26/SCL25. Flotador deshabilitado.
+  Timer0 de la bomba no cambio las lecturas PWM del servo:
+  frecuencia 50 Hz, duty_ns 1690063 en 17 muestras durante 4 segundos.
+  Rele observado LOW inicialmente y HIGH a los 3003 ms.
+  Esto es lectura de configuracion, no medicion con osciloscopio.
+
+25 pruebas automatizadas aprobadas:
+  python -m unittest test_manual_servo_bomba test_water_relay test_pantalla_servo
+
+Cambios: lectura de consola mediante select.poll; comprobacion del reloj
+en el ciclo, ademas del temporizador; bloqueo de actuadores en ambos
+sentidos; encendidos repetidos no extienden plazo; parada independiente
+de ambas salidas ante errores y Ctrl+C. Sin reintentos de movimiento.
+
+Pendiente: comprobar bomba sola con servo fisicamente desconectado
+(desconectar y reconectar siempre con fuente apagada). Desactivar PWM
+no corta la alimentacion del servo. No se atribuye aun el incidente a
+una causa electrica concreta. Ver guia Word para instrucciones.
