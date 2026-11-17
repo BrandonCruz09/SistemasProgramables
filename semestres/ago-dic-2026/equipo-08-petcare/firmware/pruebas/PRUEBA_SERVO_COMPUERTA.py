@@ -46,7 +46,9 @@ class PruebaCompuerta:
         if not 0 < duracion_ms <= CIERRE_PRUEBA_MS:
             raise ValueError('Duracion fuera del limite de esta prueba')
         if self.pwm is None:
-            self.pwm = PWM(self.pin, freq=50, duty_ns=pulso * 1000)
+            # Inicializar el temporizador antes de usar duty_ns (ESP32).
+            duty = (pulso * 65535 + 10000) // 20000
+            self.pwm = PWM(self.pin, freq=50, duty_u16=duty)
         print('Orden:', pulso, 'us durante', duracion_ms, 'ms')
         self.pwm.duty_ns(pulso * 1000)
         # Esperas breves para responder a Ctrl+C durante la prueba.
@@ -130,4 +132,14 @@ class PruebaCompuerta:
 if __name__ == '__main__':
     # Rele HW-383 activo LOW: mantener la bomba apagada durante esta prueba.
     Pin(23, Pin.OUT, value=1)
+    # Comprobar el temporizador sin enviar pulsos al servo.
+    prueba_pwm = PWM(Pin(PIN_SERVO), freq=50, duty_u16=0)
+    try:
+        prueba_pwm.duty_ns(0)
+        time.sleep_ms(30)
+        if prueba_pwm.freq() != 50 or prueba_pwm.duty_ns() != 0:
+            raise RuntimeError('PWM no paso la comprobacion de inicio')
+        print('PWM comprobado en ESP32: 50 Hz, sin pulsos de movimiento.')
+    finally:
+        prueba_pwm.deinit()
     PruebaCompuerta().menu()

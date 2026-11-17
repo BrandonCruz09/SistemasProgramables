@@ -41,7 +41,8 @@ class CompuertaPruebaTests(unittest.TestCase):
         with patch.object(self.mod, 'time', reloj):
             self.servo.ejecutar(((1390, self.mod.ESPERA_APERTURA_MS),))
         pwm = self.hardware.PWM.return_value
-        self.assertEqual(self.hardware.PWM.call_args.kwargs['duty_ns'], 1390000)
+        self.assertNotIn('duty_ns', self.hardware.PWM.call_args.kwargs)
+        self.assertEqual(self.hardware.PWM.call_args.kwargs['duty_u16'], 4555)
         pwm.duty_ns.assert_called_with(1390000)
         pwm.deinit.assert_not_called()
         self.servo.liberar()

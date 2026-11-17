@@ -25,7 +25,8 @@ class ServoSG90:
         if not config.SERVO_MIN_PULSE_US <= pulse_us <= config.SERVO_MAX_PULSE_US:
             raise ValueError('Pulso fuera del recorrido validado de la compuerta')
         if self._pwm is None:
-            self._pwm = PWM(self._pin, freq=50, duty_ns=int(pulse_us * 1000))
+            duty = (pulse_us * 65535 + 10000) // 20000
+            self._pwm = PWM(self._pin, freq=50, duty_u16=duty)
         self._pwm.duty_ns(int(pulse_us * 1000))
 
     def release(self):

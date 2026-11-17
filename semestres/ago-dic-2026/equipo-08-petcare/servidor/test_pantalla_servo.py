@@ -19,6 +19,8 @@ class MontajeTests(unittest.TestCase):
         with patch.dict(sys.modules, {'machine': types.SimpleNamespace(Pin=pin_cls, PWM=pwm_cls)}):
             servo = ServoSG90()
             servo.move_us(config.SERVO_CLOSED_US)
+            self.assertNotIn('duty_ns', pwm_cls.call_args.kwargs)
+            self.assertEqual(pwm_cls.call_args.kwargs['duty_u16'], 5538)
             self.assertEqual(pwm.duty_ns.call_args.args, (1690000,))
             servo.move_us(config.SERVO_OPEN_US)
             self.assertEqual(pwm.duty_ns.call_args.args, (1390000,))
