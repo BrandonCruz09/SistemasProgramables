@@ -4,7 +4,7 @@ from machine import Pin, PWM
 import time
 
 PIN_SERVO = 33
-ABIERTO_US = 1390
+ABIERTO_US = 1340
 CERRADO_US = 1690
 MIN_US = 1300
 MAX_US = 1850

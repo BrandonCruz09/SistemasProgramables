@@ -32,18 +32,18 @@ class CompuertaPruebaTests(unittest.TestCase):
         self.servo.mover = Mock()
         self.servo.ciclo()
         self.assertEqual([c.args for c in self.servo.mover.call_args_list],
-                         [(1390, 900), (1690, 3000)])
+                         [(1340, 900), (1690, 3000)])
         self.pin.value.assert_not_called()
 
-    def test_apertura_1390_conserva_pwm_despues_de_600_ms(self):
+    def test_apertura_1340_conserva_pwm_despues_de_600_ms(self):
         reloj = types.SimpleNamespace(ticks_ms=Mock(side_effect=[0, 0, 600]),
                                       ticks_diff=lambda a, b: a-b, sleep_ms=Mock())
         with patch.object(self.mod, 'time', reloj):
-            self.servo.ejecutar(((1390, self.mod.ESPERA_APERTURA_MS),))
+            self.servo.ejecutar(((1340, self.mod.ESPERA_APERTURA_MS),))
         pwm = self.hardware.PWM.return_value
         self.assertNotIn('duty_ns', self.hardware.PWM.call_args.kwargs)
-        self.assertEqual(self.hardware.PWM.call_args.kwargs['duty_u16'], 4555)
-        pwm.duty_ns.assert_called_with(1390000)
+        self.assertEqual(self.hardware.PWM.call_args.kwargs['duty_u16'], 4391)
+        pwm.duty_ns.assert_called_with(1340000)
         pwm.deinit.assert_not_called()
         self.servo.liberar()
         pwm.deinit.assert_called_once()
@@ -53,7 +53,7 @@ class CompuertaPruebaTests(unittest.TestCase):
         self.servo.mover = Mock()
         self.servo.ciclo(con_alivio=True)
         self.assertEqual([c.args for c in self.servo.mover.call_args_list],
-                         [(1390, 900), (1690, 350), (1590, 250), (1690, 500)])
+                         [(1340, 900), (1690, 350), (1574, 250), (1690, 500)])
 
     def test_cancelacion_no_intenta_otro_cierre(self):
         self.servo.pwm = Mock()
@@ -66,7 +66,7 @@ class CompuertaPruebaTests(unittest.TestCase):
         self.assertIsNone(self.servo.pwm)
 
     def test_limites_y_sentido_inverso(self):
-        for bad in (800, 1299, 1851, 3000, True, 1390.5):
+        for bad in (800, 1299, 1851, 3000, True, 1340.5):
             with self.assertRaises(ValueError):
                 self.servo.validar(bad)
         self.assertEqual(self.mod.secuencia_cierre(1850, 1600),
@@ -76,7 +76,7 @@ class CompuertaPruebaTests(unittest.TestCase):
         with patch('builtins.input', side_effect=['900', '3000']):
             with self.assertRaises(ValueError):
                 self.servo.ajustar()
-        self.assertEqual((self.servo.abierto, self.servo.cerrado), (1390, 1690))
+        self.assertEqual((self.servo.abierto, self.servo.cerrado), (1340, 1690))
 
 
 if __name__ == '__main__':
