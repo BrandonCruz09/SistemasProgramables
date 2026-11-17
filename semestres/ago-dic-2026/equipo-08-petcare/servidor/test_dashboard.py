@@ -55,4 +55,22 @@ class DashboardTests(unittest.TestCase):
             server.shutdown();server.server_close()
 
 
+    def test_demo_y_archivos_publicos(self):
+        server=start_dashboard(DashboardState(),Path(__file__).resolve().parents[1]/'interfaz/dashboard.html','127.0.0.1',0,demo_mode=True)
+        try:
+            base='http://127.0.0.1:'+str(server.server_port)
+            with urllib.request.urlopen(base,timeout=2) as response:
+                self.assertIn('data-demo="true"',response.read().decode())
+            for name,mime in [('dashboard.css','text/css'),('dashboard.js','application/javascript'),('petcare-dog.webp','image/webp')]:
+                with urllib.request.urlopen(base+'/assets/'+name,timeout=2) as response:
+                    self.assertEqual(response.headers.get_content_type(),mime)
+                    self.assertGreater(len(response.read()),100)
+            for path in ['/assets/../servidor/dashboard.py','/assets/%2e%2e/dashboard.py','/assets/unknown.txt']:
+                with self.assertRaises(urllib.error.HTTPError) as error:
+                    urllib.request.urlopen(base+path,timeout=2)
+                self.assertEqual(error.exception.code,404)
+        finally:
+            server.shutdown();server.server_close()
+
+
 if __name__=='__main__':unittest.main()

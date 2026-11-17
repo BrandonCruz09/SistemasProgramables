@@ -1,0 +1,6 @@
+PETCARE - Fondo del panel - 17 noviembre 2026
+Archivo: interfaz/assets/petcare-dog.webp
+Origen: generación nueva con image_gen (herramienta integrada). No es una foto del perro del usuario ni una captura de la cámara.
+Procesado: conversión a WebP con Pillow, calidad 86. El archivo se sirve localmente; la página no hace llamadas a generación ni usa fuentes externas.
+Prompt utilizado:
+Use case: photorealistic-natural. Asset type: wide landscape hero photograph for a warm, tasteful pet-care web dashboard. Natural editorial photograph of a happy adult golden retriever resting on a warm stone patio beside soft sage green garden foliage, realistic fur and anatomy, gentle morning sunlight, calm welcoming expression with mouth slightly open, eyes looking toward camera. Composition supports a real website layout: dog occupies right third to right half, left 55 percent is softly out-of-focus dark olive foliage and patio shadow with quiet negative space for separate white HTML headline. Landscape wide 2:1 composition. Warm ivory, olive green, honey fur, subtle natural film texture, sophisticated pet lifestyle photography. No text, letters, logos, watermark, UI, collage, borders, artificial glow, cartoons, accessories or exaggerated smile.

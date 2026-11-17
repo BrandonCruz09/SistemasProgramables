@@ -82,8 +82,14 @@ class DashboardState:
                 'available':age is not None and age<30})
 
 
-def start_dashboard(state, html_path, host='0.0.0.0', port=8766):
+def start_dashboard(state, html_path, host='0.0.0.0', port=8766, demo_mode=False):
     html=Path(html_path).read_bytes()
+    if demo_mode:
+        html=html.replace(b'data-demo="false"', b'data-demo="true"')
+    assets=Path(html_path).resolve().parent/'assets'
+    public_assets={'dashboard.css':'text/css; charset=utf-8',
+                   'dashboard.js':'application/javascript; charset=utf-8',
+                   'petcare-dog.webp':'image/webp'}
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
         def do_POST(self):
@@ -111,6 +117,11 @@ def start_dashboard(state, html_path, host='0.0.0.0', port=8766):
             path=self.path.split('?')[0]
             if path=='/':body,mime=html,'text/html; charset=utf-8'
             elif path=='/api/state':body,mime=json.dumps(state.snapshot(),allow_nan=False).encode(),'application/json'
+            elif path.startswith('/assets/') and path[8:] in public_assets:
+                name=path[8:]
+                try: body=(assets/name).read_bytes()
+                except OSError: self.send_error(404);return
+                mime=public_assets[name]
             else:self.send_error(404);return
             self.send_response(200);self.send_header('Content-Type',mime)
             self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(body)))

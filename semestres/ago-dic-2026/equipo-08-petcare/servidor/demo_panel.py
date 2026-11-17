@@ -1,7 +1,6 @@
 """Demostracion local del panel y controlador. Sin MQTT, GPIO ni nube."""
 import queue
 import sys
-import tempfile
 import time
 from pathlib import Path
 from dashboard import DashboardState, start_dashboard
@@ -53,33 +52,26 @@ def main():
         sensors=Sensors()
         return PetCareController(sensors,Servo(sensors),Output(),Output(),Output())
     c=controller()
-    html=(ROOT/'interfaz/dashboard.html').read_text(encoding='utf-8')
-    html=html.replace('<h1>Estado de la estación</h1>', '<h1>PetCare · Demostración</h1><section style="background:#fff3d8"><strong>SIMULACIÓN: no controla tu ESP32 ni guarda en Firestore.</strong><p>Pesos, temperatura y caídas de croquetas son ejemplos. Prueba primero agua 5 s; después alimento hasta 300 g.</p><button onclick="command(\'reset_demo\')">Reiniciar simulación</button></section>')
-    html=html.replace('let videoPaused=false','let videoPaused=true')
-    html=html.replace('Cámara en vivo','Cámara pendiente en esta demostración')
-    html=html.replace('La PC procesa la imagen.', 'No se solicita video real en esta demostración.')
-    with tempfile.TemporaryDirectory(prefix='petcare_demo_') as temp:
-        page=Path(temp)/'index.html'; page.write_text(html,encoding='utf-8')
-        server=start_dashboard(state,page,'127.0.0.1',8770)
-        print('SIMULACION http://127.0.0.1:8770/',flush=True)
-        try:
-            while True:
-                now=int(time.monotonic()*1000)
-                c.tick(now)
-                try: command=state.commands.get_nowait()
-                except queue.Empty: command=None
-                if command:
-                    action=command['action']
-                    if action=='reset_demo': c.safe_shutdown(); c=controller(); c.tick(now); ok,msg=True,'Simulacion reiniciada'
-                    elif action=='feed': ok,msg=c.request_food(now)
-                    elif action=='water': ok,msg=c.request_pump(now)
-                    elif action=='stop_food': ok,msg=c.stop_food(now)
-                    elif action=='stop_water': c.stop_pump(now); ok,msg=True,'Agua detenida (simulacion)'
-                    else: ok,msg=c.request_signal(now)
-                    state.events.append({'id':action,'ok':ok,'message':msg})
-                state.update({'simulated':True,'status':c.snapshot()})
-                time.sleep(.05)
-        finally: c.safe_shutdown(); server.shutdown(); server.server_close()
+    server=start_dashboard(state,ROOT/'interfaz/dashboard.html','127.0.0.1',8770,demo_mode=True)
+    print('SIMULACION http://127.0.0.1:8770/',flush=True)
+    try:
+        while True:
+            now=int(time.monotonic()*1000)
+            c.tick(now)
+            try: command=state.commands.get_nowait()
+            except queue.Empty: command=None
+            if command:
+                action=command['action']
+                if action=='reset_demo': c.safe_shutdown(); c=controller(); c.tick(now); ok,msg=True,'Simulacion reiniciada'
+                elif action=='feed': ok,msg=c.request_food(now)
+                elif action=='water': ok,msg=c.request_pump(now)
+                elif action=='stop_food': ok,msg=c.stop_food(now)
+                elif action=='stop_water': c.stop_pump(now); ok,msg=True,'Agua detenida (simulacion)'
+                else: ok,msg=c.request_signal(now)
+                state.events.append({'id':action,'ok':ok,'message':msg})
+            state.update({'simulated':True,'status':c.snapshot()})
+            time.sleep(.05)
+    finally: c.safe_shutdown(); server.shutdown(); server.server_close()
 
 
 if __name__=='__main__': main()
