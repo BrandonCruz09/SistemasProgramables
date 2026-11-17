@@ -16,11 +16,12 @@ HTML = """<!doctype html><html lang="es"><meta charset="utf-8">
 <h1>PetCare</h1><p>Agua manual supervisada. Nivel y volumen no medidos.</p>
 <label><input type="checkbox" id="check"> Revise que hay agua en el deposito y espacio en el plato.</label><br>
 <button id="water" onclick="send('/pump')" disabled>Prueba de agua 15 s (objetivo 500 ml, sin calibrar)</button>
+<button id="waterTest" onclick="send('/pump/test')" disabled>Probar agua 3 segundos</button>
 <button onclick="send('/pump/stop')">Detener agua</button>
-<button id="food" onclick="send('/feed')" disabled>Servir alimento</button>
+<button id="food" onclick="send('/feed')" disabled>Probar compuerta / servir alimento una vez</button>
 <p id="message" role="status"></p><pre id="status"></pre>
 <script>let busy=false,ready=false,lock=0;
-function buttons(){document.getElementById('water').disabled=busy||!ready||Date.now()<lock||!document.getElementById('check').checked}
+function buttons(){let blocked=busy||!ready||Date.now()<lock||!document.getElementById('check').checked;document.getElementById('water').disabled=blocked;document.getElementById('waterTest').disabled=blocked}
 document.getElementById('check').onchange=buttons;
 async function send(path){if(busy&&path!='/pump/stop')return;busy=true;buttons();try{let r=await fetch(path,{method:'POST'});document.getElementById('message').textContent=await r.text();if(path=='/pump'&&r.ok){lock=Date.now()+25000;document.getElementById('check').checked=false}}catch(e){document.getElementById('message').textContent='Sin conexion'}finally{busy=false;refresh()}}
 async function refresh(){try{let r=await fetch('/api');let s=await r.json();ready=s.state=='LISTO';document.getElementById('status').textContent=JSON.stringify(s,null,2);document.getElementById('food').disabled=!ready||!s.calibrated}catch(e){ready=false}buttons()}refresh();setInterval(refresh,1000);</script></html>"""
@@ -106,6 +107,9 @@ class WebDashboard:
             elif path.startswith("/pump/stop") and method == "POST":
                 controller.stop_pump()
                 self._send(client, "200 OK", "text/plain; charset=utf-8", "Bomba detenida")
+            elif path == '/pump/test' and method == 'POST':
+                ok, msg = controller.request_pump(now, source='prueba_3s', test=True)
+                self._send(client, "200 OK" if ok else "409 Conflict", "text/plain; charset=utf-8", msg)
             elif path.startswith("/pump") and method == "POST":
                 ok, msg = controller.request_pump(now, source='panel_esp32')
                 self._send(client, "200 OK" if ok else "409 Conflict", "text/plain; charset=utf-8", msg)

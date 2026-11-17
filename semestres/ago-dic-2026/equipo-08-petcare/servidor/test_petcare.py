@@ -45,6 +45,13 @@ class FakeLed:
     def set_color(self, color): self.color=color
 
 class PetCareTests(unittest.TestCase):
+    def test_bloqueo_de_compuerta_no_envia_movimiento(self):
+        c = self.make_controller()
+        c.tick(0)
+        with patch.object(config, 'SERVO_MOVEMENT_ENABLED', False, create=True):
+            self.assertFalse(c.request_feed(0)[0])
+        self.assertEqual(self.servo.angles, [])
+
     def make_controller(self, **kwargs):
         self.servo=FakeServo(); self.pump=FakePump(); self.buzzer=FakeBuzzer(); self.led=FakeLed()
         self.controller=PetCareController(FakeSensors(**kwargs), self.servo, self.pump, self.buzzer, self.led)

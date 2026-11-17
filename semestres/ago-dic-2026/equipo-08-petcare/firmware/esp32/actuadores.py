@@ -15,7 +15,7 @@ import config
 class ServoSG90:
     def __init__(self, pin=config.PIN_SERVO):
         from machine import Pin
-        self._pin = Pin(pin, Pin.OUT)
+        self._pin = Pin(pin, Pin.OUT, value=0)
         self._pwm = None
 
     def move_us(self, pulse_us):
@@ -52,10 +52,14 @@ class PumpRelay:
         self._pin.value(self._off_level)
         self.active = False
 
-    def on(self):
+    def on(self, duration_ms=None):
         self.off()
         from machine import Timer
         duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
+        if duration_ms is not None:
+            if isinstance(duration_ms, bool) or not isinstance(duration_ms, int):
+                raise ValueError('Duracion debe ser un entero en ms')
+            duration = min(duration, duration_ms)
         if duration <= 0:
             raise ValueError('Duracion de bomba invalida')
         try:

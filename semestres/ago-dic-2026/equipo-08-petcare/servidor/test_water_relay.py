@@ -19,6 +19,28 @@ import config
 
 
 class WaterRelayTests(unittest.TestCase):
+    def test_pulso_corto_corta_fsm_y_registra_tres_segundos(self):
+        c = self.controller()
+        c.pump = Mock()
+        self.assertTrue(c.request_pump(0, source='prueba_3s', test=True)[0])
+        c.pump.on.assert_called_once_with(duration_ms=3000)
+        c.tick(2999)
+        self.assertEqual(c.state, c.PUMPING)
+        c.tick(3000)
+        c.pump.off.assert_called()
+        self.assertEqual(c.state, c.IDLE)
+        self.assertEqual(c.water_events[-1]['requested_ms'], 3000)
+        self.assertEqual(c.water_events[-1]['duration_ms'], 3000)
+
+    def test_pulso_corto_arma_timer_de_tres_segundos(self):
+        timer = Mock()
+        timer_cls = Mock(return_value=timer)
+        timer_cls.ONE_SHOT = 0
+        with patch.dict(sys.modules, {'machine':types.SimpleNamespace(Pin=Mock(), Timer=timer_cls)}):
+            pump = PumpRelay()
+            pump.on(duration_ms=3000)
+            self.assertEqual(timer.init.call_args.kwargs['period'], 3000)
+
     def controller(self):
         factory = test_petcare.PetCareTests()
         c = factory.make_controller(calibrated=False, weight=None, water=None)

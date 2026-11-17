@@ -84,6 +84,9 @@ class PetCareController:
             return a + delta
 
     def request_feed(self, now_ms):
+        if not getattr(config, 'SERVO_MOVEMENT_ENABLED', True):
+            self.last_event = 'Compuerta bloqueada: revisar recorrido fisico antes de habilitar'
+            return False, self.last_event
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
         if not self.status.get("calibrated") or self.status.get("weight_g") is None:
@@ -101,7 +104,7 @@ class PetCareController:
         self.last_event = "Compuerta de alimento abierta por tiempo limitado"
         return True, self.last_event
 
-    def request_pump(self, now_ms, source='manual', command_id=None):
+    def request_pump(self, now_ms, source='manual', command_id=None, test=False):
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
         if self._pump_ready_at is not None and self._diff(now_ms, self._pump_ready_at) < 0:
@@ -112,11 +115,16 @@ class PetCareController:
             self.last_event = "Bomba bloqueada: flotador indica poca o nada de agua"
             return False, self.last_event
         try:
-            self.pump.on()
+            if test:
+                self.pump.on(duration_ms=3000)
+            else:
+                self.pump.on()
         except Exception as exc:
             self.last_event = "Error al activar bomba: " + str(exc)
             return False, self.last_event
         duration = min(15000, config.PUMP_PULSE_MS, config.PUMP_MAX_ON_MS)
+        if test:
+            duration = min(duration, 3000)
         self._water_seq += 1
         self._water_run = {'run_id': self._boot_id + '-' + str(self._water_seq),
                            'started_ms': now_ms, 'requested_ms': duration,
