@@ -1,10 +1,12 @@
-> Actualizacion 17 de noviembre: RGB retirado. Buzzer 3V3 en GPIO22 habilitado; OLED SDA26/SCL25. La IA registra detecciones sin accionar luces. Ver docs/CONEXIONES_SIN_RGB_17NOV.txt.
+> **Estado vigente, 18 de noviembre:** agua manual de 5 s; alimento por tandas o apertura manual con cierre al alcanzar 300 g totales. Servo GPIO33: abrir 1350 µs, cerrar 1690 µs; conserva PWM. Panel rediseñado y 137 pruebas de software aprobadas. Archivos preparados; esta versión no se cargó a la placa. Relé, servo y buzzer requieren comprobar su respuesta física. [Conexiones con protoboard, sin borneras adicionales](docs/Conexiones_protoboard_18nov.txt) · [Guía en Word](docs/Conexiones_protoboard_18nov.docx) · [Comportamiento de los botones](docs/Control_manual_compuerta_18nov.docx).
+
+> Las notas fechadas que siguen son historial: sus tiempos y posiciones anteriores no son la configuración vigente. El RGB está retirado; OLED SDA26/SCL25. El buzzer está habilitado en GPIO22, pero falta identificar su pin central y confirmar si necesita PWM de audio.
 
 > **Preparación del 15 de noviembre:** programa completo con OLED SSD1306 (SDA26/SCL25), peso calibrado y compuerta cerrada a 1850 us / abierta a 800 us. Cámara en vivo dentro del panel. 73 pruebas de software y 7 verificaciones locales de video/MQTT aprobadas. Archivos preparados para cargar; montaje completo aún pendiente de prueba física. [Guía de carga y conexiones](docs/MONTAJE_LISTO_15NOV.md).
 
 > **Actualización del 14 de noviembre:** calibración de la pesa integrada y cargada al ESP32. Captura física de 12 lecturas; último peso 22.46 g. MQTT de PC, guardado y consulta en Firestore real y API del panel comprobados con esa captura: 22 verificaciones aprobadas. La prueba usó USB desde el ESP32; no prueba aún Wi-Fi integral ni compuerta. DHT sin respuesta en esta captura. [Resultados y siguientes pasos](docs/CALIBRACION_FIRESTORE_14NOV.md).
 
-> Agua: prueba manual de 15 s, objetivo 500 ml desde vacío SIN caudal calibrado. [Detalle vigente](docs/ACTUALIZACION_AGUA_13NOV.txt).
+> Agua, corte histórico del 13 de noviembre: prueba de 15 s y objetivo de 500 ml sin caudal calibrado. Sustituido por pulso manual de 5 s, sin medir volumen. [Registro anterior](docs/ACTUALIZACION_AGUA_13NOV.txt).
 
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 

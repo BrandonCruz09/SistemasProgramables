@@ -1,0 +1,175 @@
+PetCare · conexiones con protoboard
+
+Guía vigente · 18 de noviembre de 2026 · Equipo 08
+
+Fuente indicada por el usuario: 5 V / 5 A. No se midió su salida. Sin borneras adicionales, LED RGB, flotador ni módulo IRF520. Esta guía sustituye las instrucciones de alimentación anteriores; la respuesta física de relé, servo y buzzer sigue pendiente.
+
+
+1. Antes de mover cables
+
+Desenchufa la fuente y desconecta los USB. El símbolo de tierra ⏚ es protección eléctrica de la fuente: no es V− ni GND del ESP32. Su conexión a la tierra de la instalación y la protección de los bornes de red deben revisarse por una persona competente. No lleves L, N ni ⏚ a la protoboard.
+
+
+2. Distribución en la protoboard
+
+Coloca el ESP32 con el USB hacia ti y las dos filas de patas a lados opuestos de la ranura central. Sigue las letras impresas en la placa: D23 significa GPIO23, no el agujero 23. No puedo asignar números de agujero sin una foto actual del montaje.
+
+Riel propuesto | Conexión
+
+Izquierdo rojo (+) | V+ de la fuente: +5 V.
+
+Izquierdo azul (−) | V− de la fuente: GND común.
+
+Derecho rojo (+) | 3V3 del ESP32: solo 3.3 V.
+
+Derecho azul (−) | Un puente al riel azul izquierdo.
+
+Si los rieles están partidos | Une las dos mitades del mismo riel. No unas rojo de 5 V con rojo de 3.3 V.
+
+Los colores dibujados no crean conexiones: cada grupo central de cinco agujeros se conecta horizontalmente en su lado de la ranura; no cruza la ranura. Comprueba si tus rieles laterales tienen interrupciones.
+
+
+3. Alimentación de las placas y los motores
+
+Equipo | Positivo | Negativo
+
+ESP32 normal | Riel +5 V → VIN/5V de la placa | GND → riel negativo
+
+ESP32-CAM | Riel +5 V → pin 5V | GND → riel negativo
+
+Servo MG995 | Rojo → V+ de la fuente, cable directo | Marrón/negro → V−, cable directo
+
+Bomba | V+ → COM1; NO1 → rojo de bomba | Negro de bomba → V−, cable directo
+
+Servo y bomba no se alimentan a través de los rieles de protoboard, de VIN del ESP32 ni de sus pines GPIO. Usa cables cortos y uniones firmes, aisladas; no enrolles cables sueltos. Las salidas de tornillo que ya tiene la fuente no son una bornera adicional.
+
+Para programar por USB: desconecta también el cable externo de +5 V de la placa que vas a programar. No unas alimentación USB y alimentación externa sin verificar el circuito de tu placa. Conserva GND común; vuelve al montaje con fuente al terminar y retirar USB. La cámara se programa con su base MB, sin FTDI.
+
+Señales y sensores
+
+Los GPIO de esta tabla corresponden al config.py actual. No cambies la calibración ni la tara guardadas al copiar archivos.
+
+Componente | Alimentación | Señal al ESP32 normal
+
+DHT22, módulo de 3 pines | VCC → 3V3; GND → negativo | DATA/S → GPIO4
+
+PIR, si es HC-SR501 | VCC → +5 V; GND → negativo | OUT → GPIO27 (salida 3.3 V)
+
+HX711 usado con la pesa | VCC → 3V3; GND → negativo | DT/DOUT → GPIO19; SCK → GPIO18
+
+OLED I2C de 4 pines | VCC → 3V3; GND → negativo | SDA → GPIO26; SCL → GPIO25
+
+Servo MG995 | Fuente directa según página 1 | Naranja/amarillo → GPIO33
+
+Relé HW-383, canal K1 | Alimentación separada en página 3 | IN1 → GPIO23; IN2 → 3V3
+
+Buzzer de 3 patas | − → GND; pin central por identificar | S → GPIO22; no aplicar 5 V a S
+
+
+Celda de carga y HX711
+
+Conserva los cuatro cables de la celda tal como funcionaron durante la calibración. La correspondencia habitual es rojo → E+, negro → E−, verde → A+ y blanco → A−, pero los colores no son universales. La celda se conecta al HX711, no directamente a 5 V ni a GPIO. Si ya pesa bien, no intercambies A+ y A−.
+
+El tazón y su plataforma deben cargar únicamente sobre el extremo móvil de la celda. Deja libre el borde del tazón respecto a la carcasa; los cables no deben tirar de la plataforma. Un cambio mecánico puede cambiar el cero aunque el factor de calibración permanezca guardado.
+
+
+Buzzer: dato que todavía falta
+
+En tu pieza solo identificamos «−», una pata sin marca y «S». Eso no permite afirmar que la pata central sea VCC: existen módulos con conexiones distintas. Envía una foto nítida de ambos lados para identificarla antes de alimentarla. El programa actual espera buzzer activo; un buzzer pasivo requiere una frecuencia de audio. No subirlo a 5 V como prueba a ciegas.
+
+
+Resistencias
+
+DHT22: si el módulo no trae resistencia de pull-up, coloca una de 4.7 kΩ a 10 kΩ entre DATA y 3V3. No añadas otra por rutina si ya está incorporada. No se requiere resistencia en serie para alimentar los módulos HX711, OLED o relé según este montaje. La bomba sí requiere el diodo indicado en la página 3. El circuito del buzzer depende de identificar el módulo.
+
+
+Cámara
+
+La ESP32-CAM recibe +5 V y GND; no necesita cables TX/RX hacia el ESP32 normal para el funcionamiento del proyecto. Se comunica por Wi-Fi de 2.4 GHz con la PC. La PC ejecuta el servidor y la IA; la página del celular muestra el video cuando ese servicio y la cámara están conectados. No dejes IO0 unido a GND para uso normal.
+
+Relé K1 y prueba por etapas
+
+Orientación de tu foto: seis tornillos arriba y los conectores pequeños abajo. De izquierda a derecha: NC1 · COM1 · NO1 · NC2 · COM2 · NO2. Confirma las marcas de tu placa antes de energizar.
+
+
+1. Bomba y diodo
+
+Origen | Destino
+
+Fuente V+ (+5 V) | COM1: tornillo central del grupo K1
+
+NO1: tornillo derecho de K1 | Cable rojo de la bomba
+
+Cable negro de la bomba | Fuente V−
+
+Diodo: extremo con franja | Rojo de bomba / NO1
+
+Diodo: extremo sin franja | Negro de bomba / V−
+
+El diodo va en paralelo con la bomba: no entre COM1 y NO1 ni en serie con un cable. Aísla sus patas y deja diodo y empalmes fuera del agua. NC1 y los tres tornillos de K2 quedan sin cables.
+
+
+2. Control del módulo HW-383
+
+Con todo apagado, retira el puente que une RY-VCC y VCC para separar los 5 V de la bobina de los 3.3 V de control. Sigue las etiquetas, no la posición aparente en una foto girada.
+
+Terminal del módulo | Conexión
+
+RY-VCC / alimentación de bobinas | Fuente +5 V
+
+VCC / alimentación lógica | ESP32 3V3
+
+GND del módulo | V− común, unido a GND del ESP32
+
+IN1 | GPIO23 / D23
+
+IN2, canal que no usamos | 3V3; no conectarlo a V−
+
+El LED encendido solo demuestra la respuesta de una parte del circuito. Si no hay clic, no se confirmó la activación de la bobina. Algunos módulos de este tipo no activan fiablemente con lógica de 3.3 V: este montaje no garantiza la compatibilidad de todas las variantes. No puentear 5 V hacia una entrada del ESP32.
+
+
+3. Orden de comprobación
+
+Primero, fuente desconectada: retira y aísla el cable de NO1 que llega al rojo de la bomba. Prueba solo el relé; debe hacer clic al activar y al desactivar. Si solo cambia el LED, detén aquí y revisa RY-VCC y el puente.
+
+Con todo apagado, reconecta NO1. Coloca la bomba sumergida, la manguera al plato y deja espacio libre. La orden de agua debe durar 5 segundos; permanece junto al equipo.
+
+Prueba el servo por separado y sin croquetas. GPIO33, apertura 1350 µs y cierre 1690 µs, PWM de 50 Hz conservado. Si zumba y no se mueve, detén la prueba: el código enviado no prueba que haya recorrido físico.
+
+Verifica la pesa vacía antes de poner comida. Después prueba una cantidad pequeña. Apertura manual y servido por tandas cierran al leer 300 g; puede haber exceso por material en caída. No se corrigió ni recalibró físicamente la celda en esta revisión.
+
+Qué quedó preparado
+
+
+Software y validación
+
+Se implementó el cierre de apertura manual al alcanzar 300 g y se mantuvo el servido automático por tandas. La lectura debe ser válida y reciente; si se pierde o la apertura llega a 90 segundos, se ordena cerrar. Se conservan 1350/1690 µs, 50 Hz y los archivos de calibración. El agua conserva un pulso manual de 5 segundos y botón de parada.
+
+Se rediseñó el panel: cámara lateral, controles de comida y agua numerados, peso destacado, registro debajo, tipografía Trebuchet MS y Bahnschrift, colores azul oscuro, ámbar y azul. La adaptación móvil coloca primero los controles. El funcionamiento real requiere reiniciar el servidor actualizado y conectar la placa.
+
+Pasaron 137 pruebas automatizadas. Son pruebas de software, no evidencia de clic del relé, movimiento del servo, sonido o caudal. La revisión visual del navegador quedó pendiente por dificultades de acceso a la ventana. La vista local de diseño no está conectada a actuadores.
+
+
+Archivos e instalación pendiente
+
+Escritorio > PetCare_Listo_15nov > 01_ESP32 > controlador.py contiene el cambio del controlador. Esta versión no se cargó a la placa porque no se detectó puerto serie. Copia los módulos actualizados al ESP32 antes de ejecutar main.py; no sobrescribas config_local.py ni los JSON de calibración y tara con archivos de ejemplo.
+
+La guía vigente está en el Escritorio, carpeta PetCare_Listo_15nov: Conexiones_protoboard_18nov.docx y .txt. En el repositorio se conserva la misma copia. El archivo Control_manual_compuerta_18nov.docx describe el comportamiento de los botones.
+
+
+Firestore: alcance de la comprobación
+
+La consulta de esta revisión encontró 60 lecturas recientes: 41 del 18 de noviembre y 19 del 16, según hora local. No apareció el día 17 en ese conjunto. El registro local de agua tenía 24 eventos y cero pendientes; los tres últimos consultados coincidieron con Firestore. Un evento de orden no demuestra salida física de agua; no equivalen a 24 servidos. No se habilitó facturación.
+
+
+Referencias para el cableado
+
+Espressif: alimentación del DevKitC; elegir USB o entrada externa, sin combinar. https://docs.espressif.com/projects/esp-idf/en/v5.0.5/esp32/hw-reference/esp32/get-started-devkitc.html
+
+Handson Technology: módulo de dos relés; separación bobina/lógica y límites con 3.3 V. La variante física debe verificarse. https://www.handsontec.com/dataspecs/module/2Ch-relay.pdf
+
+Handson Technology: HC-SR501, alimentación y salida lógica. https://www.handsontec.com/dataspecs/SR501%20Motion%20Sensor.pdf
+
+AVIA Semiconductor: HX711, alimentación 2.6–5.5 V. https://cdn.sparkfun.com/assets/b/f/5/a/e/hx711F_EN.pdf
+
+SparkFun: colores habituales de celdas y montaje. https://learn.sparkfun.com/tutorials/load-cell-amplifier-hx711-breakout-hookup-guide/all?print=1

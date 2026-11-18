@@ -1,3 +1,5 @@
+GUÍA HISTÓRICA: para conexiones actuales usar Conexiones_protoboard_18nov.docx o .txt.
+
 PETCARE SIN RGB - 17 de noviembre de 2026
 
 Programa preparado en Escritorio/PetCare_Listo_15nov/01_ESP32. main.py abierto en Thonny. No cargado ni ejecutado: COM3 no encontrado.

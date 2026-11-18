@@ -1,3 +1,5 @@
+> Ilustraciones históricas. Para el cableado actual con protoboard, relé y sin RGB, consultar [Conexiones del 18 de noviembre](../docs/Conexiones_protoboard_18nov.txt). No copiar el módulo MOSFET ni la distribución de estas imágenes al montaje actual.
+
 # Montaje y conexiones al 8 de noviembre de 2026
 
 La izquierda y derecha siempre se describen **mirando PetCare de frente, desde donde come el perro**. Comida a la izquierda, agua a la derecha. Las seis imágenes son ilustraciones de montaje propuesto, no fotografías del prototipo terminado, ni un esquemático validado ni plantillas de perforación a escala. Seguir nombres de terminales; no copiar filas del protoboard dibujado. Faltan medidas reales de módulos, platos y recipientes.

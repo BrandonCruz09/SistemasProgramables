@@ -6,7 +6,7 @@ let last = null, pending = 0, waterLock = 0, refreshing = false;
 let videoPaused = demo, videoError = false, videoRetry = null;
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const number = (v, unit) => finite(v) ? `${v.toFixed(1)} ${unit}` : 'Sin lectura';
-const states = {LISTO:'Lista para cuidar',COMPUERTA_ABIERTA:'Sirviendo alimento',COMPUERTA_CERRANDO:'Cerrando el plato',BOMBA_ACTIVA:'Sirviendo agua',ERROR_ACTUADOR:'Necesita una revisión'};
+const states = {LISTO:'Lista para operar',COMPUERTA_ABIERTA:'Sirviendo alimento',COMPUERTA_CERRANDO:'Cerrando el plato',BOMBA_ACTIVA:'Sirviendo agua',ERROR_ACTUADOR:'Necesita una revisión'};
 const actionNames = {beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',reset_demo:'Demostración reiniciada'};
 
 el('demoBanner').hidden = !demo;
@@ -78,8 +78,10 @@ function buttons() {
   el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.food_active||Date.now()<waterLock;
   el('resetDemo').disabled=!!pending;
   el('testBuzzer').disabled=!!pending||!ready||!s.buzzer_enabled;
-  for (const id of ['openGate','closeGate']) el(id).disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active;
-  el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.gate_command==='abrir'?'Última orden: abrir. Pulsa Cerrar cuando quieras.':s.gate_command==='cerrar'?'Última orden: cerrar.': 'Control manual listo. No se ha enviado una posición.';
+  el('openGate').disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active||!s.hx_ok||!s.calibrated;
+  const canClose=last?.available && last.age_seconds<=15 && ['LISTO','COMPUERTA_ABIERTA','COMPUERTA_CERRANDO'].includes(s.state) && s.actions_allowed!==false;
+  el('closeGate').disabled=!!pending||!canClose||!s.servo_manual_enabled;
+  el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.manual_food_active?'Abierta: se cerrará al llegar a 300 g. Puedes cerrar antes.':s.gate_command==='cerrar'?'Última orden: cerrar.': 'Apertura manual con cierre automático a 300 g.';
   el('foodProgress').textContent = !last?.available ? 'Esperando una lectura reciente de la pesa.' : !s.servo_enabled ? 'Servido automático pendiente. Puedes usar los botones manuales.' : s.food_result || 'Listo para completar su plato.';
   el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
 }
@@ -101,7 +103,7 @@ function render(data) {
   el('cloud').textContent=demo?'Sin envíos durante la demo':cloud.status==='desactivado'?'Sin configurar':cloud.status||'Sin información';
   el('events').replaceChildren();
   const events=(data.events||[]).slice(-6).reverse();
-  if(!events.length){const li=document.createElement('li');li.className='empty-event';li.textContent='Todavía no hay actividad. Aquí aparecerán los próximos cuidados.';el('events').append(li);}
+  if(!events.length){const li=document.createElement('li');li.className='empty-event';li.textContent='Todavía no hay actividad. Aquí aparecerán las órdenes confirmadas.';el('events').append(li);}
   events.forEach(event=>{
     const li=document.createElement('li'), title=document.createElement('strong'),body=document.createElement('span');
     title.textContent=actionNames[event.action||event.id]||'Estación PetCare';

@@ -41,12 +41,13 @@ class DashboardState:
         if action not in ('stop_water', 'stop_food'):
             if not data['available'] or data['age_seconds'] > 15:
                 return False, 'No hay datos recientes del ESP32'
-            if data['telemetry']['status'].get('state') != 'LISTO':
+            closing = action == 'gate_close' and data['telemetry']['status'].get('state') in ('LISTO', 'COMPUERTA_ABIERTA', 'COMPUERTA_CERRANDO')
+            if data['telemetry']['status'].get('state') != 'LISTO' and not closing:
                 return False, 'El equipo esta ocupado'
             status = data['telemetry']['status']
             if status.get('actions_allowed') is False:
                 return False, 'Modo diagnostico; actuadores bloqueados'
-            if action in ('gate_open', 'gate_close') and (status.get('servo_manual_enabled') is not True or status.get('food_active')):
+            if action in ('gate_open', 'gate_close') and (status.get('servo_manual_enabled') is not True or (action == 'gate_open' and (status.get('food_active') or not status.get('hx_ok') or not status.get('calibrated')))):
                 return False, 'Control manual no disponible; espera al firmware o cancela el servido'
             if action == 'beep' and status.get('buzzer_enabled') is not True:
                 return False, 'Buzzer no disponible'

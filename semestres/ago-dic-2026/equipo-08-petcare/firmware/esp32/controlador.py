@@ -49,6 +49,7 @@ class PetCareController:
         self.servo_holding = False
         self.gate_command = None
         self.food_target = None
+        self.manual_food_started = None
         self.food_cycles = 0
         self.food_started = None
         self.food_weigh_at = None
@@ -71,6 +72,7 @@ class PetCareController:
 
     def _actuator_fault(self, message):
         self.food_target = None
+        self.manual_food_started = None
         self.food_result = message
         self.fault = message
         self.last_event = message
@@ -142,6 +144,15 @@ class PetCareController:
             return False, 'Equipo ocupado'
         if opened and (self.food_target is not None or self.state != self.IDLE):
             return False, 'Cancela primero el servido automatico'
+        if opened:
+            if self.manual_food_started is not None:
+                return False, 'Compuerta abierta; cierre automatico a 300 g activo'
+            try:
+                weight = self._food_weight(now_ms)
+            except Exception as exc:
+                return False, str(exc)
+            if weight >= config.FOOD_TARGET_G:
+                return False, 'El tazon ya alcanza 300 g; no se abre'
         pulse = config.SERVO_OPEN_US if opened else config.SERVO_CLOSED_US
         try:
             self.servo.move_us(pulse)
@@ -150,15 +161,19 @@ class PetCareController:
             return False, self.last_event
         self.food_target = None
         self.food_weigh_at = None
+        self.manual_food_started = now_ms if opened else None
         self.state = self.IDLE
         self.servo_holding = True
         self.gate_command = 'abrir' if opened else 'cerrar'
         self.last_event = 'Orden de %s enviada: %s us; mantiene posicion' % (self.gate_command, pulse)
-        self.food_result = 'Control manual; sin objetivo de gramos'
+        self.food_result = ('Apertura manual; cierre automatico al llegar a 300 g'
+                            if opened else 'Compuerta cerrada manualmente')
         self.request_beep(now_ms, duration_ms=200)
         return True, self.last_event
 
     def request_feed(self, now_ms, _batch=False):
+        if self.manual_food_started is not None:
+            return False, 'Primero cerrar la compuerta manual'
         if self.food_target is not None and not _batch:
             return False, 'Ya hay un servido de 300 g en curso'
         if not self.actions_allowed:
@@ -202,7 +217,7 @@ class PetCareController:
         return value
 
     def request_food(self, now_ms):
-        if not self.actions_allowed or self.fault or self.state != self.IDLE or self.food_target is not None:
+        if not self.actions_allowed or self.fault or self.state != self.IDLE or self.food_target is not None or self.manual_food_started is not None:
             return False, 'Equipo ocupado o bloqueado'
         if not config.SERVO_MOVEMENT_ENABLED:
             return False, 'Servo bloqueado hasta validar fisicamente el montaje'
@@ -223,6 +238,8 @@ class PetCareController:
         return True, self.food_result
 
     def stop_food(self, now_ms):
+        if self.manual_food_started is not None:
+            return self.request_gate(False, now_ms)
         self.food_target = None
         self.food_result = 'Servido de alimento cancelado'
         if self.state == self.FEED_OPEN:
@@ -234,6 +251,23 @@ class PetCareController:
                 self._actuator_fault('Error al cerrar durante parada: ' + repr(exc))
                 return False, self.last_event
         return True, self.food_result
+
+    def _manual_food_tick(self, now_ms):
+        if self.manual_food_started is None:
+            return
+        reason = None
+        try:
+            weight = self._food_weight(now_ms)
+            if weight >= config.FOOD_TARGET_G:
+                reason = 'Cierre automatico: objetivo alcanzado %.1f g' % weight
+            elif self._diff(now_ms, self.manual_food_started) >= config.FOOD_MAX_RUN_MS:
+                reason = 'Cierre por tiempo maximo; revisar deposito y pesa'
+        except Exception as exc:
+            reason = 'Cierre por lectura de peso no valida: ' + str(exc)
+        if reason:
+            ok, _ = self.request_gate(False, now_ms)
+            if ok:
+                self.food_result = self.last_event = reason
 
     def _food_tick(self, now_ms):
         if self.food_target is None or self.state != self.IDLE:
@@ -272,7 +306,7 @@ class PetCareController:
             return False, 'Modo diagnostico: servido bloqueado'
         if self.state != self.IDLE:
             return False, "Espera a que termine la accion actual"
-        if self.food_target is not None:
+        if self.food_target is not None or self.manual_food_started is not None:
             return False, 'Primero terminar o cancelar el servido de alimento'
         if self._pump_ready_at is not None and self._diff(now_ms, self._pump_ready_at) < 0:
             return False, 'Espera 10 segundos entre servidos de agua'
@@ -355,6 +389,7 @@ class PetCareController:
                 if self.state == self.PUMPING:
                     self._finish_water(now_ms, 'error_sensor')
         self.status['readings_paused'] = not reading_allowed
+        self._manual_food_tick(now_ms)
         self._food_tick(now_ms)
 
         if self._last_beep_until is not None and self._diff(now_ms, self._last_beep_until) >= 0:
@@ -378,7 +413,8 @@ class PetCareController:
         data['servo_closed_us'] = config.SERVO_CLOSED_US
         data['servo_holding_pwm'] = self.servo_holding
         data['food_target_g'] = config.FOOD_TARGET_G
-        data['food_active'] = self.food_target is not None
+        data['food_active'] = self.food_target is not None or self.manual_food_started is not None
+        data['manual_food_active'] = self.manual_food_started is not None
         data['food_cycles'] = self.food_cycles
         data['food_result'] = self.food_result
         data['water_duration_ms'] = config.PUMP_PULSE_MS
@@ -394,6 +430,7 @@ class PetCareController:
 
     def safe_shutdown(self):
         self.food_target = None
+        self.manual_food_started = None
         self._signal_until = None
         # Una parada no debe ordenar otro movimiento de una compuerta trabada.
         self._optional('bomba', self.stop_pump)

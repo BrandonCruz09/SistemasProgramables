@@ -7,10 +7,10 @@ from dashboard import DashboardState
 
 class GateTests(unittest.TestCase):
     def setUp(self):
-        self.c=test_petcare.PetCareTests().make_controller(calibrated=False,weight=None)
+        self.c=test_petcare.PetCareTests().make_controller(calibrated=True,weight=0)
         self.c.tick(0)
 
-    def test_manual_sin_pesa_ni_auto_y_mantiene_pwm(self):
+    def test_manual_con_pesa_y_mantiene_pwm(self):
         with patch.object(config,'SERVO_MOVEMENT_ENABLED',False):
             self.assertTrue(self.c.request_gate(True,0)[0])
             self.c.tick(60000)
@@ -21,6 +21,55 @@ class GateTests(unittest.TestCase):
             self.assertEqual(self.c.servo.angles,[1350,1690])
             self.assertEqual(self.c.servo.released,0)
             self.assertFalse(self.c.request_food(120000)[0])
+
+    def test_manual_cierra_a_300_sin_reabrir(self):
+        c=self.c
+        self.assertTrue(c.request_gate(True,0)[0])
+        c.sensors.weight=299; c.tick(800)
+        self.assertEqual(c.servo.angles,[1350])
+        c.sensors.weight=300; c.tick(1600)
+        self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertFalse(c.snapshot()['food_active'])
+        c.sensors.weight=100; c.tick(2400)
+        self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertEqual(c.servo.released,0)
+
+    def test_manual_requiere_pesa_y_no_abre_si_lleno(self):
+        for weight in (None,float('nan'),300,310):
+            self.c.sensors.weight=weight; self.c.tick(0)
+            self.assertFalse(self.c.request_gate(True,0)[0])
+        self.assertEqual(self.c.servo.angles,[])
+        self.assertTrue(self.c.request_gate(False,0)[0])
+
+    def test_manual_cierra_si_falla_pesa_o_vence_tiempo(self):
+        self.c.request_gate(True,0)
+        self.c.sensors.weight=None; self.c.tick(800)
+        self.assertEqual(self.c.servo.angles,[1350,1690])
+        self.c.sensors.weight=0; self.c.tick(1000)
+        self.c.request_gate(True,1000)
+        self.c.tick(1000+config.FOOD_MAX_RUN_MS)
+        self.assertEqual(self.c.servo.angles,[1350,1690,1350,1690])
+
+    def test_manual_cierra_ante_sensor_desconectado(self):
+        self.c.request_gate(True,0)
+        self.c.sensors.read=Mock(side_effect=OSError('HX711 desconectado'))
+        self.c.tick(800)
+        self.assertEqual(self.c.servo.angles,[1350,1690])
+        self.assertFalse(self.c.snapshot()['food_active'])
+
+    def test_manual_no_usa_lectura_vieja_para_abrir(self):
+        self.assertFalse(self.c.request_gate(True,config.WEIGHT_MAX_AGE_MS+1)[0])
+        self.assertEqual(self.c.servo.angles,[])
+
+    def test_cerrar_disponible_durante_apertura_manual(self):
+        c=self.c; c.request_gate(True,0)
+        d=DashboardState(); d.update({'status':c.snapshot()})
+        self.assertTrue(d.request_command('gate_close')[0])
+        self.assertFalse(d.request_command('gate_open')[0])
+        self.assertFalse(c.request_pump(1)[0])
+        self.assertTrue(c.stop_food(2)[0])
+        self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertFalse(c.snapshot()['food_active'])
 
     def test_no_mueve_al_iniciar(self):
         self.c.tick(10000)
