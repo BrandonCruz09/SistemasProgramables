@@ -49,6 +49,7 @@ SERVO_OPEN_US = 1350  # Ultimo ajuste solicitado; falta revalidar el conjunto al
 SERVO_MIN_PULSE_US = 1350
 SERVO_MAX_PULSE_US = 1690
 SERVO_MOVEMENT_ENABLED = False  # Revalidar montaje tras el temblor; no rearmar automaticamente.
+SERVO_MANUAL_ENABLED = True  # Apertura y cierre solicitados desde el panel.
 BUZZER_ENABLED = True  # Modulo activo 3V3, señal en GPIO22.
 SERVO_OPEN_TIME_MS = 900
 SERVO_SETTLE_MS = 350

@@ -35,7 +35,7 @@ class DashboardState:
         self.command_token = secrets.token_hex(16)
 
     def request_command(self, action, supervised=False):
-        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog'):
+        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'beep'):
             return False, 'Accion desconocida'
         data = self.snapshot()
         if action not in ('stop_water', 'stop_food'):
@@ -46,6 +46,10 @@ class DashboardState:
             status = data['telemetry']['status']
             if status.get('actions_allowed') is False:
                 return False, 'Modo diagnostico; actuadores bloqueados'
+            if action in ('gate_open', 'gate_close') and (status.get('servo_manual_enabled') is not True or status.get('food_active')):
+                return False, 'Control manual no disponible; espera al firmware o cancela el servido'
+            if action == 'beep' and status.get('buzzer_enabled') is not True:
+                return False, 'Buzzer no disponible'
             if action == 'feed' and (status.get('servo_enabled') is not True or not status.get('hx_ok') or not status.get('calibrated') or status.get('food_active')):
                 return False, 'Revisa servo y pesa antes de servir alimento'
             if action == 'water' and (status.get('servo_holding_pwm') or status.get('food_active')):

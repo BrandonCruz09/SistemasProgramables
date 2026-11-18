@@ -47,6 +47,7 @@ class PetCareController:
         self.aux_errors = {}
         self.actions_allowed = True
         self.servo_holding = False
+        self.gate_command = None
         self.food_target = None
         self.food_cycles = 0
         self.food_started = None
@@ -118,6 +119,44 @@ class PetCareController:
             return time.ticks_add(a, delta)
         except AttributeError:
             return a + delta
+
+    def request_beep(self, now_ms, duration_ms=2000):
+        if not self.actions_allowed or self.fault or self.state != self.IDLE:
+            return False, 'Espera a que termine la accion actual'
+        if not config.BUZZER_ENABLED:
+            return False, 'Buzzer desactivado en configuracion'
+        self._optional('buzzer', self.buzzer.on)
+        if 'buzzer' in self.aux_errors:
+            return False, 'No se pudo activar el buzzer'
+        self._last_beep_until = self._add(now_ms, min(2000, max(100, duration_ms)))
+        return True, 'Pulso de sonido enviado al buzzer'
+
+    def request_gate(self, opened, now_ms):
+        if not self.actions_allowed or self.fault:
+            return False, 'Control detenido o con error de actuador'
+        if not getattr(config, 'SERVO_MANUAL_ENABLED', False):
+            return False, 'Control manual no habilitado'
+        if self.state == self.PUMPING or self.pump.active:
+            return False, 'Espera a que termine la bomba antes de mover la compuerta'
+        if self.state not in (self.IDLE, self.FEED_OPEN, self.FEED_CLOSE):
+            return False, 'Equipo ocupado'
+        if opened and (self.food_target is not None or self.state != self.IDLE):
+            return False, 'Cancela primero el servido automatico'
+        pulse = config.SERVO_OPEN_US if opened else config.SERVO_CLOSED_US
+        try:
+            self.servo.move_us(pulse)
+        except Exception as exc:
+            self._actuator_fault('Error de compuerta manual: ' + repr(exc))
+            return False, self.last_event
+        self.food_target = None
+        self.food_weigh_at = None
+        self.state = self.IDLE
+        self.servo_holding = True
+        self.gate_command = 'abrir' if opened else 'cerrar'
+        self.last_event = 'Orden de %s enviada: %s us; mantiene posicion' % (self.gate_command, pulse)
+        self.food_result = 'Control manual; sin objetivo de gramos'
+        self.request_beep(now_ms, duration_ms=200)
+        return True, self.last_event
 
     def request_feed(self, now_ms, _batch=False):
         if self.food_target is not None and not _batch:
@@ -334,6 +373,11 @@ class PetCareController:
         data['actuator_fault'] = self.fault
         data['aux_errors'] = dict(self.aux_errors)
         data['servo_enabled'] = config.SERVO_MOVEMENT_ENABLED
+        data['servo_manual_enabled'] = getattr(config, 'SERVO_MANUAL_ENABLED', False)
+        data['gate_command'] = self.gate_command
+        data['buzzer_enabled'] = config.BUZZER_ENABLED
+        data['servo_open_us'] = config.SERVO_OPEN_US
+        data['servo_closed_us'] = config.SERVO_CLOSED_US
         data['servo_holding_pwm'] = self.servo_holding
         data['food_target_g'] = config.FOOD_TARGET_G
         data['food_active'] = self.food_target is not None

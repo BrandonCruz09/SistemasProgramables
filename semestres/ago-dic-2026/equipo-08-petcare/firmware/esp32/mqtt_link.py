@@ -25,6 +25,7 @@ class MQTTLink:
         self.recent_ids = []
         self.last_connect = None
         self.last_publish = None
+        self.last_pir = None
         self.disabled_message_printed = False
         self.accept_actions = True
         self.deferred_acks = []
@@ -45,7 +46,7 @@ class MQTTLink:
             data = json.loads(message.decode())
             if not self.accept_actions and isinstance(data, dict) and data.get('action') not in ('stop_water', 'stop_food'):
                 return
-            if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water", "stop_food", "signal_dog"):
+            if isinstance(data, dict) and data.get("action") in ("feed", "water", "stop_water", "stop_food", "signal_dog", "gate_open", "gate_close", "beep"):
                 self.pending_command = data
         except Exception:
             print("MQTT: comando JSON invalido; ignorado")
@@ -107,6 +108,17 @@ class MQTTLink:
                     ok, message = False, 'Sesion antigua; actualiza la pagina'
                 else:
                     ok, message = controller.request_food(now)
+            elif action == 'beep':
+                if command.get('session_id') != controller.snapshot().get('session_id'):
+                    ok, message = False, 'Sesion antigua; actualiza la pagina'
+                else:
+                    ok, message = controller.request_beep(now)
+            elif action in ('gate_open', 'gate_close'):
+                if command.get('session_id') != controller.snapshot().get('session_id'):
+                    ok, message = False, 'Sesion antigua; actualiza la pagina'
+                else:
+                    ok, message = controller.request_gate(action == 'gate_open', now)
+                    self.last_publish = None
             elif action == "water":
                 if (command.get('supervised') is not True or
                         command.get('session_id') != controller.snapshot().get('session_id')):
@@ -158,11 +170,15 @@ class MQTTLink:
                 self.client.publish(self.water_topic, json.dumps(event).encode(), qos=1, retain=False)
                 controller.water_events.pop(0)
             interval = getattr(config, "MQTT_TELEMETRY_SECONDS", 10) * 1000
-            if self._elapsed(now, self.last_publish) >= interval:
+            status = controller.snapshot()
+            pir_changed = status.get('pir') != self.last_pir
+            elapsed = self._elapsed(now, self.last_publish)
+            if elapsed >= interval or (pir_changed and elapsed >= 500):
                 payload = {"device": "esp32-devkit", "uptime_ms": now,
-                           "status": controller.snapshot()}
+                           "status": status}
                 self.client.publish(self.telemetry_topic, json.dumps(payload).encode())
                 self.last_publish = now
+                self.last_pir = status.get('pir')
         except Exception as exc:
             controller.stop_pump()
             print("MQTT desconectado; se intentara reconectar:", exc)
