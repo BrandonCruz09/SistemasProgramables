@@ -56,6 +56,13 @@ class GateTests(unittest.TestCase):
         m._on_message(m.command_topic,json.dumps(cmd).encode());m._run_command(self.c,3)
         self.assertEqual(self.c.servo.angles,[1350,1690])
 
+    def test_panel_agua_con_pwm_sostenido(self):
+        self.c.request_gate(False,0)
+        d=DashboardState();d.update({'status':self.c.snapshot()})
+        self.assertTrue(d.request_command('water',supervised=True)[0])
+        self.assertTrue(self.c.request_pump(1)[0])
+        self.assertEqual(self.c.servo.angles,[1690])
+
     def test_dashboard_capacidad_y_datos_recientes(self):
         d=DashboardState();d.update({'status':self.c.snapshot()})
         self.assertTrue(d.request_command('gate_open')[0])

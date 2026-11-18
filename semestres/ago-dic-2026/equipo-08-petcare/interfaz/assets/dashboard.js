@@ -75,13 +75,13 @@ function buttons() {
   const s=last?.telemetry?.status||{};
   const ready=last?.available && last.age_seconds<=15 && s.state==='LISTO' && s.actions_allowed!==false;
   el('serveFood').disabled=!!pending||!ready||!s.calibrated||!s.hx_ok||!s.servo_enabled||!!s.food_active;
-  el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.servo_holding_pwm||!!s.food_active||Date.now()<waterLock;
+  el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.food_active||Date.now()<waterLock;
   el('resetDemo').disabled=!!pending;
   el('testBuzzer').disabled=!!pending||!ready||!s.buzzer_enabled;
   for (const id of ['openGate','closeGate']) el(id).disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active;
   el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.gate_command==='abrir'?'Última orden: abrir. Pulsa Cerrar cuando quieras.':s.gate_command==='cerrar'?'Última orden: cerrar.': 'Control manual listo. No se ha enviado una posición.';
   el('foodProgress').textContent = !last?.available ? 'Esperando una lectura reciente de la pesa.' : !s.servo_enabled ? 'Servido automático pendiente. Puedes usar los botones manuales.' : s.food_result || 'Listo para completar su plato.';
-  el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.servo_holding_pwm ? 'Agua bloqueada mientras el servo mantiene su posición.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
+  el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
 }
 function render(data) {
   last=data;const s=data.telemetry?.status||{};

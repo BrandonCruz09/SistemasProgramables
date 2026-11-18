@@ -52,8 +52,8 @@ class DashboardState:
                 return False, 'Buzzer no disponible'
             if action == 'feed' and (status.get('servo_enabled') is not True or not status.get('hx_ok') or not status.get('calibrated') or status.get('food_active')):
                 return False, 'Revisa servo y pesa antes de servir alimento'
-            if action == 'water' and (status.get('servo_holding_pwm') or status.get('food_active')):
-                return False, 'Agua bloqueada mientras se valida la alimentacion del servo'
+            if action == 'water' and status.get('food_active'):
+                return False, 'Primero terminar o cancelar el servido de alimento'
         if action == 'water' and supervised is not True:
             return False, 'Confirma que hay agua y espacio en el plato'
         try:

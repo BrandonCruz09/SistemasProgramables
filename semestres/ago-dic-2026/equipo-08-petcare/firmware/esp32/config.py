@@ -45,10 +45,10 @@ FLOAT_WATER_PRESENT_LEVEL = 0
 
 # Posiciones observadas por el equipo en la compuerta instalada.
 SERVO_CLOSED_US = 1690
-SERVO_OPEN_US = 1350  # Ultimo ajuste solicitado; falta revalidar el conjunto alimentado.
+SERVO_OPEN_US = 1350  # Apertura acordada para la paleta.
 SERVO_MIN_PULSE_US = 1350
 SERVO_MAX_PULSE_US = 1690
-SERVO_MOVEMENT_ENABLED = False  # Revalidar montaje tras el temblor; no rearmar automaticamente.
+SERVO_MOVEMENT_ENABLED = True  # Usuario confirma ajuste fisico de la paleta el 18nov.
 SERVO_MANUAL_ENABLED = True  # Apertura y cierre solicitados desde el panel.
 BUZZER_ENABLED = True  # Modulo activo 3V3, señal en GPIO22.
 SERVO_OPEN_TIME_MS = 900

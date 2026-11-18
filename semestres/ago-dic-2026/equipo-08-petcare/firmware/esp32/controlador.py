@@ -274,8 +274,6 @@ class PetCareController:
             return False, "Espera a que termine la accion actual"
         if self.food_target is not None:
             return False, 'Primero terminar o cancelar el servido de alimento'
-        if self.servo_holding:
-            return False, 'Agua bloqueada: servo mantiene PWM; validar alimentacion conjunta antes de integrar'
         if self._pump_ready_at is not None and self._diff(now_ms, self._pump_ready_at) < 0:
             return False, 'Espera 10 segundos entre servidos de agua'
         if len(self.water_events) > 30:

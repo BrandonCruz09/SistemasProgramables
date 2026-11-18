@@ -79,10 +79,15 @@ class TargetTests(unittest.TestCase):
         c=self.c; c.status.update(dht_ok=False,dht_error='116')
         self.assertTrue(c.request_food(0)[0])
 
-    def test_pwm_mantenido_bloquea_bomba(self):
+    def test_pwm_mantenido_permite_bomba_sin_cambiar_servo(self):
         c=self.c; c.request_feed(0); c.tick(900); c.tick(1250)
         self.assertEqual(c.state,c.IDLE)
-        self.assertFalse(c.request_pump(1300)[0])
+        angles = list(c.servo.angles)
+        self.assertTrue(c.request_pump(1300)[0])
+        c.tick(6300)
+        self.assertFalse(c.pump.active)
+        self.assertEqual(c.servo.angles, angles)
+        self.assertEqual(c.servo.released, 0)
 
     def test_sin_movimiento_automatico_con_servo_bloqueado(self):
         with patch.object(config,'SERVO_MOVEMENT_ENABLED',False):
