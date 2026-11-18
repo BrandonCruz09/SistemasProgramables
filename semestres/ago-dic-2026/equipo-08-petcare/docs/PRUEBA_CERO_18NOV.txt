@@ -1,0 +1,3 @@
+TARA_GUARDADA {"TARE_RAW": -8994.451, "factor_conservado": 285.80386, "estado": "cero_18nov_tazon_vacio_confirmado; factor_pendiente_revalidar_con_carga", "variacion_g": 0.47375284}
+RESPALDO tara_tazon_antes_18nov_562229.bak
+CERO_VERIFICADO [0.368963432, 0.021171096, 0.13803582, -0.28742942, 0.25629808, -0.36020936, 0.09954789, 0.10724616, 0.0057779736, -0.0355083968, 0.21291372, -0.2167543, -0.013817933, -0.10129051, -0.07539726]

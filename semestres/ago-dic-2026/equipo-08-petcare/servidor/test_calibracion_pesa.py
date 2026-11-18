@@ -60,7 +60,7 @@ class CalibracionTests(unittest.TestCase):
     def test_archivos_del_montaje_validado(self):
         result = cargar(FW.as_posix())
         self.assertIsNone(result['error'])
-        self.assertAlmostEqual(result['tara'], -409450.7, places=2)
+        self.assertAlmostEqual(result['tara'], -8994.451, places=2)
         self.assertTrue(result['aproximada'])
 
     def hub(self, raw):

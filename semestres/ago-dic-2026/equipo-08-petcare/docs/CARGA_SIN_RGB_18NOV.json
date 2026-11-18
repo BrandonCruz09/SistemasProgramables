@@ -1,0 +1,24 @@
+{
+  "fecha": "2026-11-18",
+  "puerto": "COM3",
+  "archivos_verificados": {
+    "actuadores.py": "19fc183f444021fd49a71063e6e728e4e6167997ba30b36d7915b9bde26c68d3",
+    "boot.py": "ab7ccd77b3d027b3d018d6be87a6ffde736b0e6a2c6bab28323a1f5396d3448b",
+    "calibracion_pesa.py": "ae9f5d10a8cd3e2a2456fb1947f2533f367805051596b5bd24e2013dfa4d305a",
+    "calibrar_bascula.py": "60d5bb1b13e5ef87a4989dc7ada0940ebc3388e05741c2f35f2ddb536f05879b",
+    "config.py": "b71f3ca46f73e04858852838057b1eb5cb5973377db88522481f71196c95000c",
+    "controlador.py": "bc061416c41c1cfbef6c71279f73b01ca14bd58e18a347c0099848d9abb9fc33",
+    "hx711.py": "12d9f7d70f68bb13114139c00e22166789fd684c33244e745cc05ad8abbe98b9",
+    "mqtt_link.py": "167439464ab551f93aa8c2bf15cdadf7df62912c7fae1df9212053c423a86e6d",
+    "pantalla_peso.py": "589a5919471877dcc2b5d8c5be0130479cbd58811dd9b17d96751c6f953b0c5a",
+    "probar_salidas.py": "35206cb70c79b0294a7a0028ade9f2bbdea8743623265da03f67d9f852fc3752",
+    "probar_servo.py": "18416aa2176ba48c399053f60a790150a9c8f67d1afc3ec72a17b1528dafe1ce",
+    "prueba_periodica.py": "c7909b1aa3fd93f61e570bd787a86d0dca09d40e8227d0bf579a979de556bb83",
+    "sensores.py": "0bbaed8bcae4898553c257b10137127153bb01c5ff8252dcf239b7bd4a123bfe",
+    "ssd1306.py": "980f8084b94d946ac83c8219b11a0e9fc18d39eca73407c130261fcf296c6bbc",
+    "wifi_panel.py": "4ce24dc8ea4c5bc9093609f2b428529665f8c582578407fd7721260a08417f14",
+    "main.py": "e01649531f1a4057e5e00b39048eb3789ac3a6f06a45adc8b1156f942711f139"
+  },
+  "calibracion_y_perfil_preservados": true,
+  "prueba_fisica_actuadores": false
+}
