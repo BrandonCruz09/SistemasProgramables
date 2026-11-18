@@ -5,7 +5,7 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22
 # ============================================
 # PetCare - maquina de estados para servir alimento y activar la bomba.
 # El ciclo principal no usa esperas largas: Thonny puede interrumpirlo con Stop.
@@ -21,12 +21,11 @@ class PetCareController:
     PUMPING = "BOMBA_ACTIVA"
     FAULT = "ERROR_ACTUADOR"
 
-    def __init__(self, sensors, servo, pump, buzzer, led):
+    def __init__(self, sensors, servo, pump, buzzer):
         self.sensors = sensors
         self.servo = servo
         self.pump = pump
         self.buzzer = buzzer
-        self.led = led
         self.state = self.IDLE
         self.deadline = 0
         self.status = {}
@@ -101,10 +100,9 @@ class PetCareController:
         self.last_event = 'Agua: ' + reason
 
     def request_signal(self, now_ms):
-        # Indicador breve de IA. No mueve la compuerta ni enciende la bomba.
+        # Registra la deteccion; no activa componentes fisicos.
         self._signal_until = self._add(now_ms, 1500)
-        self._optional('RGB', self.led.set_color, 'white')
-        self.last_event = 'IA: perro confirmado; orden RGB blanca durante 1500 ms'
+        self.last_event = 'IA: perro confirmado; evento registrado sin actuadores'
         return True, self.last_event
 
     @staticmethod
@@ -327,23 +325,7 @@ class PetCareController:
             self._last_beep_until = None
         if self._signal_until is not None and self._diff(now_ms, self._signal_until) >= 0:
             self._signal_until = None
-        self._update_led()
         return self.status
-
-    def _update_led(self):
-        if self._signal_until is not None:
-            color = 'white'
-        elif config.WATER_LEVEL_SENSOR_ENABLED and not self.status.get("water_available"):
-            color = "red"
-        elif self.fault:
-            color = 'red'
-        elif not self.status.get("calibrated") or not self.status.get('hx_ok'):
-            color = "yellow"
-        elif self.status.get("pir"):
-            color = "blue"
-        else:
-            color = "green"
-        self._optional('RGB', self.led.set_color, color)
 
     def snapshot(self):
         data = dict(self.status)
@@ -375,6 +357,5 @@ class PetCareController:
         self._optional('bomba', self.stop_pump)
         self._optional('buzzer', self.buzzer.off)
         self._optional('servo', self.servo.release)
-        self._optional('RGB', self.led.set_color, 'off')
         self.actions_allowed = False
         self.state = self.FAULT if self.fault else self.IDLE

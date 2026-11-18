@@ -46,7 +46,7 @@ def main():
         print('PETCARE — integración MQTT e IA',flush=True)
         print('Celular: http://%s:%s/' % (settings['hardware_broker_host'],settings.get('web',{}).get('port',8765)),flush=True)
         print('Dashboard: http://%s:%s/' % (settings['hardware_broker_host'],settings.get('dashboard',{}).get('port',8766)),flush=True)
-        print('Conecta ambas placas al mismo Wi-Fi. La señal IA usa RGB blanco 1.5 s.',flush=True)
+        print('Conecta ambas placas al mismo Wi-Fi. La IA registra detecciones; el montaje no usa RGB.',flush=True)
         cloud = settings.get('firebase', {})
         print('Nube: '+(cloud.get('provider','rtdb') if cloud.get('enabled') else 'desactivada')+
               '. Ctrl+C cierra los servicios.',flush=True)

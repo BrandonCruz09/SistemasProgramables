@@ -69,7 +69,6 @@ class MontajeTests(unittest.TestCase):
     def test_pines_oled_no_chocan_con_componentes(self):
         active = [config.PIN_DHT22,config.PIN_PIR,config.PIN_HX711_DOUT,config.PIN_HX711_SCK,
                   config.PIN_SERVO,config.PIN_PUMP_RELAY,config.PIN_BUZZER,
-                  config.PIN_LED_R,config.PIN_LED_G,config.PIN_LED_B,
                   config.OLED_SDA,config.OLED_SCL]
         self.assertEqual(len(active),len(set(active)))
         self.assertEqual((config.OLED_SDA,config.OLED_SCL),(26,25))

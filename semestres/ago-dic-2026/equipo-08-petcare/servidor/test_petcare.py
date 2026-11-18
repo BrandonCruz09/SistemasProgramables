@@ -59,7 +59,7 @@ class PetCareTests(unittest.TestCase):
 
     def make_controller(self, **kwargs):
         self.servo=FakeServo(); self.pump=FakePump(); self.buzzer=FakeBuzzer(); self.led=FakeLed()
-        self.controller=PetCareController(FakeSensors(**kwargs), self.servo, self.pump, self.buzzer, self.led)
+        self.controller=PetCareController(FakeSensors(**kwargs), self.servo, self.pump, self.buzzer)
         return self.controller
 
     def test_feed_requires_calibrated_scale(self):

@@ -5,17 +5,17 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22
 # ============================================
 # PetCare | Equipo 08 | Sistemas Programables
 # Objetivo: supervisar sensores y accionar una compuerta con servo posicional y una bomba con rele.
 # Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo=33,
-# rele bomba=23, buzzer=22, LED RGB=16/17/21. Ver CONEXIONES_PROTOTIPO.txt.
+# rele bomba=23, buzzer=22. Ver CONEXIONES_PROTOTIPO.txt.
 
 import time
 import config
 from sensores import SensorHub
-from actuadores import ServoSG90, PumpRelay, ActiveBuzzer, RGBLed
+from actuadores import ServoSG90, PumpRelay, ActiveBuzzer
 from controlador import PetCareController
 from wifi_panel import connect_wifi, WebDashboard
 from mqtt_link import MQTTLink
@@ -40,7 +40,7 @@ def main(prueba_periodica=False, solo_lectura=False, max_runtime_ms=None):
     # Apagar primero la bomba, aun si despues falla otro componente.
     pump = PumpRelay()
     controller = dashboard = mqtt_link = None
-    servo = buzzer = led = None
+    servo = buzzer = None
     screen = None
     try:
         sensors = SensorHub()
@@ -50,8 +50,7 @@ def main(prueba_periodica=False, solo_lectura=False, max_runtime_ms=None):
             buzzer = BuzzerOmitido()
         else:
             buzzer = ActiveBuzzer()
-        led = RGBLed()
-        controller = PetCareController(sensors, servo, pump, buzzer, led)
+        controller = PetCareController(sensors, servo, pump, buzzer)
         controller.actions_allowed = not solo_lectura
         screen = PantallaPeso()
         mqtt_link = MQTTLink()
@@ -130,7 +129,6 @@ def main(prueba_periodica=False, solo_lectura=False, max_runtime_ms=None):
             intentar_cierre('controlador', controller.safe_shutdown)
         if servo: intentar_cierre('servo', servo.release)
         if buzzer: intentar_cierre('buzzer', buzzer.off)
-        if led: intentar_cierre('RGB', lambda: led.set_color('off'))
         if screen: intentar_cierre('OLED', screen.close)
         if dashboard: intentar_cierre('panel', dashboard.close)
         if mqtt_link: intentar_cierre('MQTT', mqtt_link.close)

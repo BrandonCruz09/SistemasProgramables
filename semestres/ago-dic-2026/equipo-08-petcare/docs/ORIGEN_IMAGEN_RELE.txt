@@ -1,0 +1,16 @@
+Herramienta integrada image_gen. Generacion basada en la foto del rele del usuario, seguida de edicion para reemplazar el dibujo de control por una tabla.
+Archivo final: CONEXION_RELE_K1.png
+Prompt inicial:
+Create a technically accurate Spanish educational wiring infographic, landscape high resolution, clean large text, off-white background, using the referenced photo ONLY as the appearance/orientation reference for the user's HW-383 two channel relay module. Not a photo edit. The final diagram must be readable and unambiguous, not decorative. Title "PETCARE · BOMBA CON RELÉ K1". Subtitle "Conectar con la fuente apagada".
+Top half focus on POWER wiring: draw a simplified faithful black HW-383 board in the same orientation as photo: six blue screw terminals across TOP, two blue relay blocks below, small control pins below. The six terminals explicitly labeled left to right "NC1", "COM1", "NO1", "NC2", "COM2", "NO2" and small numbers 1 to 6. K1 bracket over first three, K2 over last three. NC1 and K2 clearly marked unused. Left source block is only low-voltage OUTPUT "FUENTE 5 V CC" with V+ and V- labeled, not mains L/N. Red wire from V+ to COM1 (second screw). Red wire from NO1 (third screw) to pump red positive wire. Pump on right shown white small cylinder sitting submerged in transparent water reservoir, thin factory black cable exits above water ending in red/black individual conductors. Black wire pump negative to source V-. Diode as black axial cylinder with silver stripe shown across pump's positive/negative wires in a large separate close-up inset: top red horizontal pump+ node and bottom black horizontal pump- node; diode vertical bridge silver band at TOP red side, plain end at BOTTOM black side. Label "Franja → rojo / NO1" and "Sin franja → negro / V−"; "Diodo en paralelo, fuera del agua". Do NOT put diode across COM/NO or in series. Keep source to pump cables separate, uncluttered.
+Bottom half "CONTROL · ESP32 NORMAL". This portion is a clearly labeled connection table, not a guessed physical pin order. Show simplified ESP32 on breadboard labeled 3V3, GND, D23 and relay control labels. Exact table:
+"ESP32 D23 → IN1"
+"ESP32 3V3 → VCC"
+"ESP32 3V3 → IN2 (sin uso)"
+"Fuente V+ 5 V → RY-VCC"
+"Fuente V− → GND del relé y GND del ESP32"
+"Quitar puente J1 entre RY-VCC y VCC"
+"Seguir las letras del módulo; no el orden del dibujo."
+Small note "ESP32 por USB durante esta prueba. No unir 5 V con 3V3."
+Footer clearly "V− es el retorno de baja tensión. El borne ⏚ de la fuente es tierra de protección; no se usa como GND del ESP32." This diagram does not instruct any mains wiring. Large arrows and short labels. No RGB, no servo, no camera, no extraneous components. Do not duplicate outputs or draw electrical shorts.
+Edicion final: conservar el circuito de potencia y diodo; sustituir todo el dibujo inferior de ESP32, rele y cables por pasos de control en texto. VCC a 3V3; IN2 a 3V3; IN1 a D23; RY-VCC a 5V; GND comun a V-. Retirar J1. Consultar las letras de la placa.

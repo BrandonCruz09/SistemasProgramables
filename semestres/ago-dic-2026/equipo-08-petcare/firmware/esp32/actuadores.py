@@ -1,11 +1,11 @@
 # ============================================
 # Proyecto: PetCare — Equipo 08
 # Archivo: actuadores.py
-# Objetivo: Encapsular servo posicional, bomba por rele, buzzer y LED RGB.
+# Objetivo: Encapsular servo posicional, bomba por rele, buzzer.
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22
 # ============================================
 # PetCare - salidas seguras y con tiempos limitados.
 import config
@@ -91,21 +91,3 @@ class ActiveBuzzer:
 
     def off(self):
         self._pin.value(0)
-
-
-class RGBLed:
-    def __init__(self):
-        from machine import Pin
-        self._r = Pin(config.PIN_LED_R, Pin.OUT, value=0)
-        self._g = Pin(config.PIN_LED_G, Pin.OUT, value=0)
-        self._b = Pin(config.PIN_LED_B, Pin.OUT, value=0)
-
-    def set_color(self, color):
-        values = {
-            "off": (0, 0, 0), "green": (0, 1, 0), "blue": (0, 0, 1),
-            "yellow": (1, 1, 0), "red": (1, 0, 0), "white": (1, 1, 1),
-        }
-        r, g, b = values.get(color, values["off"])
-        self._r.value(r)
-        self._g.value(g)
-        self._b.value(b)

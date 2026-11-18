@@ -1,3 +1,5 @@
+> Actualizacion 17 de noviembre: RGB retirado. Buzzer 3V3 en GPIO22 habilitado; OLED SDA26/SCL25. La IA registra detecciones sin accionar luces. Ver docs/CONEXIONES_SIN_RGB_17NOV.txt.
+
 > **Preparación del 15 de noviembre:** programa completo con OLED SSD1306 (SDA26/SCL25), peso calibrado y compuerta cerrada a 1850 us / abierta a 800 us. Cámara en vivo dentro del panel. 73 pruebas de software y 7 verificaciones locales de video/MQTT aprobadas. Archivos preparados para cargar; montaje completo aún pendiente de prueba física. [Guía de carga y conexiones](docs/MONTAJE_LISTO_15NOV.md).
 
 > **Actualización del 14 de noviembre:** calibración de la pesa integrada y cargada al ESP32. Captura física de 12 lecturas; último peso 22.46 g. MQTT de PC, guardado y consulta en Firestore real y API del panel comprobados con esa captura: 22 verificaciones aprobadas. La prueba usó USB desde el ESP32; no prueba aún Wi-Fi integral ni compuerta. DHT sin respuesta en esta captura. [Resultados y siguientes pasos](docs/CALIBRACION_FIRESTORE_14NOV.md).
@@ -46,7 +48,7 @@ La cámara es una segunda placa. La PC recibe MJPEG por HTTP, ejecuta MobileNet 
 | `petcare/equipo8/ack` | DevKit → broker → PC | Resultado y motivo de aceptación/rechazo |
 | `petcare/equipo8/vision` | PC → broker | Presencia de perro/persona, disponibilidad y recuadros; sin fotografía |
 
-El RGB admite ahora `signal_dog` por MQTT: blanco durante 1.5 s y retorno a la supervisión local. El buzzer conserva lógica local. La ejecución física integral sigue pendiente.
+La orden `signal_dog` registra la detección por MQTT sin activar salidas físicas. El buzzer conserva lógica local. La ejecución física integral sigue pendiente.
 
 ## 🛠️ Hardware
 
@@ -60,7 +62,6 @@ El RGB admite ahora `signal_dog` por MQTT: blanco durante 1.5 s y retorno a la s
 | 6 | OLED SSD1306 128×64 de Nebula Dash | Pantalla de gramos | 1 reutilizada | Sin compra adicional |
 | 7 | MG995 | Actuador compuerta | 1; SG90 disponibles de pruebas anteriores | Por registrar |
 | 8 | Bomba 3–5 V + relé HW-383 + diodo | Actuador de agua | 1 conjunto, probado por el equipo | Por registrar |
-| 9 | LED RGB + 3 resistencias | Indicador | 1 conjunto | Por registrar |
 | 10 | Buzzer activo/driver según consumo | Indicador audible | 1 | Por registrar |
 | 11 | Fuente regulada 5 V / 5 A | Alimentación | 1 | Por registrar |
 | 12 | Coroplast, soportes, jarra azul, bote rojo y platos | Estructura/depósitos | Según medidas reales | Por registrar |
@@ -130,7 +131,7 @@ Detectar perros y personas en la PC mediante **MobileNet SSD preentrenado sobre 
 - El flujo es ESP32-CAM → MJPEG → PC/OpenCV → página web del celular.
 - Se dibujan recuadros y se confirma presencia después de tres cuadros. Mínimos: perro 0.60; persona 0.80. No son porcentajes de precisión del sistema.
 - El equipo confirmó video y detección de persona/perro en el teléfono. También se reportó un falso positivo de perro como persona; se añadieron umbrales por clase y revisión de recuadros contradictorios. Falta medir su efecto en escenas repetidas.
-- La zona de platos está sin ajustar hasta fijar la cámara. La detección no dispensa alimento. La política opcional `dog_indicator_enabled` envía una señal breve al RGB por MQTT; queda pendiente comprobarla en hardware.
+- La zona de platos está sin ajustar hasta fijar la cámara. La detección no dispensa alimento. La política opcional `dog_indicator_enabled` registra una detección por MQTT sin activar componentes físicos.
 - [Funcionamiento, pruebas y límites](docs/VIDEO_Y_DETECCION.md). El envío de decisión IA→MQTT→RGB y el registro en RTDB se probaron con dispositivos simulados. Falta repetirlos con el hardware real.
 
 ## 🎥 Demostración

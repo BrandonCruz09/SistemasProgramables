@@ -5,7 +5,7 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22
 # ============================================
 # PetCare - Wi-Fi opcional y panel web local, sin dependencias externas.
 import config
@@ -19,7 +19,7 @@ HTML = """<!doctype html><html lang="es"><meta charset="utf-8">
 <button id="waterTest" onclick="send('/pump/test')" disabled>Probar agua 3 segundos</button>
 <button onclick="send('/pump/stop')">Detener agua</button>
 <button id="food" onclick="send('/feed')" disabled>Completar tazon hasta 300 g</button>
-<button onclick="send('/feed/stop')">Cancelar alimento</button><button onclick="send('/signal')">Probar luz RGB</button><p>Las paradas remotas pueden esperar al final del pulso. Peso objetivo total: 300 g; puede haber exceso por croquetas en caida.</p><p id="message" role="status"></p><pre id="status"></pre>
+<button onclick="send('/feed/stop')">Cancelar alimento</button><p>Las paradas remotas pueden esperar al final del pulso. Peso objetivo total: 300 g; puede haber exceso por croquetas en caida.</p><p id="message" role="status"></p><pre id="status"></pre>
 <script>let busy=false,ready=false,lock=0;
 function buttons(){let blocked=busy||!ready||Date.now()<lock||!document.getElementById('check').checked;document.getElementById('water').disabled=blocked;document.getElementById('waterTest').disabled=blocked}
 document.getElementById('check').onchange=buttons;

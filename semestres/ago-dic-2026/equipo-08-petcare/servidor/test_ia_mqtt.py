@@ -79,12 +79,13 @@ class IATests(unittest.TestCase):
         self.assertIsNone(policy.propose(value, 30))
 
     def test_senal_no_mueve_motores_y_se_apaga(self):
-        outputs=[SalidaSimulada() for _ in range(4)]
+        outputs=[SalidaSimulada() for _ in range(3)]
         control=PetCareController(SensoresSimulados(), *outputs)
         control.tick(0)
         self.assertTrue(control.request_signal(0)[0])
-        control.tick(1499);self.assertEqual(outputs[3].color,'white')
-        control.tick(1500);self.assertNotEqual(outputs[3].color,'white')
+        control.tick(1499);self.assertTrue(control.snapshot()['ia_signal_active'])
+        control.tick(1500);self.assertFalse(control.snapshot()['ia_signal_active'])
+        self.assertFalse(outputs[2].active)
         self.assertFalse(outputs[0].angles);self.assertFalse(outputs[1].active)
 
     def test_mqtt_link_real_deduplica_y_confirma(self):
@@ -92,7 +93,7 @@ class IATests(unittest.TestCase):
         spec=importlib.util.spec_from_file_location('hardware_mqtt_test',path)
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         link=module.MQTTLink(); link.client=Mock()
-        control=Mock();control.state='LISTO';control.request_signal.return_value=(True,'RGB')
+        control=Mock();control.state='LISTO';control.request_signal.return_value=(True,'Evento IA')
         control.action_in_progress.return_value = False
         msg=b'{"id":"ia-test","action":"signal_dog"}'
         for now in (0, 50):

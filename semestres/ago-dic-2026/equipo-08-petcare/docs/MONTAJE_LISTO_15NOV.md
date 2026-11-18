@@ -1,3 +1,5 @@
+> Actualizacion 17 de noviembre: montaje sin RGB. Consulta CONEXIONES_SIN_RGB_17NOV.txt.
+
 # PetCare listo para cargar y comprobar
 
 15 de noviembre de 2026. Se preparó el software para el montaje. No se cargaron estas nuevas versiones a las placas ni se movieron actuadores durante esta preparación.
@@ -30,9 +32,8 @@ Conectar por el nombre impreso en cada módulo, no por la posición izquierda/de
 | Servo MG995 | Señal | GPIO33 |
 | Relé HW-383 | IN1 | GPIO23, activo LOW; conservar montaje de potencia validado |
 | Buzzer | Señal de control | GPIO22; conservar driver/alimentación según el módulo |
-| RGB cátodo común | R / G / B | GPIO16 / GPIO17 / GPIO21, cada color con su resistencia |
 
-La OLED tiene bus exclusivo: no usar GPIO21/22 de Nebula Dash, pues aquí controlan RGB y buzzer. No se requiere MPU6050. Se reutiliza el controlador ssd1306.py del juego.
+La OLED tiene bus exclusivo: no usar GPIO21/22 de Nebula Dash, pues GPIO22 controla el buzzer; conservar SDA26/SCL25. No se requiere MPU6050. Se reutiliza el controlador ssd1306.py del juego.
 
 El servo toma +5 V de la fuente externa y su negativo va a V−. V− se une a GND del ESP32. La tierra de protección de la fuente no reemplaza V−. Durante las pruebas, alimentar cada placa por su USB; no alimentar VIN con la fuente externa al mismo tiempo. La bomba no toma potencia de un GPIO ni del riel 3V3.
 
@@ -60,7 +61,7 @@ La carpeta del escritorio contiene configuraciones privadas; en Git se publica e
 7. Abrir `ABRIR_PANEL.url` en la PC o escribir `http://IP_DE_LA_PC:8766/` en el celular. Incluye cámara y gramos. La vista de cámara independiente está en el puerto 8765. No poner localhost en el teléfono.
 8. Si PC abre pero celular no, ejecutar `CORREGIR_RED_LOCAL.cmd` y aceptar el aviso de administrador de Windows. Verificar también que no sea una red de invitados ni tenga aislamiento de clientes.
 9. Con el mecanismo libre, energizar servo y probar una sola orden de alimento sin croquetas; debe apartarse a 800 us y volver a 1850 us. Después probar con pocas croquetas y vigilar atascos. Los valores de posición están observados, pero todavía no se validó la dosis ni el cierre bajo carga.
-10. Revisar DHT22: en la captura anterior no respondió. Comprobar después PIR, RGB y buzzer con el montaje real. Medir el volumen de agua: los 15 s son una referencia sin calibrar y no garantizan 500 ml. No se usa flotador.
+10. Revisar DHT22: en la captura anterior no respondió. Comprobar después PIR y buzzer con el montaje real. Medir el volumen de agua: los 15 s son una referencia sin calibrar y no garantizan 500 ml. No se usa flotador.
 
 Si cambia la IP de la PC, ejecutar de nuevo el preparador y volver a cargar `config_local.py` en el ESP32 y `mqtt_config.py` en la cámara. Los archivos de calibración no cambian al preparar la red.
 

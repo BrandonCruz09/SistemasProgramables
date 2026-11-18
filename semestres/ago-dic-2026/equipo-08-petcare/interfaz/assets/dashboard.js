@@ -7,7 +7,7 @@ let videoPaused = demo, videoError = false, videoRetry = null;
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const number = (v, unit) => finite(v) ? `${v.toFixed(1)} ${unit}` : 'Sin lectura';
 const states = {LISTO:'Lista para cuidar',COMPUERTA_ABIERTA:'Sirviendo alimento',COMPUERTA_CERRANDO:'Cerrando el plato',BOMBA_ACTIVA:'Sirviendo agua',ERROR_ACTUADOR:'Necesita una revisión'};
-const actionNames = {feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Luz de la estación',reset_demo:'Demostración reiniciada'};
+const actionNames = {feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',reset_demo:'Demostración reiniciada'};
 
 el('demoBanner').hidden = !demo;
 el('resetDemo').addEventListener('click', () => command('reset_demo'));
@@ -76,7 +76,6 @@ function buttons() {
   const ready=last?.available && last.age_seconds<=15 && s.state==='LISTO' && s.actions_allowed!==false;
   el('serveFood').disabled=!!pending||!ready||!s.calibrated||!s.hx_ok||!s.servo_enabled||!!s.food_active;
   el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.servo_holding_pwm||!!s.food_active||Date.now()<waterLock;
-  el('signalDog').disabled=!!pending||!ready;
   el('resetDemo').disabled=!!pending;
   el('foodProgress').textContent = !last?.available ? 'Esperando una lectura reciente de la pesa.' : !s.servo_enabled ? 'Compuerta pendiente de validación física.' : s.food_result || 'Listo para completar su plato.';
   el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.servo_holding_pwm ? 'Agua bloqueada mientras el servo mantiene su posición.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
@@ -94,7 +93,6 @@ function render(data) {
   el('pir').textContent=data.available&&typeof s.pir==='boolean'?(s.pir?'Hay movimiento':'Sin movimiento'):'Sin lectura';
   el('water').textContent=typeof s.water_available==='boolean'?(s.water_available?'Agua disponible':'Nivel bajo'):'Nivel no medido';
   el('fsm').textContent=!data.available?'Sin conexión':s.food_active?'Completando su plato':states[s.state]||s.state||'Sin datos';
-  el('signalDog').dataset.active=String(!!s.ia_signal_active&&data.available);
   el('vision').textContent=demo?'Detección pendiente en la demo':data.vision?.available?(data.vision.dog_detected?'Perro detectado':'Sin perro detectado'):'Sin imagen reciente';
   const cloud=data.firebase||{};
   el('cloud').textContent=demo?'Sin envíos durante la demo':cloud.status==='desactivado'?'Sin configurar':cloud.status||'Sin información';
@@ -127,7 +125,7 @@ async function command(action) {
   } catch {feedback('No se pudo confirmar la orden. Revisa la estación antes de repetirla.',true);}
   finally {clearTimeout(timeout);pending--;buttons();await refresh();}
 }
-for(const [id,action] of Object.entries({serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water',signalDog:'signal_dog'}))el(id).addEventListener('click',()=>command(action));
+for(const [id,action] of Object.entries({serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
 el('supervised').addEventListener('change',buttons);
 el('metric').addEventListener('change',()=>chart(last?.history||[]));
 async function refresh() {

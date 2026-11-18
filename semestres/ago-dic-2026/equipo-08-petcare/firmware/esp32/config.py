@@ -5,7 +5,7 @@
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
-# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22, RGB=16/17/21
+# Pines: DHT22=4, PIR=27, HX711 DT/SCK=19/18, sin flotador, servo MG995=33, bomba rele=23, buzzer=22
 # ============================================
 # PetCare - Equipo 08 | Sistemas Programables
 # Ajustes de pines y limites. Cambia solo los valores marcados como configurables.
@@ -27,11 +27,8 @@ PUMP_ACTIVE_LEVEL = 0  # HW-383 K1: LOW activa; HIGH apaga.
 PUMP_TIMER_ID = 0
 WATER_LEVEL_SENSOR_ENABLED = False  # Montaje actual sin flotador.
 PIN_BUZZER = 22       # Buzzer activo; si es pasivo, requiere PWM
-PIN_LED_R = 16
-PIN_LED_G = 17
-PIN_LED_B = 21
 
-# OLED de Nebula Dash. Pines libres; no cambiar RGB21 ni buzzer22.
+# OLED de Nebula Dash: bus dedicado en GPIO26/25.
 OLED_ENABLED = True
 OLED_SDA = 26
 OLED_SCL = 25
@@ -52,7 +49,7 @@ SERVO_OPEN_US = 1350  # Ultimo ajuste solicitado; falta revalidar el conjunto al
 SERVO_MIN_PULSE_US = 1350
 SERVO_MAX_PULSE_US = 1690
 SERVO_MOVEMENT_ENABLED = False  # Revalidar montaje tras el temblor; no rearmar automaticamente.
-BUZZER_ENABLED = False  # Aun no conectado.
+BUZZER_ENABLED = True  # Modulo activo 3V3, señal en GPIO22.
 SERVO_OPEN_TIME_MS = 900
 SERVO_SETTLE_MS = 350
 

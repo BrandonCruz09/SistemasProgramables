@@ -33,7 +33,6 @@ class Output:
     def __init__(self): self.active=False
     def on(self, duration_ms=None): self.active=True
     def off(self): self.active=False
-    def set_color(self, color): self.color=color
 
 
 class DemoState(DashboardState):
@@ -50,7 +49,7 @@ def main():
     state=DemoState()
     def controller():
         sensors=Sensors()
-        return PetCareController(sensors,Servo(sensors),Output(),Output(),Output())
+        return PetCareController(sensors,Servo(sensors),Output(),Output())
     c=controller()
     server=start_dashboard(state,ROOT/'interfaz/dashboard.html','127.0.0.1',8770,demo_mode=True)
     print('SIMULACION http://127.0.0.1:8770/',flush=True)

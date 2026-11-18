@@ -1,0 +1,25 @@
+PETCARE SIN RGB - 17 de noviembre de 2026
+
+Programa preparado en Escritorio/PetCare_Listo_15nov/01_ESP32. main.py abierto en Thonny. No cargado ni ejecutado: COM3 no encontrado.
+
+RGB retirado del firmware y de ambos paneles. IA/MQTT registra detecciones sin accionar luces. Buzzer activo 3V3 habilitado en GPIO22; respuesta fisica pendiente.
+
+OLED: VCC 3V3, GND GND, SDA GPIO26, SCL GPIO25.
+
+Se conserva calibracion/tara. Apertura 1350 us y cierre 1690 us; el servo sigue bloqueado hasta revalidar el montaje por los fallos previos. Objetivo 300 g y agua manual supervisada 5 s. Sin flotador.
+
+121 pruebas de software aprobadas; no son una validacion fisica.
+
+RELE HW-383: seis tornillos arriba y pines abajo, como en tu foto. De izquierda a derecha: 1 NC1, 2 COM1, 3 NO1, 4 NC2, 5 COM2, 6 NO2.
+
+Apagar la fuente antes de tocar cables. V+ 5 V a COM1 (2). NO1 (3) a rojo de bomba. Negro de bomba a V-. NC1 y K2 sin cables.
+
+Diodo en paralelo: con franja a rojo/NO1; sin franja a negro/V-. Aislar patas, fuera del agua. No conectar entre COM1 y NO1 ni en serie.
+
+Quitar puente J1 RY-VCC/VCC. Fuente V+ 5 V a RY-VCC. ESP32 3V3 a VCC e IN2. GPIO23 a IN1. GND del rele y GND del ESP32 a V- de la fuente. Seguir letras, no adivinar posiciones.
+
+ESP32 por USB en esta prueba. No unir 5 V con 3V3. Tierra de proteccion de la fuente no sustituye V- ni GND. Esta guia no modifica el cableado de red electrica.
+
+SIGUIENTE: terminar rele con fuente apagada y conectar ESP32 normal por USB de datos. Actualizar todos los modulos de 01_ESP32 en la placa antes de F5; ejecutar solo main.py no actualiza los modulos viejos. Conservar config_local.py y JSON de calibracion/tara. Primero revisar sensores/OLED; luego bomba sumergida y espacio en el tazon. Servo pendiente de revalidacion.
+
+Fuente: https://www.handsontec.com/dataspecs/module/2Ch-relay.pdf. Montaje separado ya documentado en GUIA_RELE_11NOV.txt; falta verificar tus cables actuales.

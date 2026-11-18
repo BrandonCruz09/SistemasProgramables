@@ -103,7 +103,7 @@ def run():
                 if command['id'] not in bridge.pending_ia:break
                 time.sleep(.02)
             check('ESP32 simulada recibe y confirma',any(a['id']==command['id'] and a['ok'] for a in sim.acks))
-            check('RGB simulado enciende blanco',sim.led.color=='white')
+            check('Deteccion registrada sin actuadores',sim.controller.snapshot()['ia_signal_active'])
             check('IA no activa servo ni bomba',not sim.servo.angles and not sim.pump.active)
             check('Puente correlaciona el ACK',command['id'] not in bridge.pending_ia)
             stored=db.get(topic+'/eventos_ia/'+command['id'])
@@ -113,7 +113,7 @@ def run():
             check('Estado actual conserva telemetria',db.get(topic+'/estado_actual').get('telemetria')==telemetry)
             deadline=time.monotonic()+2
             while time.monotonic()<deadline:sim.tick();time.sleep(.02)
-            check('Señal termina sin otra orden',sim.led.color!='white')
+            check('Señal termina sin otra orden',not sim.controller.snapshot()['ia_signal_active'])
             fixture['frame_number']+=1
             check('No repite con el perro presente',bridge.process_vision(fixture) is None)
             report['passed']=True

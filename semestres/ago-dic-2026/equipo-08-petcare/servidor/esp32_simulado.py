@@ -49,8 +49,8 @@ class ESP32Simulado:
             raise ValueError('Usa un topico separado con /simulacion/')
         self.topic = topic
         self.sensors = SensoresSimulados()
-        self.servo, self.pump, self.buzzer, self.led = [SalidaSimulada() for _ in range(4)]
-        self.controller = PetCareController(self.sensors, self.servo, self.pump, self.buzzer, self.led)
+        self.servo, self.pump, self.buzzer = [SalidaSimulada() for _ in range(3)]
+        self.controller = PetCareController(self.sensors, self.servo, self.pump, self.buzzer)
         self.commands = queue.Queue(maxsize=100)
         self.ready = threading.Event()
         self.seen = set()

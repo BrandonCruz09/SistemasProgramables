@@ -1,7 +1,7 @@
 # ============================================
 # Proyecto: PetCare — Equipo 08
 # Archivo: ia_policy.py
-# Objetivo: Decidir una señal RGB por presencia reciente de perro.
+# Objetivo: Registrar presencia reciente de perro por MQTT.
 # Equipo: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312)
 # Materia: Sistemas Programables — ISC TecNM León
 # Semestre: ago-dic-2026
