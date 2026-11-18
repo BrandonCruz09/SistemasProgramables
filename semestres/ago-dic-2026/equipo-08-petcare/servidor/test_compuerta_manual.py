@@ -98,4 +98,3 @@ class GateTests(unittest.TestCase):
             self.assertEqual(m.client.publish.call_count,initial+2)
 
 if __name__=='__main__':unittest.main()
-
