@@ -1,0 +1,22 @@
+{
+  "revision": "petcare-19nov-r4",
+  "source_zip": "PetCare_v2_19nov_r2.zip",
+  "source_sha256": "e22aa42dd9fe094aa2bdff86398b385381df68aabeb32bfceb302f2992e9869d",
+  "source_tests_passed": 41,
+  "merged_firmware_tests_passed": 61,
+  "pc_tests_passed": 29,
+  "tests_use_simulated_hardware_and_cloud": true,
+  "manual_enabled": true,
+  "automatic_enabled": true,
+  "servo_open_us": 1350,
+  "servo_closed_us": 1690,
+  "food_target_g": 300,
+  "water_pulse_ms": 5000,
+  "factor_preserved": 285.80386,
+  "tare_from_documented_18nov_zero": -8994.451,
+  "previous_tare_backed_up": -428929.16,
+  "uploaded_to_esp32": false,
+  "physical_cutoff_verified_this_revision": false,
+  "reason_not_uploaded": "No serial port detected",
+  "firestore_live_write_tested_this_revision": false
+}

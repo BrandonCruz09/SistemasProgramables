@@ -276,7 +276,7 @@ class Tests(unittest.TestCase):
         for _ in range(5):
             c = cargar(str(FW))
             self.assertEqual(c["factor"], 285.80386)
-            self.assertEqual(c["tara"], -428929.16)
+            self.assertEqual(c["tara"], -8994.451)
         self.assertEqual(before, p.read_bytes())
 
     def test_newer_tare_does_not_override(self):
@@ -285,7 +285,7 @@ class Tests(unittest.TestCase):
                 (FW / "calibracion_validada.json").read_bytes()
             )
             Path(folder, "tara_tazon.json").write_text('{"TARE_RAW":0}')
-            self.assertEqual(cargar(folder)["tara"], -428929.16)
+            self.assertEqual(cargar(folder)["tara"], -8994.451)
 
     def test_missing_calibration_not_zero(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -344,6 +344,242 @@ class Tests(unittest.TestCase):
         self.assertEqual(sum(h.sck.writes), 25)
         self.assertEqual(h.sck.value(), 0)
 
+    def test_water_not_blocked_without_pc(self):
+        for _ in range(20):
+            self.assertTrue(self.c.request_pump(clock[0])[0])
+            self.tick(5000)
+            self.tick(10000)
+        self.assertLessEqual(len(self.c.water_events), 30)
+
+    def test_control_weight_ignores_single_spike(self):
+        import sensores
+
+        h = sensores.SensorHub.__new__(sensores.SensorHub)
+        h.cal = {
+            "tara": 0,
+            "factor": 1,
+            "error": None,
+            "aproximada": True,
+            "referencia_g": None,
+            "archivo": "",
+        }
+        h.errors = {}
+        h.pir = None
+        h.temp = h.humidity = None
+        h.last_hx = clock[0]
+        h.samples = [100, 100, 900]
+        h.raw = 900
+        self.assertEqual(h.snapshot(clock[0])["weight_control_g"], 100)
+
+    def signal(self):
+        return self.c.command("signal_dog", clock[0])
+
+    def test_stop_water_cancels_queued_automatic_water(self):
+        self.signal()
+        self.assertIsNotNone(self.c.water_pending_until)
+        self.c.command("stop_water", clock[0])
+        self.s.g = 301
+        self.tick(1)
+        self.assertIsNone(self.c.water_pending_until)
+        self.assertFalse(self.p.active)
+
+    def test_cancel_food_also_cancels_pending_water(self):
+        self.signal()
+        self.c.command("stop_food", clock[0])
+        self.tick(1)
+        self.assertIsNone(self.c.food_mode)
+        self.assertFalse(self.p.active)
+
+    def test_fault_discards_queue_and_rejects_new_presence(self):
+        self.signal()
+        self.c.handle_fault(OSError("salida"), clock[0])
+        self.signal()
+        self.tick(1)
+        self.assertIsNone(self.c.water_pending_until)
+        self.assertIsNone(self.c.food_mode)
+        self.assertFalse(self.p.active)
+        self.assertFalse(self.c.request_gate(True, clock[0])[0])
+
+    def test_disabling_automation_discards_pending_water(self):
+        self.c.water_pending_until = time.ticks_add(clock[0], 10000)
+        config.AUTO_SERVE_ENABLED = False
+        try:
+            self.tick(1)
+        finally:
+            config.AUTO_SERVE_ENABLED = True
+        self.assertIsNone(self.c.water_pending_until)
+        self.assertFalse(self.p.active)
+
+    def test_manual_water_consumes_pending_automatic_water(self):
+        self.s.g = 20
+        self.tick(1)
+        self.signal()
+        self.c.request_pump(clock[0])
+        self.tick(5000)
+        self.tick(10001)
+        self.assertIsNone(self.c.water_pending_until)
+        self.assertEqual(self.c.water_sequence, 1)
+
+    def test_bounded_water_log_reports_discarded_events(self):
+        for _ in range(20):
+            self.c.request_pump(clock[0])
+            self.tick(5000)
+            self.tick(10000)
+        self.assertGreater(self.c.snapshot()["water_events_dropped"], 0)
+        self.assertLessEqual(len(self.c.water_events), 30)
+
+    def test_manual_and_automatic_modes_are_reported(self):
+        self.assertEqual(self.c.snapshot()["water_mode"], "manual_y_automatico")
+        self.assertTrue(self.c.snapshot()["auto_serve_enabled"])
+
+    def test_pc_dog_policy_through_mqtt_to_firmware(self):
+        import importlib.util
+
+        path = FW.parents[1] / "servidor" / "ia_policy.py"
+        spec = importlib.util.spec_from_file_location("policy_r4", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        policy = module.DogSignalPolicy()
+        frame = dict(
+            available=True,
+            frame_age_seconds=0.1,
+            processed_at="test",
+            frame_number=1,
+            dog_detected=True,
+            detections=[dict(class_="dog", confidence=0.9)],
+        )
+        frame["detections"][0]["class"] = frame["detections"][0].pop("class_")
+        command = policy.propose(frame, 100)
+        link = MQTTLink()
+        payload = string(link.base + "/commands") + json.dumps(command).encode()
+        link.receive(0x30, payload, self.c, clock[0])
+        self.assertEqual(self.c.food_mode, "auto")
+        self.assertIn(b'"ok": true', bytes(link.tx))
+        self.tick(1)
+        self.s.g = 300
+        self.tick(10)
+        self.assertEqual(self.v.pulse, 1690)
+        self.assertTrue(self.p.active)
+        self.tick(5000)
+        self.assertFalse(self.p.active)
+        self.assertEqual(self.p.pin.value(), 1)
+        link.receive(0x30, payload, self.c, clock[0])
+        self.assertEqual(self.c.water_sequence, 1)
+
+    def test_auto_empty_feeds_then_water(self):
+        self.assertTrue(self.signal()[0])
+        self.assertEqual(self.c.food_mode, "auto")
+        self.tick(1)
+        self.assertFalse(self.p.active)
+        self.s.g = 301
+        self.tick(10)
+        self.assertIsNone(self.c.food_mode)
+        self.assertTrue(self.p.active)
+
+    def test_auto_20g_no_food_water_only(self):
+        self.s.g = 20
+        self.tick(1)
+        self.signal()
+        self.assertIsNone(self.c.food_mode)
+        self.tick(1)
+        self.assertTrue(self.p.active)
+
+    def test_auto_minus3_feeds(self):
+        self.s.g = -3
+        self.tick(1)
+        self.signal()
+        self.assertEqual(self.c.food_mode, "auto")
+
+    def test_auto_bad_scale_water_only(self):
+        self.s.valid = False
+        self.tick(1)
+        self.signal()
+        self.assertIsNone(self.c.food_mode)
+        self.tick(1)
+        self.assertTrue(self.p.active)
+
+    def test_auto_second_visit_serves_nothing(self):
+        self.signal()
+        self.s.g = 301
+        self.tick(10)
+        self.tick(5000)
+        self.tick(60000)
+        self.s.g = 0
+        self.tick(1)
+        self.signal()
+        self.assertIsNone(self.c.food_mode)
+        self.assertFalse(self.c.snapshot()["auto_water_pending"])
+
+    def test_manual_water_blocks_auto_water(self):
+        self.s.g = 20
+        self.c.request_pump(clock[0])
+        self.tick(5000)
+        self.tick(1800000)
+        self.signal()
+        self.assertFalse(self.c.snapshot()["auto_water_pending"])
+
+    def test_auto_disabled_or_readonly_or_dry_test(self):
+        config.AUTO_SERVE_ENABLED = False
+        try:
+            self.signal()
+        finally:
+            config.AUTO_SERVE_ENABLED = True
+        self.c.actions_allowed = False
+        self.signal()
+        self.c.actions_allowed = True
+        self.c.command("gate_test_open", clock[0])
+        self.signal()
+        self.tick(1)
+        self.assertIsNone(self.c.food_mode)
+        self.assertFalse(self.p.active)
+
+    def test_water_waits_for_manual_gate_then_runs(self):
+        self.c.request_gate(True, clock[0])
+        self.signal()
+        self.tick(60000)
+        self.assertFalse(self.p.active)
+        self.tick(30000)
+        self.assertIsNone(self.c.food_mode)
+        self.assertTrue(self.p.active)
+
+    def test_pending_water_expires(self):
+        self.s.g = 20
+        self.c.request_gate(True, clock[0])
+        self.c.auto_water_after = None
+        self.c.water_pending_until = time.ticks_add(clock[0], config.AUTO_WATER_PENDING_MS)
+        old = config.FOOD_MAX_RUN_MS
+        config.FOOD_MAX_RUN_MS = 10**6
+        try:
+            self.tick(121000)
+        finally:
+            config.FOOD_MAX_RUN_MS = old
+        self.c.request_gate(False, clock[0])
+        self.tick(1)
+        self.assertFalse(self.p.active)
+
+    def test_cooldowns_clear_after_time(self):
+        self.signal()
+        self.s.g = 301
+        self.tick(10)
+        self.tick(5000)
+        self.tick(config.AUTO_FOOD_COOLDOWN_MS)
+        self.assertTrue(self.c.snapshot()["auto_food_ready"])
+        self.assertTrue(self.c.snapshot()["auto_water_ready"])
+
+    def test_manual_buttons_still_work_after_auto(self):
+        self.signal()
+        self.s.g = 301
+        self.tick(10)
+        self.tick(5000)
+        self.tick(10000)
+        self.assertTrue(self.c.request_pump(clock[0])[0])
+        self.tick(5000)
+        self.s.g = 0
+        self.tick(1)
+        self.assertTrue(self.c.request_gate(True, clock[0])[0])
+        self.c.request_gate(False, clock[0])
+        self.assertTrue(self.c.request_food(clock[0])[0])
+
 
 class FaultTests(unittest.TestCase):
     setUp = Tests.setUp
@@ -361,7 +597,7 @@ class FaultTests(unittest.TestCase):
         from unittest.mock import Mock, patch
         from main import main
 
-        self.s.cal = {"factor": 285.80386, "tara": -428929.16}
+        self.s.cal = {"factor": 285.80386, "tara": -8994.451}
         wifi = Mock()
         wifi.connected.return_value = False
         wifi.tick.side_effect = OSError("wifi")

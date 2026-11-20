@@ -1,4 +1,4 @@
-"""Programa integrado: sin tara ni movimientos al iniciar."""
+"""Programa integrado: sin tara automatica; cierre inicial solo en modo operativo."""
 
 import time
 import config
@@ -46,6 +46,11 @@ def main(solo_lectura=False, max_runtime_ms=None):
         resources.append(("buzzer", buzzer.off))
         control = PetCareController(SensorHub(), servo, pump, buzzer)
         control.actions_allowed = not solo_lectura
+        if config.SERVO_CLOSE_ON_START and control.actions_allowed:
+            try:
+                control._close("Inicio: cierre enviado a 1690 us")
+            except Exception as exc:
+                control.handle_fault(exc, time.ticks_ms())
         mqtt = MQTTLink()
         resources.append(("MQTT", mqtt.close))
         wifi = Wifi()

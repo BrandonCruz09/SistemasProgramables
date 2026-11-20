@@ -66,7 +66,9 @@ class SensorHub:
         if valid and calibrated and self.samples:
             ordered = sorted(self.samples)
             weight = (ordered[len(ordered) // 2] - self.cal["tara"]) / self.cal["factor"]
-            control = (self.raw - self.cal["tara"]) / self.cal["factor"]
+            # Mediana de las 3 ultimas: un pico aislado no cierra ni cancela el servido.
+            ultimas = sorted(self.samples[-3:])
+            control = (ultimas[len(ultimas) // 2] - self.cal["tara"]) / self.cal["factor"]
             span = (max(ordered) - min(ordered)) / abs(self.cal["factor"])
         pir = None
         try:

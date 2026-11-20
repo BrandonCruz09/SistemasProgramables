@@ -7,7 +7,7 @@
 # Semestre: ago-dic-2026
 # Pines: No aplica; software en PC.
 # ============================================
-"""Una señal breve por presencia confirmada; nunca ordena comida ni agua."""
+"""Publica presencia confirmada; el ESP32 decide el servido y sus pausas."""
 import math
 import uuid
 
