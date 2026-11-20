@@ -1,6 +1,6 @@
 # Firmware activo del 19 de noviembre
 
-Esta carpeta contiene la reconstrucción cargada al ESP32 normal. `../esp32` conserva el código anterior y sus pruebas históricas. No mezclar los módulos de ambas versiones.
+Esta carpeta contiene la revisión r3 del firmware. La revisión anterior se cargó al ESP32; r3 todavía no se ha cargado ni probado físicamente. `../esp32` conserva el código anterior y sus pruebas históricas. No mezclar los módulos de ambas versiones.
 
 ## Uso
 
@@ -19,6 +19,6 @@ Se preservó la referencia del 14 de noviembre: factor 285.80386 y tara -428929.
 
 El tazón vacío sigue indicando aproximadamente 1470–1507 g. La referencia histórica NO está validada para el montaje actual. `prueba_pesa.py` permite leer RAW y crear una propuesta después de comprobar cero, carga conocida y repetición, sin reemplazar la referencia activa. El dato nominal anterior de 163 g era aproximado.
 
-28 pruebas automatizadas pasaron. En el ESP32 real se verificaron PWM de 50 Hz y pulsos acordados, corte de salida del relé a 5004 ms, DHT y MQTT. El usuario confirmó sonido con PWM; luego se cambió a dos notas, pendiente de escucha de esa nueva secuencia. Servo y bombeo siguen pendientes de funcionamiento físico; un ACK no demuestra movimiento ni flujo. No hay medición de volumen.
+Revisión r3: 40 pruebas del firmware y 8 del panel y ACK pasaron en PC. Se probaron errores de inicio, red, pantalla, cierre y apagado. Se ordenó el formato del firmware, se aislaron fallos de servicios y se añadió el estado ERROR_SALIDAS para no informar LISTO cuando falla el cierre. Las siguientes comprobaciones en placa pertenecen a la revisión anterior. En el ESP32 real se verificaron PWM de 50 Hz y pulsos acordados, corte de salida del relé a 5004 ms, DHT y MQTT. El usuario confirmó sonido con PWM; luego se cambió a dos notas, pendiente de escucha de esa nueva secuencia. Servo y bombeo siguen pendientes de funcionamiento físico; un ACK no demuestra movimiento ni flujo. No hay medición de volumen.
 
 Ejecutar pruebas de PC: `python -m unittest discover -s tests`. Las pruebas usan dobles de hardware y no mueven dispositivos.

@@ -1,6 +1,8 @@
 """HX711 canal A, ganancia 128. Lectura sin esperar conversiones en el bucle."""
+
 import time
 from machine import Pin, disable_irq, enable_irq
+
 
 class HX711:
     def __init__(self, dout_pin, sck_pin):
@@ -36,7 +38,7 @@ class HX711:
         if value & 0x800000:
             value -= 0x1000000
         if abs(value) >= 8388000:
-            raise ValueError('HX711 saturado')
+            raise ValueError("HX711 saturado")
         return value
 
     def read_raw(self, timeout_ms=500):
@@ -46,9 +48,9 @@ class HX711:
             if value is not None:
                 return value
             time.sleep_ms(1)
-        raise OSError('HX711 sin dato')
+        raise OSError("HX711 sin dato")
 
     def read_average(self, samples=5, timeout_ms=500):
         if samples < 1:
-            raise ValueError('Cantidad de muestras invalida')
+            raise ValueError("Cantidad de muestras invalida")
         return sum(self.read_raw(timeout_ms) for _ in range(samples)) / samples

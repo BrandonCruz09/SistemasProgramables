@@ -1,7 +1,9 @@
 """Una salida por GPIO. El servo conserva PWM hasta la parada explicita."""
+
 import time
 import config
 from machine import Pin, PWM, Timer
+
 
 class ServoSG90:
     def __init__(self, pin=config.PIN_SERVO):
@@ -11,14 +13,14 @@ class ServoSG90:
 
     def move_us(self, pulse):
         if type(pulse) is not int or pulse not in (config.SERVO_OPEN_US, config.SERVO_CLOSED_US):
-            raise ValueError('Solo se admiten los dos pulsos acordados')
+            raise ValueError("Solo se admiten los dos pulsos acordados")
         if self.pwm is None:
             # Esta compilacion de ESP32 requiere activar PWM con duty_u16 primero.
-            self.pwm = PWM(self.pin, freq=50, duty_u16=(pulse * 65535 + 10000)//20000)
+            self.pwm = PWM(self.pin, freq=50, duty_u16=(pulse * 65535 + 10000) // 20000)
             self.pwm.duty_ns(pulse * 1000)
         else:
             if self.pwm.freq() != 50:
-                raise RuntimeError('La frecuencia del servo cambio; no enviar otro pulso')
+                raise RuntimeError("La frecuencia del servo cambio; no enviar otro pulso")
             self.pwm.duty_ns(pulse * 1000)
         self.pulse = pulse
 
@@ -26,11 +28,13 @@ class ServoSG90:
         if self.pwm is not None:
             self.pwm.deinit()
         self.pwm = None
+        self.pulse = None
         self.pin.value(0)
 
     def verify(self):
         if self.pwm is not None and self.pwm.freq() != 50:
-            raise RuntimeError('Conflicto PWM del servo')
+            raise RuntimeError("Conflicto PWM del servo")
+
 
 class PumpRelay:
     def __init__(self, pin=config.PIN_PUMP_RELAY):
@@ -45,8 +49,8 @@ class PumpRelay:
         self.active = False
 
     def on(self, duration_ms=5000):
-        if type(duration_ms) is not int or not 1 <= duration_ms <= 5000:
-            raise ValueError('Agua: maximo 5000 ms')
+        if type(duration_ms) is not int or not 1 <= duration_ms <= config.PUMP_PULSE_MS:
+            raise ValueError("Agua: maximo 5000 ms")
         self.off()
         try:
             self.until = time.ticks_add(time.ticks_ms(), duration_ms)
@@ -67,26 +71,31 @@ class PumpRelay:
         self.until = None
         self.timer.deinit()
 
+
 class ActiveBuzzer:
     def __init__(self, pin=config.PIN_BUZZER):
-        self.pin = Pin(pin, Pin.OUT, value=1-config.BUZZER_ACTIVE_LEVEL)
+        self.pin = Pin(pin, Pin.OUT, value=1 - config.BUZZER_ACTIVE_LEVEL)
         self.pwm = None
         self.until = None
         self.started = None
         self.note = None
 
     def on(self, duration_ms=1000, mode=None):
-        self.off()
+        if type(duration_ms) is not int or not 100 <= duration_ms <= 2000:
+            raise ValueError("Buzzer: duracion entre 100 y 2000 ms")
         mode = mode or config.BUZZER_MODE
-        if mode == 'active':
+        if mode not in ("active", "passive"):
+            raise ValueError("Modo de buzzer desconocido")
+        self.off()
+        if mode == "active":
             self.pin.value(config.BUZZER_ACTIVE_LEVEL)
-        elif mode == 'passive':
+        elif mode == "passive":
             self.pwm = PWM(self.pin, freq=1000, duty_u16=32768)
             self.started = time.ticks_ms()
             self.note = 1000
         else:
-            raise ValueError('Modo de buzzer desconocido')
-        self.until = time.ticks_add(time.ticks_ms(), min(2000, max(100, duration_ms)))
+            raise ValueError("Modo de buzzer desconocido")
+        self.until = time.ticks_add(time.ticks_ms(), duration_ms)
 
     def tick(self, now):
         if self.until is not None and time.ticks_diff(now, self.until) >= 0:
@@ -104,6 +113,6 @@ class ActiveBuzzer:
         if self.pwm is not None:
             self.pwm.deinit()
         self.pwm = None
-        self.pin.value(1-config.BUZZER_ACTIVE_LEVEL)
+        self.pin.value(1 - config.BUZZER_ACTIVE_LEVEL)
         self.until = None
         self.started = self.note = None
