@@ -294,8 +294,7 @@ class PetCareBridge:
                     self.last_event = event
                 print("Telemetria MQTT recibida; estado:", status.get("state", "desconocido"))
             elif topic.endswith("/ack") and isinstance(payload, dict):
-                with self.dashboard.lock:
-                    self.dashboard.events.append(dict(payload, received_at=utc_now()))
+                self.dashboard.command_ack(payload, utc_now())
                 cid = payload.get('id')
                 if isinstance(cid, str) and cid in self.pending_ia:
                     self.pending_ia.pop(cid)
@@ -316,6 +315,7 @@ class PetCareBridge:
             self.dashboard.water_log = self.water_log.summary()
 
     def process_manual_commands(self):
+        self.dashboard.expire_commands()
         try:
             command = self.dashboard.commands.get_nowait()
         except queue.Empty:
@@ -338,7 +338,8 @@ class PetCareBridge:
             result = self.client.publish(self.base_topic+'/commands',json.dumps(payload),qos=0,retain=False)
             if result.rc == 0:
                 if action == 'water': self.last_manual_water = now
-                message = 'Orden enviada: '+action+'; falta ACK del ESP32'
+                self.dashboard.command_sent(payload['id'], action, utc_now())
+                return
             else:
                 message = 'No se pudo enviar la orden'
         with self.dashboard.lock:

@@ -7,7 +7,7 @@ let videoPaused = demo, videoError = false, videoRetry = null;
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const number = (v, unit) => finite(v) ? `${v.toFixed(1)} ${unit}` : 'Sin lectura';
 const states = {LISTO:'Lista para operar',COMPUERTA_ABIERTA:'Sirviendo alimento',COMPUERTA_CERRANDO:'Cerrando el plato',BOMBA_ACTIVA:'Sirviendo agua',ERROR_ACTUADOR:'Necesita una revisión'};
-const actionNames = {beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',reset_demo:'Demostración reiniciada'};
+const actionNames = {gate_test_open:'Abrir prueba sin croquetas',tone:'Tono de buzzer',beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',reset_demo:'Demostración reiniciada'};
 
 el('demoBanner').hidden = !demo;
 el('resetDemo').addEventListener('click', () => command('reset_demo'));
@@ -78,10 +78,12 @@ function buttons() {
   el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.food_active||Date.now()<waterLock;
   el('resetDemo').disabled=!!pending;
   el('testBuzzer').disabled=!!pending||!ready||!s.buzzer_enabled;
-  el('openGate').disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active||!s.hx_ok||!s.calibrated;
+  el('testTone').disabled=el('testBuzzer').disabled;
+  const dryTest=el('gateDryTest').checked;
+  el('openGate').disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active||(dryTest?!s.gate_test_supported:(!s.hx_ok||!s.calibrated));
   const canClose=last?.available && last.age_seconds<=15 && ['LISTO','COMPUERTA_ABIERTA','COMPUERTA_CERRANDO'].includes(s.state) && s.actions_allowed!==false;
   el('closeGate').disabled=!!pending||!canClose||!s.servo_manual_enabled;
-  el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.manual_food_active?'Abierta: se cerrará al llegar a 300 g. Puedes cerrar antes.':s.gate_command==='cerrar'?'Última orden: cerrar.': 'Apertura manual con cierre automático a 300 g.';
+  el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.gate_test_open?'Prueba abierta: pulsa Cerrar cuando quieras. El peso no interviene.':s.manual_food_active?'Abierta: se cerrará al llegar a 300 g. Puedes cerrar antes.':s.gate_command==='cerrar'?'Última orden: cerrar.':dryTest?'Prueba sin croquetas: abre y cierra manualmente, sin corte por peso.':'Apertura manual con cierre automático a 300 g.';
   el('foodProgress').textContent = !last?.available ? 'Esperando una lectura reciente de la pesa.' : !s.servo_enabled ? 'Servido automático pendiente. Puedes usar los botones manuales.' : s.food_result || 'Listo para completar su plato.';
   el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
 }
@@ -130,7 +132,9 @@ async function command(action) {
   } catch {feedback('No se pudo confirmar la orden. Revisa la estación antes de repetirla.',true);}
   finally {clearTimeout(timeout);pending--;buttons();await refresh();}
 }
-for(const [id,action] of Object.entries({testBuzzer:'beep',openGate:'gate_open',closeGate:'gate_close',serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
+for(const [id,action] of Object.entries({testBuzzer:'tone',testTone:'tone',closeGate:'gate_close',serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
+el('openGate').addEventListener('click',()=>command(el('gateDryTest').checked?'gate_test_open':'gate_open'));
+el('gateDryTest').addEventListener('change',buttons);
 el('supervised').addEventListener('change',buttons);
 el('metric').addEventListener('change',()=>chart(last?.history||[]));
 async function refresh() {

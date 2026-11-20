@@ -35,7 +35,7 @@ class DashboardState:
         self.command_token = secrets.token_hex(16)
 
     def request_command(self, action, supervised=False):
-        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'beep'):
+        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'beep', 'tone', 'gate_test_open'):
             return False, 'Accion desconocida'
         data = self.snapshot()
         if action not in ('stop_water', 'stop_food'):
@@ -49,7 +49,9 @@ class DashboardState:
                 return False, 'Modo diagnostico; actuadores bloqueados'
             if action in ('gate_open', 'gate_close') and (status.get('servo_manual_enabled') is not True or (action == 'gate_open' and (status.get('food_active') or not status.get('hx_ok') or not status.get('calibrated')))):
                 return False, 'Control manual no disponible; espera al firmware o cancela el servido'
-            if action == 'beep' and status.get('buzzer_enabled') is not True:
+            if action == 'gate_test_open' and status.get('gate_test_supported') is not True:
+                return False, 'Espera a que cargue el firmware de prueba'
+            if action in ('beep', 'tone') and status.get('buzzer_enabled') is not True:
                 return False, 'Buzzer no disponible'
             if action == 'feed' and (status.get('servo_enabled') is not True or not status.get('hx_ok') or not status.get('calibrated') or status.get('food_active')):
                 return False, 'Revisa servo y pesa antes de servir alimento'
@@ -70,6 +72,27 @@ class DashboardState:
             self.telemetry=copy.deepcopy(payload)
             self.history.append(copy.deepcopy(payload))
             self.received=time.monotonic()
+
+    def command_sent(self, command_id, action, received_at):
+        with self.lock:
+            self.events.append({'id':command_id, 'action':action, 'pending':True,
+                                'sent_monotonic':time.monotonic(), 'received_at':received_at,
+                                'message':'Orden enviada; esperando respuesta del ESP32'})
+
+    def command_ack(self, payload, received_at):
+        with self.lock:
+            for event in reversed(self.events):
+                if event.get('id') == payload.get('id') and 'pending' in event:
+                    event.update(payload)
+                    event.update(pending=False, received_at=received_at)
+                    return
+            self.events.append(dict(payload, pending=False, received_at=received_at))
+
+    def expire_commands(self):
+        with self.lock:
+            for event in self.events:
+                if event.get('pending') and time.monotonic()-event['sent_monotonic']>10:
+                    event.update(pending=False, message='Sin confirmacion del ESP32; resultado desconocido')
 
     def restore_history(self, history):
         if not isinstance(history,dict):return
