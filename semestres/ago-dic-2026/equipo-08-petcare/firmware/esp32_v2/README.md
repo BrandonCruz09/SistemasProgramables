@@ -1,46 +1,38 @@
-# PetCare r4 del 19 de noviembre
+# PetCare · firmware r7
 
-Integra PetCare_v2_19nov_r2.zip con las correcciones de errores de r3. Revisión preparada y probada en PC. La carga al ESP32 y la comprobación física siguen pendientes: Windows no detecta un puerto serie. El apagado físico de la bomba reportado por el usuario todavía no se ha comprobado.
+## Seguridad de arranque
 
-## Manual y automático
+- La bomba queda inactiva en nivel HIGH porque el relé K1 trabaja activo en LOW.
+- El servo no recibe pulsos al iniciar; el programa no intenta cerrar ni abrir la compuerta durante el arranque.
+- La automatización por cámara inicia desarmada después de cada reinicio. Una detección solo informa mientras esté desarmada.
+- Para permitir servido automático, habilítalo desde el panel web. La comida se completa hasta 300 g; el agua usa un pulso de 5 s. La opción manual sigue disponible.
+- Deshabilitar la automatización cancela solicitudes automáticas pendientes y detiene un servido que se originó en IA.
 
-Manual: comida, compuerta, agua y buzzer desde el panel. feed completa hasta 300 g totales; gate_open mantiene la apertura con corte a 300 g. gate_test_open es solo para pruebas sin croquetas y requiere cierre manual.
+El firmware manda el nivel seguro al inicializar GPIO, pero no puede fijar el estado eléctrico antes de que MicroPython ejecute `boot.py`. Si el relé se activa al energizar su fuente antes de que arranque la placa, mantén desconectada la bomba y revisa el nivel inactivo de la entrada del módulo; no lo atribuyas solo al código.
 
-Automático autorizado: signal_dog llega desde una detección confirmada de perro en la PC. Con peso válido inferior a 20 g solicita comida hasta 300 g. Solicita agua durante 5 segundos después del alimento si hay servido en curso. Si falla la pesa, no inicia comida; el agua puede funcionar independientemente.
+## Pines y mecanismo
 
-Pausas automáticas: 4 horas para comida y 2 horas para agua. Un servido manual inicia la pausa automática correspondiente, pero los botones manuales siguen disponibles. Entre pulsos de agua hay al menos 10 segundos de espera en firmware. Las pausas son en RAM y se reinician al apagar o reiniciar la placa.
+Servo MG995: GPIO33, 50 Hz, apertura configurada en 850 µs y cierre en 1500 µs. La apertura de 850 µs no está validada mecánicamente y puede exceder el recorrido seguro; probar primero con la paleta desacoplada y la fuente externa apagada hasta revisar el montaje.
 
-La solicitud de agua pendiente caduca a los 120 segundos. Detener agua, cancelar alimento, un fallo de control o deshabilitar la automatización la descartan. No hay flotador ni medición de volumen: 5 segundos no son 500 ml comprobados. Mantener supervisión y comprobar capacidad del plato.
+Relé de bomba: IN1 GPIO23, activo LOW, máximo 5 s por orden. Buzzer GPIO22, DHT22 GPIO4, PIR GPIO27, HX711 DT/SCK GPIO19/18, OLED SDA/SCL GPIO26/25. Sin LED RGB ni flotador.
 
-## GPIO y posiciones
+## Pesa
 
-Servo GPIO33 a 50 Hz: abrir 1350 µs y cerrar 1690 µs, manteniendo PWM. No se incorporaron 800 ni 3000 µs. main.py ordena cerrar al arrancar; solo_lectura=True y la prueba independiente no mueven el servo al iniciar.
+Se conserva `calibracion_validada.json` (factor 285.80386 cuentas/g, tara −8994.451). El programa no vuelve a calibrar ni tara automáticamente. Esa calibración provino del paquete de 163 g registrado antes; la lectura bajo carga real debe validarse con una masa conocida.
 
-Relé IN1 GPIO23 activo LOW, máximo 5000 ms, con temporizador y comprobación de plazo en el bucle. Buzzer pasivo GPIO22, DHT22 GPIO4, PIR GPIO27, HX711 DT19/SCK18, OLED SDA26/SCL25. Sin RGB ni flotador. Un ACK o GPIO lógico no demuestra clic, giro o flujo.
+## Carga y prueba
 
-## Calibración
+1. Deja desconectada la fuente externa del relé, la bomba y el servo durante la carga por USB.
+2. Conserva `config_local.py` y `calibracion_validada.json` en la placa; no los sustituyas por ejemplos.
+3. Copia los módulos `.py` y la calibración de esta carpeta a la raíz del ESP32.
+4. Inicia con la bomba desconectada del relé. Comprueba por telemetría `pump_active=false`, automatización desarmada y estado `LISTO`.
+5. Prueba el servo sin croquetas y verifica las posiciones mecánicas. Prueba la bomba con el plato vacío y espacio suficiente; confirma que el relé se apague a los 5 s.
+6. Habilita el modo automático desde la página solo cuando las pruebas manuales estén estables.
 
-Se incorporó el archivo del ZIP: factor 285.80386 cuentas/g y tara -8994.451, correspondiente al cero documentado en ../../docs/PRUEBA_CERO_18NOV.txt. La tara anterior -428929.16 sigue identificada en el JSON y respaldada antes de integrar. No se recalibró físicamente ni se midió una masa nueva. El factor original usó un paquete nominal de 163 g; la precisión actual debe comprobarse con carga conocida. No hay tara automática al arrancar.
+## Avisos sonoros
 
-El control usa la mediana de las tres últimas muestras para rechazar picos aislados. La pantalla usa hasta cinco muestras. Una lectura inválida o antigua solicita el cierre del alimento.
+El buzzer pasivo de GPIO22 tiene secuencias no bloqueantes: un doble tono breve para la compuerta y tres notas ascendentes para el agua. Una falla de audio se registra sin cancelar por sí sola el control de la bomba o el servo.
 
-## Instalación y prueba
+## Verificación de software
 
-1. Fuente externa desenchufada durante la carga. ESP32 normal por USB, sin +5 V externo en VIN.
-2. Respaldar la placa, sobre todo config_local.py y los JSON de calibración.
-3. Copiar juntos los .py y calibracion_validada.json de esta carpeta a la raíz de la placa. Conservar config_local.py; no reemplazarlo por el ejemplo. No mezclar con ../esp32, que es histórico.
-4. En la PC usar servidor/ia_policy.py y el perfil real con automation.dog_indicator_enabled=true. Los perfiles locales ya se actualizaron, sin publicar sus contraseñas. Reiniciar el servidor después de preparar cámara, broker y red.
-5. Thonny, prueba_servo.py: F5 abre el menú; 1 abre, 2 cierra, 0 sale. No hay ciclos automáticos. prueba_bomba.py prueba el relé por separado. Detener una prueba antes de iniciar otra.
-6. Verificar cierre físico y corte del agua a los 5 segundos antes de poner main.py en servicio. Bomba sumergida, manguera al plato y espacio para recibir agua. Si no se apaga, desenchufar la fuente y no repetir pulsos.
-7. Comprobar tazón vacío y carga conocida; después probar alimento hasta 300 g con supervisión.
-
-La ESP32-CAM no requiere cambios de GPIO ni firmware por esta integración. La cámara y la detección real siguen pendientes en esta sesión.
-
-## Resultados
-
-ZIP original: 41 pruebas aprobadas. Integración: 61 pruebas de firmware y 29 de panel, ACK, IA/MQTT y Firestore en PC con servicios simulados. Incluyen política de perro a MQTT y controlador, corte a 300 g, agua a 5 s, cancelaciones, duplicados y fallos. No son ensayos eléctricos ni escrituras nuevas en Firestore real.
-
-Desde la raíz del proyecto: python -m unittest discover -s firmware/esp32_v2/tests -v
-Desde servidor: python -m unittest test_ack_estado test_dashboard test_firestore test_ia_mqtt -v
-
-Sin PC, la cola de agua conserva eventos recientes y cuenta los descartados en water_events_dropped. No bloquea el agua manual por falta de espacio en la cola.
+`python -m unittest discover -s firmware/esp32_v2/tests -v` ejecuta la suite del firmware en la PC con salidas simuladas. No comprueba el cableado ni el movimiento físico.

@@ -25,11 +25,11 @@ class MontajeTests(unittest.TestCase):
             servo = ServoSG90()
             servo.move_us(config.SERVO_CLOSED_US)
             self.assertNotIn('duty_ns', pwm_cls.call_args.kwargs)
-            self.assertEqual(pwm_cls.call_args.kwargs['duty_u16'], 5538)
-            self.assertEqual(pwm.duty_ns.call_args.args, (1690000,))
+            self.assertEqual(pwm_cls.call_args.kwargs['duty_u16'], 4915)
+            self.assertEqual(pwm.duty_ns.call_args.args, (1500000,))
             servo.move_us(config.SERVO_OPEN_US)
-            self.assertEqual(pwm.duty_ns.call_args.args, (1350000,))
-            for bad in (3000, 800, 1299, True, float('nan')):
+            self.assertEqual(pwm.duty_ns.call_args.args, (850000,))
+            for bad in (3000, 800, 1501, True, float('nan')):
                 with self.assertRaises(ValueError): servo.move_us(bad)
             servo.release(); pwm.deinit.assert_called_once()
             self.assertEqual(pin.value.call_args.args, (0,))
@@ -38,7 +38,7 @@ class MontajeTests(unittest.TestCase):
         c = test_petcare.PetCareTests().make_controller()
         c.tick(0); c.request_feed(0)
         c.tick(config.SERVO_OPEN_TIME_MS)
-        self.assertEqual(c.servo.angles, [1350, 1690])
+        self.assertEqual(c.servo.angles, [850, 1500])
         c.tick(config.SERVO_OPEN_TIME_MS + config.SERVO_SETTLE_MS)
         self.assertEqual(c.state, 'LISTO')
 

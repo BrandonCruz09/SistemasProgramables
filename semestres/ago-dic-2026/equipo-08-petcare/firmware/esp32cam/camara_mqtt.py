@@ -39,7 +39,7 @@ class PublicadorFrames:
                             user=user.encode() if user else None,
                             password=password.encode() if user else None, keepalive=20)
         self.client = client
-        client.connect(timeout=2)
+        client.connect()
         client.sock.settimeout(2)
         print('MQTT camara conectado; publicando JPEG en', self.topic)
 

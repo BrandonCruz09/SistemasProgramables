@@ -354,7 +354,12 @@ class PetCareBridge:
                 self._firebase_call('IA sin ACK', 'patch', self.ia_events_path + '/' + cid,
                                     {'estado': 'sin_confirmacion', 'updated_at': utc_now()})
                 print('IA sin confirmacion del ESP32:', cid)
-        if not self.ia_enabled or not self.client or not self.client.is_connected():
+        if (
+            not self.ia_enabled
+            or not self.dashboard.snapshot().get('automation_armed')
+            or not self.client
+            or not self.client.is_connected()
+        ):
             return None
         command = self.ia_policy.propose(result, now)
         if not command:

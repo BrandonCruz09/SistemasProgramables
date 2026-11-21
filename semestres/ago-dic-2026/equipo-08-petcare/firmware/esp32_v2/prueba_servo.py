@@ -1,4 +1,4 @@
-"""Prueba independiente de compuerta: GPIO33, 1350/1690 us a 50 Hz."""
+"""Prueba independiente de compuerta: GPIO33, 850/1500 us a 50 Hz."""
 
 from machine import Pin
 from actuadores import ServoSG90
@@ -10,7 +10,7 @@ def main():
     Pin(config.PIN_BUZZER, Pin.OUT, value=0)
     servo = ServoSG90()
     print("\nPRUEBA SOLO SERVO - GPIO33 - 50 Hz")
-    print("1 ABRIR 1350 us | 2 CERRAR 1690 us | 0 SALIR")
+    print("1 ABRIR 850 us | 2 CERRAR 1500 us | 0 SALIR")
     print("Sin pesa, Wi-Fi, bomba ni buzzer. No hay ciclos automaticos.")
     print("Abrir y cerrar mantienen PWM; salir o Ctrl+C retira PWM.")
     try:

@@ -7,7 +7,7 @@ let videoPaused = demo, videoError = false, videoRetry = null;
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const number = (v, unit) => finite(v) ? `${v.toFixed(1)} ${unit}` : 'Sin lectura';
 const states = {LISTO:'Lista para operar',COMPUERTA_ABIERTA:'Sirviendo alimento',COMPUERTA_CERRANDO:'Cerrando el plato',BOMBA_ACTIVA:'Sirviendo agua',ERROR_ACTUADOR:'Necesita una revisión'};
-const actionNames = {gate_test_open:'Abrir prueba sin croquetas',tone:'Tono de buzzer',beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',reset_demo:'Demostración reiniciada'};
+const actionNames = {tone:'Tono de buzzer',beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',auto_enable:'Automático habilitado',auto_disable:'Automático deshabilitado',reset_demo:'Demostración reiniciada'};
 
 el('demoBanner').hidden = !demo;
 el('resetDemo').addEventListener('click', () => command('reset_demo'));
@@ -21,7 +21,7 @@ if (demo) {
   el('camera').href = videoBase + '/';
 }
 function cameraState() {
-  const available = !demo && !videoPaused && !videoError && last?.available && last?.vision?.available;
+  const available = !demo && !videoPaused && !videoError && last?.vision?.available;
   el('liveVideo').hidden = !available;
   el('cameraEmpty').hidden = !!available;
   el('cameraBadge').dataset.live = String(!!available);
@@ -76,14 +76,18 @@ function buttons() {
   const ready=last?.available && last.age_seconds<=15 && s.state==='LISTO' && s.actions_allowed!==false;
   el('serveFood').disabled=!!pending||!ready||!s.calibrated||!s.hx_ok||!s.servo_enabled||!!s.food_active;
   el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.food_active||Date.now()<waterLock;
+  const autoOn=s.auto_serve_enabled===true&&last?.automation_armed===true;
+  const autoCanDisable=last?.available&&last.age_seconds<=15&&s.actions_allowed!==false;
+  const autoCanEnable=ready&&s.auto_serve_available===true;
+  el('toggleAuto').disabled=!!pending||!(autoOn?autoCanDisable:autoCanEnable);
+  el('toggleAuto').textContent=autoOn?'Deshabilitar automático':'Habilitar automático';
+  el('automationStatus').textContent=!last?.available?'Sin conexión. El modo queda desarmado.':autoOn?'Armado y confirmado por el ESP32; detecciones confirmadas pueden servir comida y agua.':'Desarmado. La cámara solo informa detecciones y no activa salidas.';
   el('resetDemo').disabled=!!pending;
   el('testBuzzer').disabled=!!pending||!ready||!s.buzzer_enabled;
-  el('testTone').disabled=el('testBuzzer').disabled;
-  const dryTest=el('gateDryTest').checked;
-  el('openGate').disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active||(dryTest?!s.gate_test_supported:(!s.hx_ok||!s.calibrated));
+  el('openGate').disabled=!!pending||!ready||!s.servo_manual_enabled||!!s.food_active||!s.hx_ok||!s.calibrated;
   const canClose=last?.available && last.age_seconds<=15 && ['LISTO','COMPUERTA_ABIERTA','COMPUERTA_CERRANDO'].includes(s.state) && s.actions_allowed!==false;
   el('closeGate').disabled=!!pending||!canClose||!s.servo_manual_enabled;
-  el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.gate_test_open?'Prueba abierta: pulsa Cerrar cuando quieras. El peso no interviene.':s.manual_food_active?'Abierta: se cerrará al llegar a 300 g. Puedes cerrar antes.':s.gate_command==='cerrar'?'Última orden: cerrar.':dryTest?'Prueba sin croquetas: abre y cierra manualmente, sin corte por peso.':'Apertura manual con cierre automático a 300 g.';
+  el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.manual_food_active?'Abierta: se cerrará al llegar a 300 g. Puedes cerrar antes.':s.gate_command==='cerrar'?'Última orden: cerrar.':'Apertura manual con cierre automático a 300 g.';
   el('foodProgress').textContent = !last?.available ? 'Esperando una lectura reciente de la pesa.' : !s.servo_enabled ? 'Servido automático pendiente. Puedes usar los botones manuales.' : s.food_result || 'Listo para completar su plato.';
   el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
 }
@@ -132,9 +136,9 @@ async function command(action) {
   } catch {feedback('No se pudo confirmar la orden. Revisa la estación antes de repetirla.',true);}
   finally {clearTimeout(timeout);pending--;buttons();await refresh();}
 }
-for(const [id,action] of Object.entries({testBuzzer:'tone',testTone:'tone',closeGate:'gate_close',serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
-el('openGate').addEventListener('click',()=>command(el('gateDryTest').checked?'gate_test_open':'gate_open'));
-el('gateDryTest').addEventListener('change',buttons);
+for(const [id,action] of Object.entries({testBuzzer:'tone',closeGate:'gate_close',serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
+el('toggleAuto').addEventListener('click',()=>command(last?.telemetry?.status?.auto_serve_enabled&&last?.automation_armed?'auto_disable':'auto_enable'));
+el('openGate').addEventListener('click',()=>command('gate_open'));
 el('supervised').addEventListener('change',buttons);
 el('metric').addEventListener('change',()=>chart(last?.history||[]));
 async function refresh() {

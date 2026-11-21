@@ -19,10 +19,12 @@ class PetCareController:
         self.state = self.IDLE
         self.status = {}
         self.actions_allowed = True
+        # La deteccion de la camara no debe activar actuadores hasta que el
+        # operador habilite expresamente el modo automatico desde el panel.
+        self.auto_armed = False
         self.session = binascii.hexlify(os.urandom(8)).decode()
         self.errors = {}
         self.gate_command = None
-        self.gate_test_open = False
         self.food_mode = None
         self.food_started = self.food_deadline = None
         self.last_weight = None
@@ -59,15 +61,24 @@ class PetCareController:
             raise ValueError("Pesa sin lectura valida; revisar RAW y calibracion conservada")
         return g
 
-    def _move(self, opened):
+    def _cue(self, kind):
+        try:
+            self.buzzer.cue(kind)
+            self.errors.pop("buzzer", None)
+        except Exception as exc:
+            # Una falla del buzzer no debe cancelar ni bloquear un actuador.
+            self.errors["buzzer"] = repr(exc)
+
+    def _move(self, opened, sound=False):
         pulse = config.SERVO_OPEN_US if opened else config.SERVO_CLOSED_US
         self.servo.move_us(pulse)
         self.gate_command = "abrir" if opened else "cerrar"
         self.errors.pop("servo", None)
+        if sound:
+            self._cue("gate")
 
-    def _close(self, reason):
-        self._move(False)
-        self.gate_test_open = False
+    def _close(self, reason, sound=False):
+        self._move(False, sound=sound)
         self.food_mode = None
         self.state = self.IDLE
         self.food_result = self.last_event = reason
@@ -79,39 +90,26 @@ class PetCareController:
             return False, "Termina primero el agua"
         try:
             if not opened:
-                self._close("Cierre enviado: 1690 us; PWM conservado")
+                self._close("Cierre enviado; PWM conservado", sound=True)
                 return True, self.last_event
             if self.state == self.FAULT or self.food_mode:
                 return False, "Compuerta ocupada o con error de salida"
             if self.weight(now) >= config.FOOD_TARGET_G:
                 return False, "La lectura alcanza 300 g; no se abre"
-            self._move(True)
+            self._move(True, sound=True)
             self.food_mode = "manual"
             self.food_started = now
             self.auto_food_after = time.ticks_add(now, config.AUTO_FOOD_COOLDOWN_MS)
             self.state = self.FEED_OPEN
-            self.last_event = "Apertura enviada: 1350 us; cierre a 300 g activo"
+            self.last_event = "Apertura enviada: %d us; cierre a 300 g activo" % config.SERVO_OPEN_US
             return True, self.last_event
         except Exception as exc:
             return False, str(exc)
-
-    def request_gate_test(self, now):
-        if not self.actions_allowed or self.action_in_progress() or self.state == self.FAULT:
-            return False, "Termina primero la accion en curso"
-        try:
-            self._move(True)
-            self.gate_test_open = True
-            self.last_event = "Prueba sin croquetas: apertura 1350 us mantenida; cerrar manualmente"
-            return True, self.last_event
-        except Exception as exc:
-            self.errors["servo"] = repr(exc)
-            return False, "Servo: " + str(exc)
 
     def request_food(self, now):
         if (
             not self.actions_allowed
             or self.action_in_progress()
-            or self.gate_test_open
             or self.state == self.FAULT
         ):
             return False, "Cierra la compuerta de prueba antes del servido automatico"
@@ -133,7 +131,7 @@ class PetCareController:
     def stop_food(self, now):
         self.water_pending_until = None
         try:
-            self._close("Alimento detenido; orden de cierre enviada")
+            self._close("Alimento detenido; orden de cierre enviada", sound=True)
             return True, self.last_event
         except Exception as exc:
             self.errors["servo"] = repr(exc)
@@ -203,6 +201,7 @@ class PetCareController:
             self.water_events = self.water_events[-20:]
         try:
             self.pump.on(config.PUMP_PULSE_MS)
+            self._cue("water")
             self.water_sequence += 1
             self.water_run = {
                 "run_id": self.session + "-" + str(self.water_sequence),
@@ -217,7 +216,7 @@ class PetCareController:
             self.auto_water_after = time.ticks_add(now, config.AUTO_WATER_COOLDOWN_MS)
             self.water_pending_until = None
             self.state = self.PUMPING
-            self.last_event = "Rele activado por 5 s; flujo fisico sin verificar"
+            self.last_event = "Agua activada por 5 s; flujo fisico sin verificar"
             return True, self.last_event
         except Exception as exc:
             self.errors["bomba"] = repr(exc)
@@ -239,8 +238,8 @@ class PetCareController:
     def request_signal(self, now):
         if (
             not config.AUTO_SERVE_ENABLED
+            or not self.auto_armed
             or not self.actions_allowed
-            or self.gate_test_open
             or self.state == self.FAULT
         ):
             self.last_event = "IA: deteccion registrada, sin servido automatico"
@@ -270,20 +269,37 @@ class PetCareController:
 
     def _auto_tick(self, now):
         self._expire_auto_deadlines(now)
-        if not config.AUTO_SERVE_ENABLED or not self.actions_allowed or self.state == self.FAULT:
+        if (
+            not config.AUTO_SERVE_ENABLED
+            or not self.auto_armed
+            or not self.actions_allowed
+            or self.state == self.FAULT
+        ):
             self.water_pending_until = None
             return
         if (
             self.water_pending_until is not None
             and not self.action_in_progress()
-            and not self.gate_test_open
         ):
             self.water_pending_until = None
             self.request_pump(now, "auto_ia")
 
     def command(self, action, now, command_id=None, mode=None):
-        if action == "gate_test_open":
-            return self.request_gate_test(now)
+        if action == "auto_enable":
+            if not config.AUTO_SERVE_ENABLED:
+                return False, "La automatizacion esta deshabilitada en la configuracion"
+            self.auto_armed = True
+            self.last_event = "Modo automatico habilitado manualmente; se desarmara al reiniciar"
+            return True, self.last_event
+        if action == "auto_disable":
+            self.auto_armed = False
+            self.water_pending_until = None
+            if self.food_mode == "auto":
+                self.stop_food(now)
+            elif self.water_run and self.water_run.get("source") == "auto_ia":
+                self.stop_pump(now, "automatizacion_deshabilitada")
+            self.last_event = "Modo automatico deshabilitado; servidos manuales siguen disponibles"
+            return True, self.last_event
         if action == "tone":
             return self.request_beep(now, "passive")
         if action == "gate_open":
@@ -330,12 +346,12 @@ class PetCareController:
             try:
                 g = self.weight(now)
                 if g >= config.FOOD_TARGET_G:
-                    self._close("Cierre a %.1f g; objetivo alcanzado" % g)
+                    self._close("Cierre a %.1f g; objetivo alcanzado" % g, sound=True)
                 elif time.ticks_diff(now, self.food_started) >= config.FOOD_MAX_RUN_MS:
-                    self._close("Cierre por limite de tiempo de alimento")
+                    self._close("Cierre por limite de tiempo de alimento", sound=True)
                 elif self.food_mode == "auto" and time.ticks_diff(now, self.food_deadline) >= 0:
                     if self.state == self.FEED_OPEN:
-                        self._move(False)
+                        self._move(False, sound=True)
                         self.state = self.FEED_CLOSE
                         self.food_deadline = time.ticks_add(now, config.FOOD_WEIGH_WAIT_MS)
                     else:
@@ -344,10 +360,10 @@ class PetCareController:
                                 self.no_progress + 1 if g - self.last_weight < 1 else 0
                             )
                         if self.no_progress >= 3 or self.cycles >= 30:
-                            self._close("No aumenta el peso; revisar atasco o deposito")
+                            self._close("No aumenta el peso; revisar atasco o deposito", sound=True)
                         else:
                             self.last_weight = g
-                            self._move(True)
+                            self._move(True, sound=True)
                             self.state = self.FEED_OPEN
                             self.food_deadline = time.ticks_add(
                                 now,
@@ -388,16 +404,21 @@ class PetCareController:
             servo_closed_us=config.SERVO_CLOSED_US,
             servo_pulse_us=self.servo.pulse,
             gate_command=self.gate_command,
-            gate_test_supported=True,
-            gate_test_open=self.gate_test_open,
             manual_food_active=self.food_mode == "manual",
             food_active=self.food_mode is not None,
             food_target_g=config.FOOD_TARGET_G,
             food_result=self.food_result,
             pump_active=self.pump.active,
             water_duration_ms=config.PUMP_PULSE_MS,
-            water_mode="manual_y_automatico" if config.AUTO_SERVE_ENABLED else "manual_supervisado",
-            auto_serve_enabled=config.AUTO_SERVE_ENABLED,
+            water_mode=(
+                "manual_y_automatico_armado"
+                if self.auto_armed
+                else "manual_y_automatico_disarmado"
+            )
+            if config.AUTO_SERVE_ENABLED
+            else "manual_supervisado",
+            auto_serve_available=config.AUTO_SERVE_ENABLED,
+            auto_serve_enabled=self.auto_armed,
             auto_food_ready=self.auto_food_after is None,
             auto_water_ready=self.auto_water_after is None,
             auto_water_pending=self.water_pending_until is not None,

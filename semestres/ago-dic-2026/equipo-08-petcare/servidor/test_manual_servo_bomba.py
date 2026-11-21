@@ -25,7 +25,7 @@ class ManualTests(unittest.TestCase):
 
     def test_apertura_y_cierre_correctos(self):
         self.c.comando('1',0); self.c.comando('2',100)
-        self.assertEqual([c.args[0] for c in self.servo.move_us.call_args_list],[1350,1690])
+        self.assertEqual([c.args[0] for c in self.servo.move_us.call_args_list],[850,1500])
 
     def test_apaga_sin_entrada_ni_callback_del_timer(self):
         self.c.comando('3',100)

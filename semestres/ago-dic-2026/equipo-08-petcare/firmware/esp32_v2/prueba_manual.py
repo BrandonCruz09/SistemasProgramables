@@ -11,7 +11,7 @@ def main():
     pump = PumpRelay()
     buzzer = ActiveBuzzer()
     sensores = SensorHub()
-    print("Prueba individual. Servo 1350/1690 us. Agua maximo 5 s.")
+    print("Prueba individual. Servo 850/1500 us. Agua maximo 5 s.")
     print("Para agua: bomba sumergida y espacio en el tazon. Sin croquetas para servo.")
     try:
         while True:

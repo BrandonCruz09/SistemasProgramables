@@ -4,8 +4,8 @@ import time
 import config
 from actuadores import ServoSG90, PumpRelay
 
-ABRIR_US = 1350
-CERRAR_US = 1690
+ABRIR_US = 850
+CERRAR_US = 1500
 BOMBA_MS = 3000
 VERSION = 'manual-v2-sin-input'
 
@@ -96,7 +96,7 @@ def main():
         poll.register(sys.stdin, select.POLLIN)
         print('\nPETCARE', VERSION)
         print('Inicio: rele apagado, servo sin PWM. Sin red, sensores ni buzzer.')
-        print('Servo GPIO33 50 Hz: abrir 1350 us / cerrar 1690 us. Rele K1 GPIO23.')
+        print('Servo GPIO33 50 Hz: abrir 850 us / cerrar 1500 us. Rele K1 GPIO23.')
         print('No se permiten bomba y servo con PWM simultaneos.')
         print('Para agua: bomba sumergida, manguera al tazon y espacio suficiente.')
         print('1 Abrir | 2 Cerrar | 3 Agua 3 s | 4 Apagar agua | 5 Detener ambos | 0 Salir')

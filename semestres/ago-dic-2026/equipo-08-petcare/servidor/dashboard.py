@@ -33,24 +33,26 @@ class DashboardState:
         self.water_log = {'total_events':0, 'pending_cloud':0}
         self.commands = queue.Queue(maxsize=10)
         self.command_token = secrets.token_hex(16)
+        self.automation_armed = False
+        self.device_session = None
 
     def request_command(self, action, supervised=False):
-        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'beep', 'tone', 'gate_test_open'):
+        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'beep', 'tone', 'auto_enable', 'auto_disable'):
             return False, 'Accion desconocida'
         data = self.snapshot()
         if action not in ('stop_water', 'stop_food'):
             if not data['available'] or data['age_seconds'] > 15:
                 return False, 'No hay datos recientes del ESP32'
             closing = action == 'gate_close' and data['telemetry']['status'].get('state') in ('LISTO', 'COMPUERTA_ABIERTA', 'COMPUERTA_CERRANDO')
-            if data['telemetry']['status'].get('state') != 'LISTO' and not closing:
+            if data['telemetry']['status'].get('state') != 'LISTO' and not closing and action != 'auto_disable':
                 return False, 'El equipo esta ocupado'
             status = data['telemetry']['status']
             if status.get('actions_allowed') is False:
                 return False, 'Modo diagnostico; actuadores bloqueados'
             if action in ('gate_open', 'gate_close') and (status.get('servo_manual_enabled') is not True or (action == 'gate_open' and (status.get('food_active') or not status.get('hx_ok') or not status.get('calibrated')))):
                 return False, 'Control manual no disponible; espera al firmware o cancela el servido'
-            if action == 'gate_test_open' and status.get('gate_test_supported') is not True:
-                return False, 'Espera a que cargue el firmware de prueba'
+            if action == 'auto_enable' and status.get('auto_serve_available') is not True:
+                return False, 'La automatizacion no esta habilitada en el firmware'
             if action in ('beep', 'tone') and status.get('buzzer_enabled') is not True:
                 return False, 'Buzzer no disponible'
             if action == 'feed' and (status.get('servo_enabled') is not True or not status.get('hx_ok') or not status.get('calibrated') or status.get('food_active')):
@@ -69,6 +71,11 @@ class DashboardState:
 
     def update(self, payload):
         with self.lock:
+            status = payload.get('status', {}) if isinstance(payload, dict) else {}
+            session = status.get('session_id') if isinstance(status, dict) else None
+            if session and session != self.device_session:
+                self.device_session = session
+                self.automation_armed = False
             self.telemetry=copy.deepcopy(payload)
             self.history.append(copy.deepcopy(payload))
             self.received=time.monotonic()
@@ -85,6 +92,10 @@ class DashboardState:
                 if event.get('id') == payload.get('id') and 'pending' in event:
                     event.update(payload)
                     event.update(pending=False, received_at=received_at)
+                    if event.get('action') == 'auto_enable':
+                        self.automation_armed = payload.get('ok') is True
+                    elif event.get('action') == 'auto_disable' and payload.get('ok') is True:
+                        self.automation_armed = False
                     return
             self.events.append(dict(payload, pending=False, received_at=received_at))
 
@@ -106,6 +117,7 @@ class DashboardState:
             return copy.deepcopy({'telemetry':self.telemetry,'history':list(self.history),
                 'events':list(self.events),'vision':self.vision,'firebase':self.cloud,
                 'water_log':self.water_log, 'command_token':self.command_token,
+                'automation_armed':self.automation_armed,
                 'age_seconds':round(age,1) if age is not None else None,
                 'available':age is not None and age<30})
 

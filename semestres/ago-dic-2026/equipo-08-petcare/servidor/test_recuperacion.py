@@ -70,7 +70,7 @@ class RecuperacionTests(unittest.TestCase):
         c.request_feed(0)
         c.sensors.read = Mock(side_effect=OSError('sensor lento'))
         c.tick(900)
-        self.assertEqual(c.servo.angles, [1350,1690])
+        self.assertEqual(c.servo.angles, [850,1500])
         c.sensors.read.assert_not_called()
         c.tick(1250)
         self.assertFalse(c.status['hx_ok'])
@@ -88,7 +88,7 @@ class RecuperacionTests(unittest.TestCase):
         c = self.controller(); c.request_feed(0)
         c.buzzer.off = Mock(side_effect=OSError('buzzer'))
         c.safe_shutdown()
-        self.assertEqual(c.servo.angles, [1350])
+        self.assertEqual(c.servo.angles, [850])
         self.assertEqual(c.servo.released, 1)
         self.assertFalse(c.pump.active)
 
@@ -106,7 +106,7 @@ class RecuperacionTests(unittest.TestCase):
         pin = Mock()
         with patch.dict(sys.modules, {'machine': types.SimpleNamespace(Pin=Mock(return_value=pin), PWM=Mock(return_value=pwm))}):
             servo = ServoSG90()
-            with self.assertRaises(RuntimeError): servo.move_us(1550)
+            with self.assertRaises(RuntimeError): servo.move_us(1400)
             pwm.deinit.assert_called_once()
             self.assertIsNone(servo._pwm)
             self.assertEqual(pin.value.call_args.args, (0,))
@@ -114,7 +114,7 @@ class RecuperacionTests(unittest.TestCase):
     def test_rechaza_posiciones_anteriores_peligrosas(self):
         with patch.dict(sys.modules, {'machine': types.SimpleNamespace(Pin=Mock(), PWM=Mock())}):
             servo = ServoSG90()
-            for value in (800,1340,3000,1700,1349):
+            for value in (800,849,1501,1700,3000):
                 with self.assertRaises(ValueError): servo.move_us(value)
 
 

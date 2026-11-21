@@ -14,11 +14,11 @@ class GateTests(unittest.TestCase):
         with patch.object(config,'SERVO_MOVEMENT_ENABLED',False):
             self.assertTrue(self.c.request_gate(True,0)[0])
             self.c.tick(60000)
-            self.assertEqual(self.c.servo.angles,[1350])
+            self.assertEqual(self.c.servo.angles,[850])
             self.assertEqual(self.c.servo.released,0)
             self.assertTrue(self.c.request_gate(False,60001)[0])
             self.c.tick(120000)
-            self.assertEqual(self.c.servo.angles,[1350,1690])
+            self.assertEqual(self.c.servo.angles,[850,1500])
             self.assertEqual(self.c.servo.released,0)
             self.assertFalse(self.c.request_food(120000)[0])
 
@@ -26,12 +26,12 @@ class GateTests(unittest.TestCase):
         c=self.c
         self.assertTrue(c.request_gate(True,0)[0])
         c.sensors.weight=299; c.tick(800)
-        self.assertEqual(c.servo.angles,[1350])
+        self.assertEqual(c.servo.angles,[850])
         c.sensors.weight=300; c.tick(1600)
-        self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertEqual(c.servo.angles,[850,1500])
         self.assertFalse(c.snapshot()['food_active'])
         c.sensors.weight=100; c.tick(2400)
-        self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertEqual(c.servo.angles,[850,1500])
         self.assertEqual(c.servo.released,0)
 
     def test_manual_requiere_pesa_y_no_abre_si_lleno(self):
@@ -44,17 +44,17 @@ class GateTests(unittest.TestCase):
     def test_manual_cierra_si_falla_pesa_o_vence_tiempo(self):
         self.c.request_gate(True,0)
         self.c.sensors.weight=None; self.c.tick(800)
-        self.assertEqual(self.c.servo.angles,[1350,1690])
+        self.assertEqual(self.c.servo.angles,[850,1500])
         self.c.sensors.weight=0; self.c.tick(1000)
         self.c.request_gate(True,1000)
         self.c.tick(1000+config.FOOD_MAX_RUN_MS)
-        self.assertEqual(self.c.servo.angles,[1350,1690,1350,1690])
+        self.assertEqual(self.c.servo.angles,[850,1500,850,1500])
 
     def test_manual_cierra_ante_sensor_desconectado(self):
         self.c.request_gate(True,0)
         self.c.sensors.read=Mock(side_effect=OSError('HX711 desconectado'))
         self.c.tick(800)
-        self.assertEqual(self.c.servo.angles,[1350,1690])
+        self.assertEqual(self.c.servo.angles,[850,1500])
         self.assertFalse(self.c.snapshot()['food_active'])
 
     def test_manual_no_usa_lectura_vieja_para_abrir(self):
@@ -68,7 +68,7 @@ class GateTests(unittest.TestCase):
         self.assertFalse(d.request_command('gate_open')[0])
         self.assertFalse(c.request_pump(1)[0])
         self.assertTrue(c.stop_food(2)[0])
-        self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertEqual(c.servo.angles,[850,1500])
         self.assertFalse(c.snapshot()['food_active'])
 
     def test_no_mueve_al_iniciar(self):
@@ -100,17 +100,17 @@ class GateTests(unittest.TestCase):
         cmd={'action':'gate_open','id':'manual-2','session_id':self.c.snapshot()['session_id']}
         m._on_message(m.command_topic,json.dumps(cmd).encode());m._run_command(self.c,1)
         m._on_message(m.command_topic,json.dumps(cmd).encode());m._run_command(self.c,2)
-        self.assertEqual(self.c.servo.angles,[1350])
+        self.assertEqual(self.c.servo.angles,[850])
         cmd.update(action='gate_close',id='manual-3')
         m._on_message(m.command_topic,json.dumps(cmd).encode());m._run_command(self.c,3)
-        self.assertEqual(self.c.servo.angles,[1350,1690])
+        self.assertEqual(self.c.servo.angles,[850,1500])
 
     def test_panel_agua_con_pwm_sostenido(self):
         self.c.request_gate(False,0)
         d=DashboardState();d.update({'status':self.c.snapshot()})
         self.assertTrue(d.request_command('water',supervised=True)[0])
         self.assertTrue(self.c.request_pump(1)[0])
-        self.assertEqual(self.c.servo.angles,[1690])
+        self.assertEqual(self.c.servo.angles,[1500])
 
     def test_dashboard_capacidad_y_datos_recientes(self):
         d=DashboardState();d.update({'status':self.c.snapshot()})
@@ -137,7 +137,7 @@ class GateTests(unittest.TestCase):
         self.assertTrue(self.c.buzzer.active)
         self.c.tick(200)
         self.assertFalse(self.c.buzzer.active)
-        self.assertEqual(self.c.servo.angles,[1350])
+        self.assertEqual(self.c.servo.angles,[850])
 
     def test_pir_publica_cambio_antes_de_diez_segundos(self):
         m=MQTTLink();m.client=Mock()

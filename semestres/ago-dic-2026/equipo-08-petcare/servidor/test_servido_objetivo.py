@@ -28,7 +28,7 @@ class TargetTests(unittest.TestCase):
         c.sensors.weight = 302
         c.tick(3450)
         self.assertIsNone(c.food_target)
-        self.assertEqual(c.servo.angles, [1350,1690,1350,1690])
+        self.assertEqual(c.servo.angles, [850,1500,850,1500])
         c.tick(10000)
         self.assertEqual(len(c.servo.angles), 4)
 
@@ -39,7 +39,7 @@ class TargetTests(unittest.TestCase):
     def test_lectura_invalida_detiene_sin_reintento(self):
         c=self.c; c.request_food(0); self.cycle(0, float('nan'))
         self.assertIsNone(c.food_target)
-        self.assertEqual(c.servo.angles, [1350,1690])
+        self.assertEqual(c.servo.angles, [850,1500])
         c.tick(5000); self.assertEqual(len(c.servo.angles),2)
 
     def test_no_caen_croquetas_limita_tandas(self):
@@ -62,7 +62,7 @@ class TargetTests(unittest.TestCase):
     def test_cancelar_cierra_y_no_reabre(self):
         c=self.c; c.request_food(0); c.tick(0)
         self.assertTrue(c.stop_food(50)[0]); c.tick(400); c.tick(3000)
-        self.assertIsNone(c.food_target); self.assertEqual(c.servo.angles,[1350,1690])
+        self.assertIsNone(c.food_target); self.assertEqual(c.servo.angles,[850,1500])
 
     def test_agua_corta_a_cinco_segundos(self):
         c=self.c; c.request_pump(0)

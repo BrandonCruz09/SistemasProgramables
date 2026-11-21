@@ -1,4 +1,4 @@
-"""Programa integrado: sin tara automatica; cierre inicial solo en modo operativo."""
+"""Programa integrado: salidas seguras y sin movimientos al arrancar."""
 
 import time
 import config
@@ -48,7 +48,7 @@ def main(solo_lectura=False, max_runtime_ms=None):
         control.actions_allowed = not solo_lectura
         if config.SERVO_CLOSE_ON_START and control.actions_allowed:
             try:
-                control._close("Inicio: cierre enviado a 1690 us")
+                control._close("Inicio: cierre enviado a %d us" % config.SERVO_CLOSED_US)
             except Exception as exc:
                 control.handle_fault(exc, time.ticks_ms())
         mqtt = MQTTLink()

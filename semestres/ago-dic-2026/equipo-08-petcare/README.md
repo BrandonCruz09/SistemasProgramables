@@ -1,15 +1,4 @@
-> **Actualización del 19 de noviembre:** el firmware activo está en [firmware/esp32_v2](firmware/esp32_v2). GPIO y referencia histórica conservados; prueba manual sin croquetas, relé de 5 s, buzzer pasivo y ACK del panel corregidos. La pesa vacía aún da un valor incorrecto; servo y bombeo siguen pendientes de comprobación física. Los cortes siguientes son históricos.
-
-> **Estado vigente, 18 de noviembre:** agua manual de 5 s; alimento por tandas o apertura manual con cierre al alcanzar 300 g totales. Servo GPIO33: abrir 1350 µs, cerrar 1690 µs; conserva PWM. Panel rediseñado y 137 pruebas de software aprobadas. Archivos preparados; esta versión no se cargó a la placa. Relé, servo y buzzer requieren comprobar su respuesta física. [Conexiones con protoboard, sin borneras adicionales](docs/Conexiones_protoboard_18nov.txt) · [Guía en Word](docs/Conexiones_protoboard_18nov.docx) · [Comportamiento de los botones](docs/Control_manual_compuerta_18nov.docx).
-
-> Las notas fechadas que siguen son historial: sus tiempos y posiciones anteriores no son la configuración vigente. El RGB está retirado; OLED SDA26/SCL25. El buzzer está habilitado en GPIO22, pero falta identificar su pin central y confirmar si necesita PWM de audio.
-
-> **Preparación del 15 de noviembre:** programa completo con OLED SSD1306 (SDA26/SCL25), peso calibrado y compuerta cerrada a 1850 us / abierta a 800 us. Cámara en vivo dentro del panel. 73 pruebas de software y 7 verificaciones locales de video/MQTT aprobadas. Archivos preparados para cargar; montaje completo aún pendiente de prueba física. [Guía de carga y conexiones](docs/MONTAJE_LISTO_15NOV.md).
-
-> **Actualización del 14 de noviembre:** calibración de la pesa integrada y cargada al ESP32. Captura física de 12 lecturas; último peso 22.46 g. MQTT de PC, guardado y consulta en Firestore real y API del panel comprobados con esa captura: 22 verificaciones aprobadas. La prueba usó USB desde el ESP32; no prueba aún Wi-Fi integral ni compuerta. DHT sin respuesta en esta captura. [Resultados y siguientes pasos](docs/CALIBRACION_FIRESTORE_14NOV.md).
-
-> Agua, corte histórico del 13 de noviembre: prueba de 15 s y objetivo de 500 ml sin caudal calibrado. Sustituido por pulso manual de 5 s, sin medir volumen. [Registro anterior](docs/ACTUALIZACION_AGUA_13NOV.txt).
-
+> **Estado al 20 de noviembre de 2026:** firmware integrado r7 y panel web actualizados en este commit. La interfaz conserva control manual de compuerta con cierre vigilado a 300 g y bombeo de 5 s; los avisos del buzzer se generan sin pausas de software. La calibración persistente se mantiene. La apertura configurada a 850 µs todavía necesita validación mecánica cuidadosa; no se da por segura por código. El equipo reportó fallas físicas intermitentes del servo al activar el relé; las pruebas con la carcasa y el perro quedan pendientes. El ESP32 conectado reportaba r5 antes de cargar esta revisión, así que el cambio de firmware debe confirmarse en la placa. El evento real de agua de 5,015 ms sí se consultó en Cloud Firestore; el registro marca explícitamente que el flujo no se verificó por sensor.
 # PetCare — Estación de alimentación, hidratación y monitoreo para perros
 
 > **Actualización del 11 de noviembre:** bomba con relé HW-383 en GPIO23, sin flotador, servido manual supervisado de 3 s y pausa de 10 s. Panel con órdenes y eventos de agua persistidos en PC y Firestore. 58 pruebas automatizadas y cadena HTTP/MQTT/Firestore con actuador simulado aprobadas. Bomba real confirmada por el equipo; ESP32 normal cargado y arranque Wi-Fi verificado. Integración física pendiente y regla MQTT de Windows por actualizar con permisos de administrador. [Guía de montaje y pasos](docs/GUIA_RELE_11NOV.txt).
@@ -29,9 +18,9 @@
 
 | Nombre | Matrícula | Rol | GitHub |
 |---|---|---|---|
-| Brandon Leonel Padilla De la Cruz | 22240293 | Distribución formal por confirmar; integración del avance | [BrandonCruz09](https://github.com/BrandonCruz09) |
-| Isaac Eliseo Flores Valencia | 22240324 | Distribución formal por confirmar | Pendiente |
-| Lidia Verenice Padilla López | 22240312 | Distribución formal por confirmar | Pendiente |
+| Brandon Leonel Padilla De la Cruz | 22240293 | Programación, firmware, cableado e integración de módulos | [BrandonCruz09](https://github.com/BrandonCruz09) |
+| Isaac Eliseo Flores Valencia | 22240324 | Por confirmar | Pendiente |
+| Lidia Verenice Padilla López | 22240312 | Construcción y ajuste de la base y el cascarón | Pendiente |
 
 ## 📌 Descripción General
 

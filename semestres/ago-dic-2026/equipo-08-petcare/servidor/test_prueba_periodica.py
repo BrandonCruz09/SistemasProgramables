@@ -39,7 +39,7 @@ class PeriodicaTests(unittest.TestCase):
                 c.tick(t); p.tick(t)
         self.assertEqual(p.phase, 'terminada')
         self.assertEqual(c.pump.calls, [3000,3000,3000])
-        self.assertEqual(c.servo.angles, [1350,1690]*3)
+        self.assertEqual(c.servo.angles, [850,1500]*3)
         self.assertFalse(c.pump.active)
         c.tick(150000); p.tick(150000)
         self.assertEqual(len(c.pump.calls), 3)

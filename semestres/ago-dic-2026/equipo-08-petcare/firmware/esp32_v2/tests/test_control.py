@@ -137,12 +137,13 @@ class Tests(unittest.TestCase):
 
     def test_servo_exact_pulses_hold(self):
         self.assertTrue(self.c.request_gate(True, 1000)[0])
+        self.assertEqual(self.b.pwm.freq(), 1250)
         p = self.v.pwm
         self.tick(600)
         self.assertIs(self.v.pwm, p)
-        self.assertEqual(p.ns, 1350000)
+        self.assertEqual(p.ns, 850000)
         self.c.request_gate(False, 1600)
-        self.assertEqual(p.ns, 1690000)
+        self.assertEqual(p.ns, 1500000)
         self.assertTrue(p.active)
 
     def test_never_800_or_3000(self):
@@ -150,35 +151,29 @@ class Tests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.v.move_us(x)
 
-    def test_dry_gate_ignores_bad_scale_and_holds(self):
+    def test_legacy_unweighted_gate_command_is_rejected(self):
         self.s.g = 1470
         self.s.valid = False
         self.tick(1)
-        self.assertTrue(self.c.command("gate_test_open", 1001)[0])
-        self.tick(120000)
-        self.assertEqual(self.v.pulse, 1350)
-        self.assertTrue(self.c.gate_test_open)
-        self.assertFalse(self.c.request_food(clock[0])[0])
-        self.assertTrue(self.c.command("gate_close", clock[0])[0])
-        self.assertEqual(self.v.pulse, 1690)
-        self.assertFalse(self.c.gate_test_open)
+        self.assertFalse(self.c.command("gate_test_open", 1001)[0])
+        self.assertIsNone(self.v.pwm)
 
     def test_manual_closes_at_300(self):
         self.c.request_gate(True, 1000)
         self.s.g = 299
         self.tick(10)
-        self.assertEqual(self.v.pulse, 1350)
+        self.assertEqual(self.v.pulse, 850)
         self.s.g = 300
         self.tick(10)
-        self.assertEqual(self.v.pulse, 1690)
+        self.assertEqual(self.v.pulse, 1500)
         self.assertIsNone(self.c.food_mode)
 
     def test_feed_batch_then_target(self):
         self.assertTrue(self.c.request_food(1000)[0])
         self.tick(1)
-        self.assertEqual(self.v.pulse, 1350)
+        self.assertEqual(self.v.pulse, 850)
         self.tick(250)
-        self.assertEqual(self.v.pulse, 1690)
+        self.assertEqual(self.v.pulse, 1500)
         self.s.g = 301
         self.tick(1200)
         self.assertIsNone(self.c.food_mode)
@@ -188,13 +183,13 @@ class Tests(unittest.TestCase):
         for _ in range(12):
             self.tick(1300)
         self.assertIsNone(self.c.food_mode)
-        self.assertEqual(self.v.pulse, 1690)
+        self.assertEqual(self.v.pulse, 1500)
 
     def test_sensor_lost_closes(self):
         self.c.request_gate(True, 1000)
         self.s.valid = False
         self.tick(10)
-        self.assertEqual(self.v.pulse, 1690)
+        self.assertEqual(self.v.pulse, 1500)
 
     def test_close_works_with_bad_weight(self):
         self.s.valid = False
@@ -208,6 +203,7 @@ class Tests(unittest.TestCase):
 
     def test_water_exact_deadline(self):
         self.assertTrue(self.c.request_pump(1000)[0])
+        self.assertEqual(self.b.pwm.freq(), 880)
         self.assertEqual(self.p.pin.value(), 0)
         self.tick(4999)
         self.assertTrue(self.p.active)
@@ -228,7 +224,7 @@ class Tests(unittest.TestCase):
         self.c.request_pump(1000)
         self.tick(5000)
         self.assertIs(self.v.pwm, p)
-        self.assertEqual(p.ns, 1690000)
+        self.assertEqual(p.ns, 1500000)
         self.assertEqual(p.f, 50)
 
     def test_no_overlap_water_food(self):
@@ -236,16 +232,25 @@ class Tests(unittest.TestCase):
         self.assertFalse(self.c.request_pump(1000)[0])
 
     def test_buzzer_stops_and_no_pwm_change(self):
-        self.v.move_us(1690)
+        self.v.move_us(1500)
         self.c.request_beep(1000, "passive")
         self.assertEqual(self.b.pwm.freq(), 1000)
         self.assertEqual(self.v.pwm.freq(), 50)
         self.tick(2000)
         self.assertIsNone(self.b.pwm)
-        self.assertEqual(self.v.pwm.duty_ns(), 1690000)
+        self.assertEqual(self.v.pwm.duty_ns(), 1500000)
+
+    def test_gate_and_water_have_distinct_nonblocking_cues(self):
+        self.assertTrue(self.c.request_gate(True, 1000)[0])
+        gate_pattern = self.b.pattern
+        self.assertEqual(gate_pattern[0], (0, 1250))
+        self.assertTrue(self.c.request_gate(False, 1100)[0])
+        self.assertTrue(self.c.request_pump(1200)[0])
+        self.assertEqual(self.b.pattern[0], (0, 880))
+        self.assertNotEqual(self.b.pattern, gate_pattern)
 
     def test_two_notes_do_not_change_servo(self):
-        self.v.move_us(1690)
+        self.v.move_us(1500)
         self.c.request_beep(1000, "passive")
         self.tick(700)
         self.assertEqual(self.b.pwm.duty, 0)
@@ -253,7 +258,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(self.b.pwm.freq(), 1500)
         self.assertEqual(self.b.pwm.duty, 32768)
         self.assertEqual(self.v.pwm.freq(), 50)
-        self.assertEqual(self.v.pulse, 1690)
+        self.assertEqual(self.v.pulse, 1500)
         self.tick(1100)
         self.assertIsNone(self.b.pwm)
 
@@ -264,7 +269,7 @@ class Tests(unittest.TestCase):
     def test_shutdown(self):
         self.p.on()
         self.b.on()
-        self.v.move_us(1690)
+        self.v.move_us(1500)
         self.c.safe_shutdown()
         self.assertFalse(self.p.active)
         self.assertIsNone(self.v.pwm)
@@ -372,6 +377,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(h.snapshot(clock[0])["weight_control_g"], 100)
 
     def signal(self):
+        self.c.command("auto_enable", clock[0])
         return self.c.command("signal_dog", clock[0])
 
     def test_stop_water_cancels_queued_automatic_water(self):
@@ -429,8 +435,29 @@ class Tests(unittest.TestCase):
         self.assertLessEqual(len(self.c.water_events), 30)
 
     def test_manual_and_automatic_modes_are_reported(self):
-        self.assertEqual(self.c.snapshot()["water_mode"], "manual_y_automatico")
+        self.c.command("auto_enable", clock[0])
+        self.assertEqual(self.c.snapshot()["water_mode"], "manual_y_automatico_armado")
         self.assertTrue(self.c.snapshot()["auto_serve_enabled"])
+
+    def test_automatic_starts_disarmed_and_detection_cannot_start_outputs(self):
+        self.assertFalse(self.c.snapshot()["auto_serve_enabled"])
+        self.assertEqual(self.c.snapshot()["water_mode"], "manual_y_automatico_disarmado")
+        self.c.command("signal_dog", clock[0])
+        self.tick(1)
+        self.assertIsNone(self.c.food_mode)
+        self.assertFalse(self.p.active)
+        self.assertTrue(self.c.command("auto_enable", clock[0])[0])
+        self.assertTrue(self.c.command("signal_dog", clock[0])[0])
+        self.assertEqual(self.c.food_mode, "auto")
+
+    def test_disabling_automatic_cancels_queued_automatic_water(self):
+        self.signal()
+        self.assertIsNotNone(self.c.water_pending_until)
+        self.c.command("auto_disable", clock[0])
+        self.tick(1)
+        self.assertFalse(self.c.snapshot()["auto_serve_enabled"])
+        self.assertIsNone(self.c.water_pending_until)
+        self.assertFalse(self.p.active)
 
     def test_pc_dog_policy_through_mqtt_to_firmware(self):
         import importlib.util
@@ -451,6 +478,8 @@ class Tests(unittest.TestCase):
         frame["detections"][0]["class"] = frame["detections"][0].pop("class_")
         command = policy.propose(frame, 100)
         link = MQTTLink()
+        auto = {"id": "enable-auto", "action": "auto_enable", "session_id": self.c.session}
+        link.receive(0x30, string(link.base + "/commands") + json.dumps(auto).encode(), self.c, clock[0])
         payload = string(link.base + "/commands") + json.dumps(command).encode()
         link.receive(0x30, payload, self.c, clock[0])
         self.assertEqual(self.c.food_mode, "auto")
@@ -458,7 +487,7 @@ class Tests(unittest.TestCase):
         self.tick(1)
         self.s.g = 300
         self.tick(10)
-        self.assertEqual(self.v.pulse, 1690)
+        self.assertEqual(self.v.pulse, 1500)
         self.assertTrue(self.p.active)
         self.tick(5000)
         self.assertFalse(self.p.active)
@@ -518,7 +547,7 @@ class Tests(unittest.TestCase):
         self.signal()
         self.assertFalse(self.c.snapshot()["auto_water_pending"])
 
-    def test_auto_disabled_or_readonly_or_dry_test(self):
+    def test_auto_disabled_or_readonly_or_unweighted_command(self):
         config.AUTO_SERVE_ENABLED = False
         try:
             self.signal()
@@ -527,10 +556,9 @@ class Tests(unittest.TestCase):
         self.c.actions_allowed = False
         self.signal()
         self.c.actions_allowed = True
-        self.c.command("gate_test_open", clock[0])
+        self.assertFalse(self.c.command("gate_test_open", clock[0])[0])
         self.signal()
-        self.tick(1)
-        self.assertIsNone(self.c.food_mode)
+        self.assertEqual(self.c.food_mode, "auto")
         self.assertFalse(self.p.active)
 
     def test_water_waits_for_manual_gate_then_runs(self):
@@ -649,7 +677,7 @@ class FaultTests(unittest.TestCase):
         ):
             self.p.on()
             self.b.on()
-            self.v.move_us(1690)
+            self.v.move_us(1500)
             with self.assertRaises(OSError):
                 main(max_runtime_ms=20)
         self.assertFalse(self.p.active)
@@ -737,7 +765,7 @@ class FaultTests(unittest.TestCase):
             self.assertEqual(self.b.pin.value(), 0)
 
     def test_released_servo_does_not_report_stale_pulse(self):
-        self.v.move_us(1690)
+        self.v.move_us(1500)
         self.v.release()
         self.assertIsNone(self.c.snapshot()["servo_pulse_us"])
 

@@ -1,7 +1,7 @@
-# Página local de PetCare
+# Interfaz local PetCare
 
-`index.html` se sirve desde `servidor/vision_main.py`, no se abre con doble clic. La dirección es `http://IP_DE_LA_PC:8765/` desde la misma red Wi-Fi.
+El panel de control está en `dashboard.html`, con estilos y lógica en `assets/dashboard.css` y `assets/dashboard.js`. Se sirve desde `servidor/petcare_server.py` cuando `dashboard.enabled` está activo, normalmente en el puerto 8766. El puente MQTT debe estar conectado para que los botones lleguen al ESP32.
 
-Muestra MJPEG con recuadros de perro/persona, estado de conexión, presencia confirmada, zona de platos y tiempos de procesamiento. Incluye pausa, reconexión y captura individual. Pausar no detiene la PC ni la cámara.
+El video de cámara se carga desde el servidor de visión, normalmente en el puerto 8765. La cámara puede seguir transmitiendo aunque el panel esté cerrado.
 
-El dashboard de sensores y la integración Firebase siguen pendientes. [Guía de ejecución](../docs/VIDEO_Y_DETECCION.md).
+La automatización por cámara permanece desarmada al iniciar. El panel solicita habilitarla y espera confirmación del ESP32; solo entonces el servidor de IA publica señales que pueden iniciar el servido. Reiniciar el servidor deja de publicar esas señales; reiniciar el ESP32 desarma también el controlador de la placa.

@@ -8,12 +8,14 @@
 # Pines: No aplica; software en PC.
 # ============================================
 import json
+import sys
 import time
+import types
 import unittest
 import urllib.request
 from pathlib import Path
 from dashboard import DashboardState, start_dashboard
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 class DashboardTests(unittest.TestCase):
@@ -27,6 +29,48 @@ class DashboardTests(unittest.TestCase):
         self.assertFalse(state['available'])
         self.assertIsNone(state['telemetry'])
         self.assertEqual(state['history'],[])
+
+    def test_automatico_requiere_orden_explicita_y_estado_reciente(self):
+        state=DashboardState()
+        state.update({'status':{'state':'LISTO','session_id':'abc','auto_serve_available':True,
+                                'auto_serve_enabled':False,'actions_allowed':True}})
+        self.assertTrue(state.request_command('auto_enable')[0])
+        enable=state.commands.get_nowait()
+        self.assertEqual(enable['action'],'auto_enable')
+        self.assertEqual(enable['session_id'],'abc')
+        state.command_sent('e1','auto_enable','now')
+        state.command_ack({'id':'e1','ok':True,'action':'auto_enable'},'later')
+        self.assertTrue(state.snapshot()['automation_armed'])
+        state.update({'status':{'state':'BOMBA_ACTIVA','session_id':'abc','auto_serve_available':True,
+                                'auto_serve_enabled':True,'actions_allowed':True}})
+        self.assertTrue(state.request_command('auto_disable')[0])
+        self.assertEqual(state.commands.get_nowait()['action'],'auto_disable')
+        state.command_sent('e2','auto_disable','now')
+        state.command_ack({'id':'e2','ok':True,'action':'auto_disable'},'later')
+        self.assertFalse(state.snapshot()['automation_armed'])
+        state.update({'status':{'state':'LISTO','session_id':'abc','auto_serve_available':False,
+                                'auto_serve_enabled':False,'actions_allowed':True}})
+        self.assertFalse(state.request_command('auto_enable')[0])
+
+    def test_ia_no_publica_senales_hasta_ack_de_activacion(self):
+        with patch.dict(sys.modules, {'requests':types.SimpleNamespace()}):
+            from petcare_server import PetCareBridge
+            bridge=PetCareBridge({'automation':{'dog_indicator_enabled':True}})
+        client=Mock();client.is_connected.return_value=True;client.publish.return_value.rc=0
+        bridge.set_mqtt_client(client)
+        frame={'available':True,'frame_age_seconds':0.1,'processed_at':'test','frame_number':1,
+               'dog_detected':True,'detections':[{'class':'dog','confidence':0.9}],
+               'uncertain_detections':0}
+        self.assertIsNone(bridge.process_vision(frame))
+        bridge.dashboard.update({'status':{'state':'LISTO','session_id':'session1',
+            'actions_allowed':True,'auto_serve_available':True,'auto_serve_enabled':False}})
+        self.assertTrue(bridge.dashboard.request_command('auto_enable')[0])
+        bridge.process_manual_commands()
+        order=json.loads(client.publish.call_args.args[1])
+        self.assertEqual(order['action'],'auto_enable')
+        bridge.dashboard.command_ack({'id':order['id'],'action':'auto_enable','ok':True},'now')
+        frame['frame_number']=2
+        self.assertEqual(bridge.process_vision(frame)['action'],'signal_dog')
 
     def test_historico_limitado_y_dato_caducado(self):
         state=DashboardState()

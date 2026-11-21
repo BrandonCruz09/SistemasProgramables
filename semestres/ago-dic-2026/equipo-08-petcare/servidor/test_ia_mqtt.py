@@ -49,7 +49,8 @@ class IATests(unittest.TestCase):
             spec.loader.exec_module(module)
             module.PublicadorFrames(settings).conectar()
         self.assertIsInstance(factory.call_args.args[0],bytes)
-        factory.return_value.connect.assert_called_once_with(timeout=2)
+        factory.return_value.connect.assert_called_once_with()
+        factory.return_value.sock.settimeout.assert_called_once_with(2)
 
     def test_una_senal_por_presencia_y_rearme(self):
         policy = DogSignalPolicy()
@@ -113,6 +114,7 @@ class IATests(unittest.TestCase):
 
     def test_puente_envio_ack_y_firebase(self):
         db=Mock();bridge=PetCareBridge({'automation':{'dog_indicator_enabled':True}}, db)
+        bridge.dashboard.automation_armed = True
         client=Mock();client.is_connected.return_value=True;client.publish.return_value.rc=0
         bridge.set_mqtt_client(client)
         command=bridge.process_vision(frame())
