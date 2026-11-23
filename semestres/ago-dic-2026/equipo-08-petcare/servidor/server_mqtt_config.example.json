@@ -1,0 +1,48 @@
+{
+  "mqtt": {
+    "host": "127.0.0.1",
+    "port": 1883,
+    "username": "CAMBIAR_USUARIO",
+    "password": "CAMBIAR_CONTRASENA",
+    "base_topic": "petcare/equipo8",
+    "frame_topic": "petcare/equipo8/cam/frame"
+  },
+  "camera_url": "http://IP_DE_LA_CAMARA/foto",
+  "camera_interval_seconds": 1.5,
+  "motion_threshold_percent": 1.8,
+  "vision_publish_seconds": 10,
+  "command_interval_seconds": 2,
+  "firebase": {
+    "enabled": false,
+    "provider": "firestore",
+    "project_id": "TU_PROYECTO_FIREBASE",
+    "api_key": "TU_WEB_API_KEY"
+  },
+  "camera_stream_url": "http://IP_DE_LA_CAMARA/stream",
+  "vision_url": "http://127.0.0.1:8765/api/status",
+  "vision": {
+    "confidence": 0.55,
+    "confirm_frames": 3,
+    "bowl_zone": null,
+    "class_thresholds": {
+      "dog": 0.6,
+      "person": 0.8
+    }
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8765
+  },
+  "camera_transport": "http",
+  "automation": {
+    "dog_indicator_enabled": true,
+    "cooldown_seconds": 15
+  },
+  "hardware_broker_host": "IP_LAN_DE_LA_PC",
+  "mosquitto_exe": "C:/Program Files/Mosquitto/mosquitto.exe",
+  "dashboard": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 8766
+  }
+}

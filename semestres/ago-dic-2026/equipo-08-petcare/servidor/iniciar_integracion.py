@@ -48,7 +48,7 @@ def main():
         print('Dashboard: http://%s:%s/' % (settings['hardware_broker_host'],settings.get('dashboard',{}).get('port',8766)),flush=True)
         print('Conecta ambas placas al mismo Wi-Fi. La IA registra detecciones; el montaje no usa RGB.',flush=True)
         cloud = settings.get('firebase', {})
-        print('Nube: '+(cloud.get('provider','rtdb') if cloud.get('enabled') else 'desactivada')+
+        print('Nube: '+(cloud.get('provider','no especificado') if cloud.get('enabled') else 'desactivada')+
               '. Ctrl+C cierra los servicios.',flush=True)
         if args.check:
             import urllib.request
