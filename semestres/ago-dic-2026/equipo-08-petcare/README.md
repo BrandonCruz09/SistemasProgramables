@@ -4,13 +4,13 @@ Dispensador supervisado de alimento y agua para perros, con báscula, sensores a
 
 ## Estado para presentación
 
-**Corte del software: 22 de noviembre de 2026.** La rama contiene el firmware integrado `petcare-20nov-r7`, el panel web y el servidor de visión/MQTT/Firestore. Las pruebas de software pasan; eso no certifica la báscula, el servo, la bomba ni la alimentación en el montaje final.
+**Corte del software: 23 de noviembre de 2026.** La rama contiene el firmware integrado `petcare-23nov-r8`, el panel web y el servidor de visión/MQTT/Firestore. Las pruebas de software pasan; eso no certifica la báscula, el servo, la bomba ni la alimentación en el montaje final.
 
 | Parte | Estado registrado | Límite pendiente |
 |---|---|---|
-| Firmware ESP32 | Versión r7 cargada por COM3; arranca con actuadores inactivos y automatización desarmada. | Hace falta confirmar el estado de la placa en cada sesión de presentación. |
+| Firmware ESP32 | Versión r8 preparada; arranca con actuadores inactivos y automatización desarmada. | Hace falta cargar y confirmar el estado de la placa en cada sesión de presentación. |
 | Báscula HX711 | Lee en gramos y conserva `calibracion_validada.json` sin volver a tarar al arrancar. | La referencia de 163 g fue declarada por el usuario, no verificada con una báscula independiente. El 21 de noviembre la última telemetría quedó en 36.46 g y después se volvió obsoleta; aún no se verificó que el peso cambie al caer croquetas. |
-| Compuerta MG995 | GPIO33; el firmware usa 850 µs para abrir y 1500 µs para cerrar. | El recorrido debe probarse con la tapa montada. Se reportó movimiento irregular al trabajar junto con la bomba. |
+| Compuerta MG995 | GPIO33; extremos configurados 850–1500 µs. El panel ahora tiene deslizador para elegir posición intermedia; se conserva el cierre a 300 g, error de lectura o tiempo límite. | Probar el recorrido con la tapa montada y sin forzar el tope mecánico. Se reportó movimiento irregular al trabajar junto con la bomba. |
 | Agua | Bomba por relé en GPIO23, pulso de 5 s y supervisión manual desde la página. | No mide mililitros ni nivel. Confirmar el corte real del flujo. |
 | Cámara e IA | La ESP32-CAM entrega video por HTTP; la PC procesa cuadros con OpenCV y MobileNet-SSD para perro/persona. | La detección puede confundir perro y persona. Repetir la prueba en la carcasa y con el perro. |
 | Firestore | El servidor Python usa Cloud Firestore mediante REST. Se guardaron eventos en verificaciones anteriores. | Las credenciales son locales y no están en Git. La conexión a la nube debe comprobarse al iniciar la presentación. |

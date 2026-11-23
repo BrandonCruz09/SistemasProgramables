@@ -7,7 +7,7 @@ let videoPaused = demo, videoError = false, videoRetry = null;
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const number = (v, unit) => finite(v) ? `${v.toFixed(1)} ${unit}` : 'Sin lectura';
 const states = {LISTO:'Lista para operar',COMPUERTA_ABIERTA:'Sirviendo alimento',COMPUERTA_CERRANDO:'Cerrando el plato',BOMBA_ACTIVA:'Sirviendo agua',ERROR_ACTUADOR:'Necesita una revisión'};
-const actionNames = {tone:'Tono de buzzer',beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',auto_enable:'Automático habilitado',auto_disable:'Automático deshabilitado',reset_demo:'Demostración reiniciada'};
+const actionNames = {tone:'Tono de buzzer',beep:'Buzzer',gate_open:'Abrir compuerta',gate_close:'Cerrar compuerta',gate_position:'Posición de compuerta',feed:'Alimento',water:'Agua',stop_food:'Alimento cancelado',stop_water:'Agua detenida',signal_dog:'Detección de perro',auto_enable:'Automático habilitado',auto_disable:'Automático deshabilitado',reset_demo:'Demostración reiniciada'};
 
 el('demoBanner').hidden = !demo;
 el('resetDemo').addEventListener('click', () => command('reset_demo'));
@@ -74,6 +74,20 @@ function chart(items = []) {
 function buttons() {
   const s=last?.telemetry?.status||{};
   const ready=last?.available && last.age_seconds<=15 && s.state==='LISTO' && s.actions_allowed!==false;
+  const gatePosition=el('gatePosition');
+  const opened=finite(s.servo_open_us)?s.servo_open_us:850;
+  const closed=finite(s.servo_closed_us)?s.servo_closed_us:1500;
+  const pulse=finite(s.servo_pulse_us)?s.servo_pulse_us:closed;
+  if(document.activeElement!==gatePosition){
+    const pct=Math.max(0,Math.min(100,Math.round((closed-pulse)*100/(closed-opened))));
+    gatePosition.value=String(pct);
+  }
+  const pct=Number(gatePosition.value);
+  const chosen=Math.round(closed-pct*(closed-opened)/100);
+  el('gatePositionValue').textContent=`${pct}% · ${chosen} µs`;
+  const fresh=last?.available&&last.age_seconds<=15;
+  const stateCanAdjust=['LISTO','COMPUERTA_ABIERTA'].includes(s.state);
+  gatePosition.disabled=!!pending||!fresh||!stateCanAdjust||s.actions_allowed===false||!s.servo_manual_enabled||!s.hx_ok||!s.calibrated||!!s.pump_active||(!!s.food_active&&!s.manual_food_active);
   el('serveFood').disabled=!!pending||!ready||!s.calibrated||!s.hx_ok||!s.servo_enabled||!!s.food_active;
   el('serveWater').disabled=!!pending||!ready||!el('supervised').checked||!!s.food_active||Date.now()<waterLock;
   const autoOn=s.auto_serve_enabled===true&&last?.automation_armed===true;
@@ -124,12 +138,12 @@ function feedback(message,failed=false) {
   el('commandResult').dataset.error=String(failed);
   el('commandResult').textContent=message;
 }
-async function command(action) {
+async function command(action, extra={}) {
   if(pending&&!['stop_water','stop_food'].includes(action))return;
   pending++;buttons();
   const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),5000);
   try {
-    const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json','X-PetCare-Token':last?.command_token||''},body:JSON.stringify({action,supervised:el('supervised').checked}),signal:abort.signal});
+    const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json','X-PetCare-Token':last?.command_token||''},body:JSON.stringify({action,supervised:el('supervised').checked,...extra}),signal:abort.signal});
     const d=await r.json();feedback(d.message||'Orden recibida',!r.ok||!d.ok);
     if(r.ok&&d.ok&&action==='water'){waterLock=Date.now()+15000;el('supervised').checked=false;}
     if(r.ok&&d.ok&&action==='reset_demo'){waterLock=0;el('supervised').checked=false;}
@@ -139,6 +153,16 @@ async function command(action) {
 for(const [id,action] of Object.entries({testBuzzer:'tone',closeGate:'gate_close',serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
 el('toggleAuto').addEventListener('click',()=>command(last?.telemetry?.status?.auto_serve_enabled&&last?.automation_armed?'auto_disable':'auto_enable'));
 el('openGate').addEventListener('click',()=>command('gate_open'));
+el('gatePosition').addEventListener('input',()=>{
+  const s=last?.telemetry?.status||{},opened=finite(s.servo_open_us)?s.servo_open_us:850,closed=finite(s.servo_closed_us)?s.servo_closed_us:1500;
+  const pct=Number(el('gatePosition').value),pulse=Math.round(closed-pct*(closed-opened)/100);
+  el('gatePositionValue').textContent=`${pct}% · ${pulse} µs`;
+});
+el('gatePosition').addEventListener('change',()=>{
+  const s=last?.telemetry?.status||{},opened=finite(s.servo_open_us)?s.servo_open_us:850,closed=finite(s.servo_closed_us)?s.servo_closed_us:1500;
+  const pulse=Math.round(closed-Number(el('gatePosition').value)*(closed-opened)/100);
+  command('gate_position',{position_us:pulse});
+});
 el('supervised').addEventListener('change',buttons);
 el('metric').addEventListener('change',()=>chart(last?.history||[]));
 async function refresh() {

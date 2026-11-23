@@ -146,10 +146,30 @@ class Tests(unittest.TestCase):
         self.assertEqual(p.ns, 1500000)
         self.assertTrue(p.active)
 
+    def test_slider_selects_partial_gate_position_and_weight_still_closes(self):
+        self.assertTrue(self.c.command('gate_position', 1000, position_us=1200)[0])
+        self.assertEqual(self.v.pulse, 1200)
+        self.assertEqual(self.c.state, self.c.FEED_OPEN)
+        self.assertEqual(self.c.food_mode, 'manual')
+        self.s.g = 300
+        self.tick(100)
+        self.assertEqual(self.v.pulse, config.SERVO_CLOSED_US)
+        self.assertIsNone(self.c.food_mode)
+
+    def test_slider_rejects_out_of_range_and_target_weight(self):
+        self.assertFalse(self.c.command('gate_position', 1000, position_us=800)[0])
+        self.assertIsNone(self.v.pwm)
+        self.s.g = config.FOOD_TARGET_G
+        self.tick(1)
+        self.assertFalse(self.c.command('gate_position', clock[0], position_us=1200)[0])
+        self.assertIsNone(self.v.pwm)
+
     def test_never_800_or_3000(self):
-        for x in (800, 3000, 1390, True):
+        for x in (800, 3000, 700, 1600, True):
             with self.assertRaises(ValueError):
                 self.v.move_us(x)
+        self.v.move_us(1390)
+        self.assertEqual(self.v.pulse, 1390)
 
     def test_legacy_unweighted_gate_command_is_rejected(self):
         self.s.g = 1470
@@ -322,6 +342,29 @@ class Tests(unittest.TestCase):
             self.c,
             1000,
         )
+        self.assertIsNone(self.v.pwm)
+
+    def test_mqtt_slider_position_command(self):
+        m = MQTTLink()
+        data = {
+            'id': 'slider-1',
+            'action': 'gate_position',
+            'position_us': 1200,
+            'session_id': self.c.session,
+        }
+        m.receive(0x30, string(m.base + '/commands') + json.dumps(data).encode(), self.c, 1000)
+        self.assertEqual(self.v.pulse, 1200)
+        self.assertEqual(self.c.state, self.c.FEED_OPEN)
+
+    def test_mqtt_slider_rejects_non_integer_position(self):
+        m = MQTTLink()
+        data = {
+            'id': 'slider-invalid',
+            'action': 'gate_position',
+            'position_us': True,
+            'session_id': self.c.session,
+        }
+        m.receive(0x30, string(m.base + '/commands') + json.dumps(data).encode(), self.c, 1000)
         self.assertIsNone(self.v.pwm)
 
     def test_mqtt_duplicate_not_reexecuted(self):

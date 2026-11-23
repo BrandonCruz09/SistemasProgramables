@@ -36,21 +36,35 @@ class DashboardState:
         self.automation_armed = False
         self.device_session = None
 
-    def request_command(self, action, supervised=False):
-        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'beep', 'tone', 'auto_enable', 'auto_disable'):
+    def request_command(self, action, supervised=False, position_us=None):
+        if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'gate_position', 'beep', 'tone', 'auto_enable', 'auto_disable'):
             return False, 'Accion desconocida'
         data = self.snapshot()
         if action not in ('stop_water', 'stop_food'):
             if not data['available'] or data['age_seconds'] > 15:
                 return False, 'No hay datos recientes del ESP32'
-            closing = action == 'gate_close' and data['telemetry']['status'].get('state') in ('LISTO', 'COMPUERTA_ABIERTA', 'COMPUERTA_CERRANDO')
-            if data['telemetry']['status'].get('state') != 'LISTO' and not closing and action != 'auto_disable':
+            state = data['telemetry']['status'].get('state')
+            closing = action == 'gate_close' and state in ('LISTO', 'COMPUERTA_ABIERTA', 'COMPUERTA_CERRANDO')
+            adjusting = action == 'gate_position' and state in ('LISTO', 'COMPUERTA_ABIERTA')
+            if state != 'LISTO' and not closing and not adjusting and action != 'auto_disable':
                 return False, 'El equipo esta ocupado'
             status = data['telemetry']['status']
             if status.get('actions_allowed') is False:
                 return False, 'Modo diagnostico; actuadores bloqueados'
-            if action in ('gate_open', 'gate_close') and (status.get('servo_manual_enabled') is not True or (action == 'gate_open' and (status.get('food_active') or not status.get('hx_ok') or not status.get('calibrated')))):
+            if action in ('gate_open', 'gate_close', 'gate_position') and status.get('servo_manual_enabled') is not True:
                 return False, 'Control manual no disponible; espera al firmware o cancela el servido'
+            if action == 'gate_open' and (status.get('food_active') or not status.get('hx_ok') or not status.get('calibrated')):
+                return False, 'Control manual no disponible; espera al firmware o cancela el servido'
+            if action == 'gate_position' and ((status.get('food_active') and not status.get('manual_food_active')) or not status.get('hx_ok') or not status.get('calibrated')):
+                return False, 'Control manual no disponible; espera al firmware o cancela el servido'
+            if action == 'gate_position':
+                opened = status.get('servo_open_us')
+                closed = status.get('servo_closed_us')
+                if (type(position_us) is not int or type(opened) is not int or type(closed) is not int
+                        or not min(opened, closed) <= position_us <= max(opened, closed)):
+                    return False, 'Posicion fuera del recorrido configurado del servo'
+                if status.get('pump_active'):
+                    return False, 'Espera a que termine el servido de agua'
             if action == 'auto_enable' and status.get('auto_serve_available') is not True:
                 return False, 'La automatizacion no esta habilitada en el firmware'
             if action in ('beep', 'tone') and status.get('buzzer_enabled') is not True:
@@ -63,6 +77,7 @@ class DashboardState:
             return False, 'Confirma que hay agua y espacio en el plato'
         try:
             self.commands.put_nowait({'action':action,'supervised':supervised,
+                **({'position_us':position_us} if action == 'gate_position' else {}),
                 'session_id':(data['telemetry'] or {}).get('status',{}).get('session_id'),
                 'queued_at':time.monotonic()})
         except queue.Full:
@@ -146,7 +161,9 @@ def start_dashboard(state, html_path, host='0.0.0.0', port=8766, demo_mode=False
                 if not 0 < length <= 1024: raise ValueError()
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data,dict): raise ValueError()
-                ok,message = state.request_command(data.get('action'),data.get('supervised'))
+                ok,message = state.request_command(
+                    data.get('action'), data.get('supervised'), data.get('position_us')
+                )
             except (ValueError, OSError):
                 self.send_error(400);return
             body=json.dumps({'ok':ok,'message':message}).encode()

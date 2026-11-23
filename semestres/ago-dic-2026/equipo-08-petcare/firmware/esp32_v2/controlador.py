@@ -106,6 +106,36 @@ class PetCareController:
         except Exception as exc:
             return False, str(exc)
 
+    def request_gate_position(self, pulse, now):
+        low = min(config.SERVO_OPEN_US, config.SERVO_CLOSED_US)
+        high = max(config.SERVO_OPEN_US, config.SERVO_CLOSED_US)
+        if type(pulse) is not int or not low <= pulse <= high:
+            return False, "Posicion fuera del recorrido configurado"
+        if pulse == config.SERVO_CLOSED_US:
+            return self.request_gate(False, now)
+        if not self.actions_allowed or self.pump.active or self.state == self.FAULT:
+            return False, "No se puede mover la compuerta en este estado"
+        adjusting = self.food_mode == "manual" and self.state == self.FEED_OPEN
+        if self.food_mode and not adjusting:
+            return False, "Termina primero el servido actual"
+        try:
+            g = self.weight(now)
+            if g >= config.FOOD_TARGET_G:
+                return False, "La lectura alcanza 300 g; no se abre"
+            self.servo.move_us(pulse)
+            self.gate_command = "posicion_manual"
+            self.errors.pop("servo", None)
+            if not adjusting:
+                self.food_mode = "manual"
+                self.food_started = now
+                self.auto_food_after = time.ticks_add(now, config.AUTO_FOOD_COOLDOWN_MS)
+            self.state = self.FEED_OPEN
+            self._cue("gate")
+            self.last_event = "Posicion manual enviada: %d us; cierre supervisado activo" % pulse
+            return True, self.last_event
+        except Exception as exc:
+            return False, str(exc)
+
     def request_food(self, now):
         if (
             not self.actions_allowed
@@ -284,7 +314,7 @@ class PetCareController:
             self.water_pending_until = None
             self.request_pump(now, "auto_ia")
 
-    def command(self, action, now, command_id=None, mode=None):
+    def command(self, action, now, command_id=None, mode=None, position_us=None):
         if action == "auto_enable":
             if not config.AUTO_SERVE_ENABLED:
                 return False, "La automatizacion esta deshabilitada en la configuracion"
@@ -306,6 +336,8 @@ class PetCareController:
             return self.request_gate(True, now)
         if action == "gate_close":
             return self.request_gate(False, now)
+        if action == "gate_position":
+            return self.request_gate_position(position_us, now)
         if action == "feed":
             return self.request_food(now)
         if action == "stop_food":

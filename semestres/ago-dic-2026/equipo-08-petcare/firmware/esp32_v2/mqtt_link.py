@@ -151,9 +151,13 @@ class MQTTLink:
                 ok, message = False, "Sesion antigua; actualiza la pagina"
             elif action == "water" and data.get("supervised") is not True:
                 ok, message = False, "Confirma agua en deposito y espacio en tazon"
+            elif action == "gate_position" and type(data.get("position_us")) is not int:
+                ok, message = False, "Posicion de compuerta invalida"
             else:
                 self.recent = (self.recent + [cid])[-32:]
-                ok, message = controller.command(action, now, cid)
+                ok, message = controller.command(
+                    action, now, cid, position_us=data.get("position_us")
+                )
             self.publish(
                 "ack",
                 {

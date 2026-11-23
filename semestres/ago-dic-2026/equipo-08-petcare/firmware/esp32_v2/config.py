@@ -1,6 +1,6 @@
 """PetCare: GPIO del montaje y limites acordados. Sin RGB ni flotador."""
 
-VERSION = "petcare-20nov-r7"
+VERSION = "petcare-23nov-r8"
 PIN_DHT22 = 4
 PIN_PIR = 27
 PIN_HX711_DOUT = 19

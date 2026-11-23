@@ -30,6 +30,31 @@ class DashboardTests(unittest.TestCase):
         self.assertIsNone(state['telemetry'])
         self.assertEqual(state['history'],[])
 
+    def test_deslizador_rechaza_fuera_de_recorrido_y_encola_pulso_valido(self):
+        state=DashboardState()
+        state.update({'status':{
+            'state':'LISTO','session_id':'servo-session','actions_allowed':True,
+            'servo_manual_enabled':True,'servo_open_us':850,'servo_closed_us':1500,
+            'hx_ok':True,'calibrated':True,'food_active':False,'pump_active':False,
+        }})
+        self.assertFalse(state.request_command('gate_position',position_us=800)[0])
+        self.assertFalse(state.request_command('gate_position',position_us=1550)[0])
+        self.assertTrue(state.request_command('gate_position',position_us=1200)[0])
+        queued=state.commands.get_nowait()
+        self.assertEqual(queued['action'],'gate_position')
+        self.assertEqual(queued['position_us'],1200)
+        self.assertEqual(queued['session_id'],'servo-session')
+
+    def test_deslizador_no_acepta_peso_no_calibrado_ni_bomba_activa(self):
+        state=DashboardState()
+        base={'state':'LISTO','session_id':'servo-session','actions_allowed':True,
+              'servo_manual_enabled':True,'servo_open_us':850,'servo_closed_us':1500,
+              'hx_ok':True,'calibrated':True,'food_active':False,'pump_active':False}
+        state.update({'status':dict(base,calibrated=False)})
+        self.assertFalse(state.request_command('gate_position',position_us=1200)[0])
+        state.update({'status':dict(base,pump_active=True)})
+        self.assertFalse(state.request_command('gate_position',position_us=1200)[0])
+
     def test_automatico_requiere_orden_explicita_y_estado_reciente(self):
         state=DashboardState()
         state.update({'status':{'state':'LISTO','session_id':'abc','auto_serve_available':True,

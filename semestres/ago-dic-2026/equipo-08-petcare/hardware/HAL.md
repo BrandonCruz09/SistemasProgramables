@@ -1,8 +1,8 @@
 # Tabla HAL — PetCare, equipo 08
 
-Actualizada el 15 de noviembre: [OLED, compuerta y carga](../docs/MONTAJE_LISTO_15NOV.md). Evidencia previa: [calibración y evidencia Firestore](../docs/CALIBRACION_FIRESTORE_14NOV.md). [Guía de relé y montaje](../docs/GUIA_RELE_11NOV.txt).
+Actualizada el 23 de noviembre de 2026 para corresponder al firmware r8 y al panel con deslizador de compuerta.
 
-> **Ampliación de software posterior a este corte:** ya se prepararon JPEG por MQTT, decisión IA con señal RGB, ACK, rutas de Firebase y dashboard. Pruebas de software y nube simulada aprobadas; carga y prueba física pendientes. [Estado actualizado y pasos](../docs/INTEGRACION_MQTT_IA.md).
+> El firmware y el panel describen el diseño de software. Las filas con estado físico pendiente requieren verificación en el montaje real.
 
 Asignación del firmware de este avance. Son valores configurados, **no mediciones físicas** del montaje completo.
 Prefijo MQTT: `petcare/equipo8`. El puerto USB de cada placa se selecciona en Thonny; no es un GPIO.
@@ -11,21 +11,22 @@ El 3 de noviembre se validó MQTT/Firebase con sensores y salidas simulados en P
 
 | Componente | Tipo | Pin ESP32 principal | Publicación / campo | Suscripción / acción | Unidad o rango | Estado |
 |---|---|---|---|---|---|---|
-| Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; nominal 5000 g; tara −428929.16, factor 285.80386 | Calibración aproximada integrada; captura física enviada a Firestore por PC |
+| Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; nominal 5000 g; tara −8994.451, factor 285.80386 | Calibración guardada; validar cambio de peso en la carcasa con una masa conocida |
 | DHT22 | Sensor | DATA 4 | `/telemetry`: `temperature_c`, `humidity_pct`, `dht_ok` | — | °C y %HR; rango real por verificar | Sin respuesta en captura del 14 de noviembre; revisar conexión |
 | PIR | Sensor | OUT 27 | `/telemetry`: `pir` | — | booleano | Confirmar modelo/VCC |
 | Flotador retirado del alcance | — | Sin pin; GPIO26 ahora es SDA de OLED | `water_available=null`, `water_level_monitored=false` | — | Nivel no medido | No se instalará |
-| MG995 | Actuador | PWM 33 | `/ack` y `status.state` | `/commands`: `feed` | abierta 800 us / cerrada 1850 us; 50 Hz | Posiciones observadas por el equipo; falta validar con croquetas |
-| Bomba 3–5 V + relé HW-383 K1 | Actuador | IN1 23, activo LOW | `/ack`, `/water_events`, `status.state` | `/commands`: `water`, `stop_water` | consigna 15000 ms; pausa 10000 ms; sin volumen calibrado | Bomba y relé confirmados por el equipo; firmware integrado pendiente físico |
-| LED RGB cátodo común | Actuador | R16, G17, B21 | Estado derivado de sensores | `/commands`: `signal_dog`; resto local | blanco 1.5 s por IA; después estado local | Pendiente físico |
+| MG995 | Actuador | PWM 33 | `/ack` y `status.state` | `/commands`: `feed`, `gate_open`, `gate_close`, `gate_position` | 850–1500 us; 50 Hz; posiciones intermedias desde el deslizador | Firmware r8 limita el recorrido y vigila peso/tiempo; validar sin forzar la compuerta |
+| Bomba 3–5 V + relé HW-383 K1 | Actuador | IN1 23, activo LOW | `/ack`, `/water_events`, `status.state` | `/commands`: `water`, `stop_water` | máximo 5000 ms por pulso; sin volumen calibrado | Confirmar corte físico de agua en la presentación |
+| LED RGB | — | Sin conexión | — | — | Eliminado del montaje | Fuera del alcance actual |
 | OLED SSD1306 128×64 | Pantalla | SDA26 / SCL25, VCC3V3 | Peso local del mismo SensorHub | — | g, actualización nominal 800 ms | Preparada; pendiente conexión física |
-| Buzzer activo | Actuador | 22 | Aviso de fin de alimento | Sin tópico propio; lógica local | ON/OFF, aviso 100 ms | Confirmar driver/consumo |
+| Buzzer pasivo | Actuador | 22 | ACK y estado auxiliar | `/commands`: `tone` | tonos PWM y avisos no bloqueantes | Comprobar en el montaje |
 | ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/stream` → PC; puente consulta `/api/status` y publica `/vision` | GET `/foto` o `/stream` | JPEG VGA 640×480, calidad 12 | Streaming probado; detección móvil de perro/persona confirmada por el equipo |
 
-Los sufijos de tópico se concatenan al prefijo anterior. Los campos de sensores están dentro de `status` en el mensaje de telemetría.
-Las órdenes usan JSON con `id` único y `action`; ejemplo: `{"id":"prueba-001","action":"feed"}`.
-El firmware bloquea alimento sin calibración y permite agua solo por órdenes manuales supervisadas; no mide nivel. No hay dispensado periódico autónomo implementado.
-Cámara: HTTP comprobado anteriormente. Ya existe modo JPEG por MQTT y prueba de transporte en PC; falta cargarlo y verificarlo en la cámara física.
+Las órdenes MQTT usan JSON con `id` único, `action` y la sesión vigente del ESP32. Entre las acciones están `feed`, `water`, `stop_water`, `stop_food`, `gate_open`, `gate_close` y `gate_position` (esta última incluye `position_us`).
+
+La comida usa el objetivo total de 300 g. El modo automático inicia desarmado y requiere activación expresa desde el panel. El cierre manual y automático se supervisa por peso, validez de la lectura y tiempo máximo. El agua funciona por pulsos de hasta 5 s; no mide volumen ni nivel. El reconocimiento de perro puede solicitar alimentación cuando el modo automático está armado.
+
+La cámara independiente puede publicar frames por el transporte seleccionado en la configuración local. La PC ejecuta OpenCV/detector y sirve el visor y el panel. La detección no identifica perros individuales ni garantiza clasificación sin falsos positivos.
 
 ## Alimentación y montaje
 
@@ -37,21 +38,11 @@ Cámara: HTTP comprobado anteriormente. Ya existe modo JPEG por MQTT y prueba de
 - Jarra azul: comida. Bote rojo: agua. Montaje propuesto con bomba, sin salida inferior abierta; confirmar que la bomba sea sumergible. El embudo abierto no detiene el flujo.
 - Caja de coroplast con soportes rígidos para depósitos y celda; electrónica separada del agua.
 
-## Dato → acción implementada
+## Comportamiento y límites
 
-| Dato/evento | Acción |
-|---|---|
-| Báscula no calibrada o peso no disponible | Rechazar `feed` |
-| Peso ≥250 g | Rechazar nuevo dispensado (umbral inicial, ajustar) |
-| `feed` autorizado | Abrir compuerta 900 ms, cerrar, esperar 350 ms y retirar PWM |
-| Nivel de agua | No medido; revisar visualmente depósito y plato antes de servir |
-| Bomba llega al tiempo límite | Apagar bomba |
-| Presencia PIR, con báscula calibrada | LED azul; no dispensar automáticamente |
-| Fin de alimento | Aviso de buzzer 100 ms |
-| Ctrl+C en firmware principal | Cerrar recursos y apagar salidas según `safe_shutdown()` |
-
-## Corte del 8 de noviembre
-
-Servo sin carga y LED del MOSFET reportados como funcionales por el equipo. No equivalen a compuerta cargada ni bombeo. [Montaje, resistencias y conexiones](MONTAJE_Y_CONEXIONES.md).
-
-La orden `signal_dog` solo activa RGB blanco por 1.5 s y emite ACK. Está probada con la FSM simulada. El ACK no mide la luz ni confirma físicamente el circuito.
+- El deslizador de compuerta traduce 0 % a la posición cerrada y 100 % al extremo abierto configurado. La placa solo acepta pulsos dentro de los extremos del firmware.
+- La posición manual mantiene los cierres supervisados por peso, sensor y tiempo; el deslizador queda bloqueado durante la bomba y mientras corre un servido automático.
+- Una lectura sin calibración o vencida bloquea la apertura/servido de alimento; no vuelve a tarar al arrancar.
+- El relé apaga la bomba al terminar cada pulso de 5 s. Confirma el corte de flujo en el montaje, porque el firmware no mide físicamente el agua.
+- El buzzer pasivo usa PWM y avisos no bloqueantes; una confirmación MQTT representa la orden aplicada por software, no una comprobación del sonido o movimiento físico.
+- La automatización se desarma al reiniciar. Prueba primero cada actuador por separado y arma el modo automático solo después de verificar el montaje.

@@ -12,8 +12,10 @@ class ServoSG90:
         self.pulse = None
 
     def move_us(self, pulse):
-        if type(pulse) is not int or pulse not in (config.SERVO_OPEN_US, config.SERVO_CLOSED_US):
-            raise ValueError("Solo se admiten los dos pulsos acordados")
+        low = min(config.SERVO_OPEN_US, config.SERVO_CLOSED_US)
+        high = max(config.SERVO_OPEN_US, config.SERVO_CLOSED_US)
+        if type(pulse) is not int or not low <= pulse <= high:
+            raise ValueError("Pulso del servo fuera del recorrido configurado")
         if self.pwm is None:
             # Esta compilacion de ESP32 requiere activar PWM con duty_u16 primero.
             self.pwm = PWM(self.pin, freq=50, duty_u16=(pulse * 65535 + 10000) // 20000)
