@@ -8,6 +8,10 @@
 # Pines: No aplica; software en PC.
 # ============================================
 """Broker real; cámara, resultado de IA y actuador simulados y declarados."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Integrar y probar los módulos del dispensador PetCare.
+
 import json
 import shutil
 import socket

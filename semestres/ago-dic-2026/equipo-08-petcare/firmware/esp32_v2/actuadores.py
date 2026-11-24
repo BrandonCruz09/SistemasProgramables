@@ -1,11 +1,14 @@
 """Una salida por GPIO. El servo conserva PWM hasta la parada explicita."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Controlar el MG995, el relevador y el buzzer desde GPIO seguros.
 
 import time
 import config
 from machine import Pin, PWM, Timer
 
 
-class ServoSG90:
+class ServoMG995:
     def __init__(self, pin=config.PIN_SERVO):
         self.pin = Pin(pin, Pin.OUT, value=0)
         self.pwm = None

@@ -1,4 +1,7 @@
 """MQTT 3.1.1 local. Recepcion incremental para no bloquear los actuadores."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Publicar telemetría y recibir órdenes autenticadas por sesión MQTT.
 
 import json
 import time

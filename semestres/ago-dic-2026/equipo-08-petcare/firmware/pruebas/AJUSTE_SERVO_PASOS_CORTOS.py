@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Registrar una prueba de banco de AJUSTE SERVO PASOS CORTOS para PetCare.
+
 # PetCare: ajuste manual de la tapa sobre su soporte de madera.
 # GPIO33. El usuario confirmo 1690 us como cierre en el montaje actual.
 # 1650 no es una apertura validada: es el limite de esta primera exploracion.

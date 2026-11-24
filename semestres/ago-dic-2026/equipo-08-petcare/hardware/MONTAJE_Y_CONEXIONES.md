@@ -1,99 +1,63 @@
-> Ilustraciones históricas. Para el cableado actual con protoboard, relé y sin RGB, consultar [Conexiones del 18 de noviembre](../docs/Conexiones_protoboard_18nov.txt). No copiar el módulo MOSFET ni la distribución de estas imágenes al montaje actual.
+# Montaje y conexiones actuales de PetCare
 
-# Montaje y conexiones al 8 de noviembre de 2026
+## Orientación física
 
-La izquierda y derecha siempre se describen **mirando PetCare de frente, desde donde come el perro**. Comida a la izquierda, agua a la derecha. Las seis imágenes son ilustraciones de montaje propuesto, no fotografías del prototipo terminado, ni un esquemático validado ni plantillas de perforación a escala. Seguir nombres de terminales; no copiar filas del protoboard dibujado. Faltan medidas reales de módulos, platos y recipientes.
+Vista frontal: mirando el dispensador desde el lado de los platos, el recipiente de alimento queda a la izquierda y el de agua a la derecha. La electrónica va en un compartimiento seco, separada de los recipientes y de cualquier salida de agua. La cámara queda arriba y al frente, con lente libre para ver el área de los platos. El depósito de croquetas queda sobre el plato izquierdo; la compuerta accionada por el MG995 solo debe abrir dentro de la base de madera.
 
-## Vista general y acercamientos
+La ubicación es una propuesta de distribución basada en las fotos del cascarón. No es una plantilla a escala: antes de atornillar placas, revisar dimensiones, movimiento de tapa y que el peso del tazón no toque la carcasa.
 
-- [00 Vista general y caja abierta](montaje/00_vista_general.png)
-- [01 Báscula y soporte](montaje/01_bascula.png)
-- [02 Caja seca y distribución de alimentación](montaje/02_caja_seca.png)
-- [03 Compuerta y servo MG995](montaje/03_servo.png)
-- [04 Bomba y MOSFET](montaje/04_bomba.png)
-- [05 Sensores cámara y resistencias](montaje/05_sensores.png)
+## Energía y tierra común
 
-La caja electrónica se fija a la izquierda del panel vertical, cerrada en el uso final, con tapa accesible. Los dibujos de detalle pueden omitir piezas para mostrar la zona: no cambian comida/agua de lado. El depósito azul y su compuerta quedan sobre el plato izquierdo. El depósito rojo y la manguera pertenecen a la zona derecha. Los soportes rígidos sostienen los recipientes; el coroplast es revestimiento y división, no una estructura portante validada.
+Cambiar conexiones con la fuente desenchufada. La fuente mostrada tiene entrada de red y salida de corriente directa. No dejar sus terminales de red expuestos ni colocarla en la zona húmeda. Si no cuenta con cubierta, fijación y cableado seguro, mantenerla fuera del equipo y pedir a una persona calificada que revise la entrada de red.
 
-## Alimentación
+- **V+ de salida (5 V):** positivo de baja tensión para las cargas que admitan 5 V, como el MG995 y la bomba mediante el relevador.
+- **V− de salida:** negativo común. Se lleva al riel negativo de la protoboard y a GND de la ESP32 DevKit; desde esa referencia vuelven las señales del módulo de relevador y las cargas de baja tensión.
+- **Símbolo `⏚`:** tierra de protección de la fuente. No es el negativo de 5 V ni la tierra de señal; no lo conectes al riel de GND del protoboard.
+- **ESP32 por USB:** durante programación y pruebas, no unir también V+ externo a VIN/5V de la placa. Sí unir GND de la DevKit con V− para compartir referencia de señal.
+- Los rieles de la protoboard pueden estar partidos a la mitad; verificar continuidad. No alimentar el servo o la bomba a través de pistas finas del protoboard. Llevar su positivo y retorno en cables directos a sus terminales o a una conexión de potencia firme; el protoboard solo sirve como punto de distribución de baja corriente/señal.
 
-Trabajar desenchufado para cambiar cables. La fuente fotografiada tiene bornes de red accesibles: requiere cubierta adecuada, fijación y ubicación seca, fuera del alcance del perro y de salpicaduras. No montar la red eléctrica dentro de la zona del agua. La imagen no certifica su cableado actual.
+## DevKit, sensores y compuerta
 
-La salida **V−** de la fuente es el retorno de baja tensión: unirla a GND del ESP32 y al retorno de las cargas. El símbolo de tierra de protección no sustituye a V− ni se usa como cable de retorno de sensores. No improvisar puentes en la entrada de red; su conexión de protección debe revisarla alguien competente.
-
-| Origen | Destino | Observación |
+| Señal/componente | Conexión exacta en la DevKit | Alimentación |
 |---|---|---|
-| Fuente V+ 5 V | Bornera +5 V | Ramas independientes hacia servo y VIN del módulo MOSFET |
-| Fuente V− | Bornera GND | GND ESP32, servo y módulo, referencia común |
-| ESP32 USB | PC durante pruebas | No conectar además +5 V externo a VIN/5V mientras use USB sin aislamiento verificado |
-| ESP32 3V3 | VCC HX711 y VCC DHT22 | No conectarlos al riel de motores de 5 V en esta guía |
-| Fuente 5 V y V− | 5V y GND de ESP32-CAM en montaje autónomo | Confirmar placa; no alimentar simultáneamente USB/base MB y fuente externa |
+| DHT22 | DATA al GPIO4 | VCC a 3V3; GND a GND común |
+| PIR | OUT al GPIO27 | VCC según la serigrafía del módulo; GND común. Confirmar que OUT no exceda 3.3 V |
+| HX711 | DT/DOUT al GPIO19; SCK al GPIO18 | VCC a 3V3; GND a GND común |
+| MG995 | Cable de señal naranja/amarillo al GPIO33 | Rojo a +5 V de la fuente; café/negro a V−. Unir ese V− a GND de DevKit |
+| Relevador HW-383 K1 | IN1 al GPIO23; GND lógico al GND común | Con el puente entre VCC y RY-VCC retirado como en el módulo fotografiado: RY-VCC a +5 V, VCC a 3V3 y GND a GND común. No conectar 5 V a una entrada lógica sin verificar la placa |
+| Buzzer pasivo | S/señal al GPIO22 | VCC y GND a los terminales del módulo según su serigrafía; común GND |
+| OLED SSD1306 (solo si está instalada) | SDA al GPIO26; SCL al GPIO25 | VCC/GND de acuerdo con el módulo |
 
-La cámara se programa con su base MB. Se comunica por Wi-Fi con PC/celular; no necesita TX/RX hacia el otro ESP32. La alimentación autónoma del DevKit exige identificar su entrada 5V/VIN; nunca aplicar 5 V a 3V3. Mientras no esté identificada, mantenerlo por USB.
+No conectar 5 V a ningún GPIO ni a 3V3. El GPIO del servo es solo señal; la corriente del motor debe venir de su fuente externa. Los valores guardados del servo son 850 µs abierto y 1500 µs cerrado a 50 Hz. El deslizador del panel envía posiciones dentro de ese intervalo. Si vibra, golpea el límite mecánico o hace esfuerzo, detenerlo y apagar la fuente; no extender los límites por software.
 
-Usar borneras o conexiones firmes para la potencia. No transportar la corriente del servo o bomba por rieles del protoboard. Los rieles de protoboard pueden estar cortados a la mitad: confirmar continuidad antes de depender de ellos. Guiar señales por el borde seco y los pares rojo/negro de motores por otra ruta, sujetos con clips y con holgura en conexiones.
+## Celda de carga
 
-## Báscula y HX711
+El tazón descansa únicamente en la plataforma unida al extremo móvil de la celda. La celda se fija por un extremo a la base rígida y por el otro a la plataforma; debe quedar espacio para flexionar sin tocar madera, carcasa ni tornillos. Mantén los cables sin tensión y lejos de la bomba y el servo.
 
-Debajo del plato izquierdo: base rígida → separador inferior → un extremo de la celda fijo. El extremo opuesto sostiene, con separador superior, la plataforma rígida del plato. La zona central de la celda queda libre. El plato y la plataforma no deben tocar la carcasa: ese apoyo desviaría la carga y falsearía la medida. No atornillar ambos extremos a la misma base.
-
-| Conexión | Destino |
+| HX711 | Placa |
 |---|---|
-| HX711 VCC | ESP32 3V3 |
-| HX711 GND | ESP32 GND |
-| HX711 DT o DOUT | GPIO19 |
-| HX711 SCK | GPIO18 |
-| Celda rojo / negro | E+ / E−, respectivamente, si corresponde al modelo |
-| Celda verde / blanco | A+ / A−, respectivamente, si corresponde al modelo |
+| VCC | 3V3 |
+| GND | GND común |
+| DT/DOUT | GPIO19 |
+| SCK | GPIO18 |
 
-Los colores de la celda son habituales, no universales. Conservar el cableado que ya produjo lecturas y verificar etiquetas/ficha antes de cambiarlo. Llevar sus cuatro hilos juntos, lejos de bomba/servo, con alivio de tensión; HX711 fijo sobre separadores en zona seca, sin cobre contra tornillos. El dibujo no permite deducir las medidas de los tornillos de tu celda.
+El código conserva el archivo `firmware/esp32_v2/calibracion_validada.json` y no cambia la tara automáticamente. La referencia nominal de 163 g no quedó verificada con una báscula independiente; antes de afirmar precisión, hacer una comprobación con una masa conocida. No borrar ni recalibrar el archivo solo para quitar una lectura extraña; primero revisar montaje, contactos y antigüedad de telemetría.
 
-RAW está probado según el equipo. Para gramos: montar la plataforma, tarar con el plato vacío, añadir una masa medida y calcular factor = (RAW con masa − tara) / masa en gramos. Luego comprobar con otra masa. Una botella marcada 1.5 L no proporciona por sí sola la masa exacta del conjunto. No inventar el factor ni bloquear la lectura RAW mientras falta calibración.
+## Relevador, bomba y diodo
 
-## Servo y compuerta
+El relevador se controla con GPIO23 y la bomba se alimenta desde la fuente externa, nunca desde un GPIO. Para el contacto K1 usar los bornes identificados en la placa o confirmar COM/NO con el diagrama del módulo. La línea de +5 V de la bomba pasa por COM y NO de K1; el otro cable de la bomba va al V− de la fuente. No usar NC para esta función. La lógica del firmware limita una orden a 5 s, pero la prueba física de corte debe hacerse con agua y bajo supervisión.
 
-Rojo a +5 V externo; café/negro a V− común; naranja/amarillo a GPIO33. Sin resistencia en serie. Fijar cuerpo del MG995 a soporte rígido, no colgar del brazo el recipiente. La varilla acciona solo la compuerta; calibrar aperturas con pocas croquetas y detener si hace fuerza contra un tope. Borde flexible apto para contacto alimentario y salida ajustada reducen atascos, no los eliminan.
+Colocar el diodo 1N4007 en paralelo con la bomba: la pata con franja al positivo de la bomba (lado que recibe +5 V cuando K1 cierra) y la pata sin franja al negativo de la bomba/V−. Aislar las patas para que no se toquen. La bomba debe ser sumergible y trabajar dentro del agua. Guiar la manguera hacia el tazón derecho, fijada y sin dirigirla a la electrónica. No operar en seco ni dejar la bomba sin vigilancia.
 
-El MG995 posicional no se convierte por código en una rueda continua de 360°. Los valores 800–3000 µs fueron una prueba local del usuario; no están medidos como ángulos ni aprobados para carga. El código publicado conserva 50 Hz y 1000–2000 µs como rango inicial, sujeto a revisión del mecanismo. El programa integrado aún usa consignas heredadas; no afirmar que la compuerta final está calibrada.
+## Cámara y acceso desde el teléfono
 
-## Bomba y módulo MOSFET
+La ESP32-CAM y la DevKit son placas distintas. La cámara se alimenta por la base MB/USB durante programación o por una fuente regulada de 5 V a sus pines 5V y GND cuando trabaje sin USB, pero no por ambas vías al mismo tiempo. No necesita cables TX/RX entre placas: la cámara entrega video por Wi‑Fi y el servidor de la PC procesa los cuadros. La PC, la cámara y la DevKit deben estar en la misma red local de 2.4 GHz; el teléfono usa la dirección local de la PC y el puerto del panel. La red guardada INFINITUM3EAE no estaba disponible en la última comprobación del equipo, así que aún no se puede decir que la integración esté probada allí.
 
-El detalle representa el módulo IRF520/IRF520N común. Confirmar modelo y serigrafía real: no basta la descripción verbal. Su LED encendido confirma señal, no la corriente disponible para mover la bomba. IRF520N no garantiza conducción suficiente con una señal de 3.3 V.
+## Comprobación antes de energizar
 
-| Conexión | Terminal |
-|---|---|
-| GPIO23 | SIG del header |
-| GND ESP32 | GND del header, unido a V− de fuente |
-| +5 V fuente | VIN de potencia del módulo |
-| V− fuente | GND de potencia del módulo |
-| Bomba positivo | V+ de salida |
-| Bomba negativo | V− de salida, NO puentearlo a GND |
-| VCC del header | Sin conexión solo si se confirma el módulo común con VCC no usado; verificar placa |
-
-Instalar un **1N4007** en paralelo con los cables de la bomba: franja al positivo, extremo sin franja al negativo. Esta selección se propone para minibomba de hasta 1 A; confirmar consumo. Aislar patas. Se requieren cable rojo/negro de potencia, propuesto 22 AWG para tramos cortos, y conexiones firmes. Bomba y diodo no se alimentan desde un GPIO.
-
-Usar el depósito rojo con fondo cerrado, sin embudo abierto abajo. Sumergir la bomba solo si es un modelo sumergible. Tubo sale por arriba y su punta queda por encima del máximo nivel del depósito, con descarga libre dirigida al plato; comprobar que la bomba alcanza esa altura y no salpica. Verificar corte real de flujo al apagar. No introducir la punta bajo el agua del plato. El cable eléctrico forma un bucle bajo la entrada de la caja seca para que una gota no llegue por él al interior. Sensor de nivel pendiente: solo pruebas supervisadas, nunca bomba en seco.
-
-## Sensores y resistencias
-
-| Elemento | Conexión o cantidad | Condición |
-|---|---|---|
-| DHT22 módulo | VCC 3V3, GND, DATA GPIO4 | Seguir etiquetas, orden físico variable |
-| Pull-up DHT22 | 1 resistencia 10 kΩ 1/4 W entre DATA y 3V3 | Solo si el módulo no la incorpora |
-| PIR | OUT GPIO27, GND común, VCC según modelo | Su salida al ESP32 debe ser de 3.3 V como máximo |
-| LED RGB cátodo común | R16, G17, B21, común GND | Confirmar tipo y patillas |
-| Resistencias RGB | 3 de 330 Ω 1/4 W | Una en serie con cada color de LED suelto; confirmar si el módulo ya las trae |
-| Flotador futuro | Contacto GPIO26 a GND, pull-up interno | Confirmar sentido al montar; no inyectar 5 V |
-| Buzzer | GPIO22 como señal | Confirmar activo/pasivo, corriente y driver antes de conexión directa |
-| HX711 y servo | Sin resistencia adicional en estas conexiones | No intercalar una resistencia para bajar su alimentación |
-
-DHT22 ventilado en borde exterior seco; PIR hacia aproximación del perro, no encerrado; cámara alta mirando ambos platos, con separadores y lente despejada. Ajustar encuadre y región de interés una vez fija. Las etiquetas de piezas pendientes en las ilustraciones no son inventario confirmado: verificar lo que ya tienen antes de comprar.
-
-## Referencias técnicas
-
-- SparkFun, montaje y conexión de celda/HX711: https://learn.sparkfun.com/tutorials/load-cell-amplifier-hx711-breakout-hookup-guide/all?print=1
-- Adafruit, conexión de DHT: https://learn.adafruit.com/dht/connecting-to-a-dhtxx-sensor
-- Infineon, IRF520N: https://www.infineon.com/assets/row/public/documents/24/49/infineon-irf520n-datasheet-en.pdf
-- Vishay, familia 1N4001 a 1N4007: https://www.vishay.com/docs/88503/1n4001.pdf
-
-Ilustraciones generadas para explicar el montaje. Para el reporte final se requieren además fotos propias y un esquemático verificable. La lámina no sustituye la comprobación de etiquetas y continuidad en el hardware real.
+1. Apaga y desenchufa la fuente externa.
+2. Comprueba que V−, GND de DevKit, GND lógico del relevador y retornos de cargas estén identificados por serigrafía; no uses el símbolo `⏚` como V−.
+3. Revisa que no exista continuidad accidental entre V+ y V− y que la franja del diodo esté en el lado positivo de la bomba.
+4. Conecta solo USB y revisa telemetría; después prueba por separado el buzzer, el servo sin carga y el relevador con la bomba apartada.
+5. Prueba bomba solo con agua y recipiente con espacio, y observa que se apague realmente al concluir los 5 s.
+6. Prueba alimento con el tazón y soporte libres, una masa conocida y la tapa montada. No armes automatización hasta verificar cierre y lectura.

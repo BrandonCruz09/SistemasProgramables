@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Comprobar mediante pruebas de software el módulo prueba compuerta de PetCare.
+
 import importlib.util
 from pathlib import Path
 import sys

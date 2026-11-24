@@ -1,4 +1,7 @@
 """Sensores independientes; conserva RAW y no cambia tara al arrancar."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Leer peso, temperatura, humedad y movimiento.
 
 import time
 import config

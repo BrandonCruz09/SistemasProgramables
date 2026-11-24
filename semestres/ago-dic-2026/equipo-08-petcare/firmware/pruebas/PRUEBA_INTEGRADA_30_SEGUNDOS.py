@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Registrar una prueba de banco de PRUEBA INTEGRADA 30 SEGUNDOS para PetCare.
+
 # PetCare: ejecuta el programa completo en modo de prueba supervisada.
 # Sin ESP32-CAM ni buzzer. Tres ciclos, separados por 30 segundos.
 import config

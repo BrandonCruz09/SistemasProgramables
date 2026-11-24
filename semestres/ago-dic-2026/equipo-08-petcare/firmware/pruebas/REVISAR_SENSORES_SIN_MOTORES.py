@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Registrar una prueba de banco de REVISAR SENSORES SIN MOTORES para PetCare.
+
 # PetCare: diagnostico del montaje sin dispensar comida ni agua.
 import config
 from machine import Pin

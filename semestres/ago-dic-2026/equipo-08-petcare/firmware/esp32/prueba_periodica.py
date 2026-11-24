@@ -1,4 +1,8 @@
 """Tres ciclos supervisados. No modifica el modo normal al reiniciar."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Documentar el uso de prueba periodica dentro del proyecto PetCare.
+
 import config
 
 

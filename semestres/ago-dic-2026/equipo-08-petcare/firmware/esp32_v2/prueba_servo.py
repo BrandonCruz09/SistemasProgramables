@@ -1,14 +1,17 @@
 """Prueba independiente de compuerta: GPIO33, 850/1500 us a 50 Hz."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Documentar el uso de prueba servo dentro del proyecto PetCare.
 
 from machine import Pin
-from actuadores import ServoSG90
+from actuadores import ServoMG995
 import config
 
 
 def main():
     Pin(config.PIN_PUMP_RELAY, Pin.OUT, value=1 - config.PUMP_ACTIVE_LEVEL)
     Pin(config.PIN_BUZZER, Pin.OUT, value=0)
-    servo = ServoSG90()
+    servo = ServoMG995()
     print("\nPRUEBA SOLO SERVO - GPIO33 - 50 Hz")
     print("1 ABRIR 850 us | 2 CERRAR 1500 us | 0 SALIR")
     print("Sin pesa, Wi-Fi, bomba ni buzzer. No hay ciclos automaticos.")

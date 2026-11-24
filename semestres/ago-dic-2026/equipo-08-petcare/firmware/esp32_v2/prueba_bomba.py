@@ -1,4 +1,7 @@
 """Prueba independiente del rele y bomba en GPIO23, activo LOW."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Documentar el uso de prueba bomba dentro del proyecto PetCare.
 
 import time
 from machine import Pin

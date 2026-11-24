@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Comprobar mediante pruebas de software el módulo control de PetCare.
+
 import sys, types, time, json, tempfile, unittest, hashlib
 from pathlib import Path
 
@@ -77,7 +81,7 @@ machine.enable_irq = lambda n: None
 sys.modules["machine"] = machine
 sys.modules["binascii"] = __import__("binascii")
 import config
-from actuadores import ServoSG90, PumpRelay, ActiveBuzzer
+from actuadores import ServoMG995, PumpRelay, ActiveBuzzer
 from controlador import PetCareController
 from calibracion_pesa import cargar
 from mqtt_link import packet, take_packet, MQTTLink, string
@@ -105,7 +109,7 @@ class Tests(unittest.TestCase):
     def setUp(self):
         clock[0] = 1000
         self.s = Sensor()
-        self.v = ServoSG90()
+        self.v = ServoMG995()
         self.p = PumpRelay()
         self.b = ActiveBuzzer()
         self.c = PetCareController(self.s, self.v, self.p, self.b)
@@ -679,7 +683,7 @@ class FaultTests(unittest.TestCase):
         screen = Mock()
         screen.update.side_effect = OSError("oled")
         with patch("actuadores.PumpRelay", return_value=self.p), patch(
-            "actuadores.ServoSG90", return_value=self.v
+            "actuadores.ServoMG995", return_value=self.v
         ), patch("actuadores.ActiveBuzzer", return_value=self.b), patch(
             "sensores.SensorHub", return_value=self.s
         ), patch(
@@ -714,7 +718,7 @@ class FaultTests(unittest.TestCase):
         from main import main
 
         with patch("actuadores.PumpRelay", return_value=self.p), patch(
-            "actuadores.ServoSG90", return_value=self.v
+            "actuadores.ServoMG995", return_value=self.v
         ), patch("actuadores.ActiveBuzzer", return_value=self.b), patch(
             "sensores.SensorHub", side_effect=OSError("inicio")
         ):

@@ -1,4 +1,7 @@
 """OLED SSD1306, SDA26/SCL25. Su fallo no detiene el control."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Mostrar peso y estado de la báscula en una pantalla OLED.
 
 import time
 import config

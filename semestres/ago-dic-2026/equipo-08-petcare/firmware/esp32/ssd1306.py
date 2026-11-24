@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Documentar el uso de ssd1306 dentro del proyecto PetCare.
+
 # Nombre de la materia: Sistemas Programables
 # Integrantes: Brandon Leonel Padilla de la Cruz, Lidia Verenice Padilla Lopez, Isaac Eliseo Flores Valencia
 # Objetivo del script: Implementar el controlador MicroPython de la pantalla SSD1306 para OLED 128x64.

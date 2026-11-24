@@ -1,4 +1,7 @@
 """Control por plazos: sin sleep durante servido, cierre a 300 g y agua 5 s."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Supervisar órdenes, lectura de peso y límites de servido.
 
 import time
 import math

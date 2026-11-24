@@ -5,6 +5,10 @@ Servo GPIO33: abrir 850 us, cerrar 1500 us. Rele IN1 GPIO23, activo LOW.
 Buzzer S GPIO22. La opcion de tono sirve para distinguir un modulo pasivo.
 Salir retira PWM: la compuerta puede perder la fuerza que la sostiene.
 """
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Documentar el uso de diagnostico salidas aislado dentro del proyecto PetCare.
+
 from machine import Pin, PWM
 from time import sleep_ms, sleep_us, ticks_ms, ticks_diff
 

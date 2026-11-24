@@ -1,4 +1,7 @@
 """HX711 canal A, ganancia 128. Lectura sin esperar conversiones en el bucle."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Leer muestras RAW del convertidor HX711.
 
 import time
 from machine import Pin, disable_irq, enable_irq

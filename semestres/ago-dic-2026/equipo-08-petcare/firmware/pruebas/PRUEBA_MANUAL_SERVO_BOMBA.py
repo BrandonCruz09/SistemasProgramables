@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Registrar una prueba de banco de PRUEBA MANUAL SERVO BOMBA para PetCare.
+
 # PetCare: prueba manual sin esperas bloqueantes ni actuadores simultaneos.
 import sys
 import time

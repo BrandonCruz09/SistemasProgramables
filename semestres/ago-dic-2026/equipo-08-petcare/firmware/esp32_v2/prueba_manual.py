@@ -1,13 +1,16 @@
 """Prueba individual supervisada. No modifica calibracion ni inicia ciclos solos."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Documentar el uso de prueba manual dentro del proyecto PetCare.
 
 import time
 import config
-from actuadores import ServoSG90, PumpRelay, ActiveBuzzer
+from actuadores import ServoMG995, PumpRelay, ActiveBuzzer
 from sensores import SensorHub
 
 
 def main():
-    servo = ServoSG90()
+    servo = ServoMG995()
     pump = PumpRelay()
     buzzer = ActiveBuzzer()
     sensores = SensorHub()

@@ -1,6 +1,9 @@
-"""PetCare: GPIO del montaje y limites acordados. Sin RGB ni flotador."""
+"""PetCare: GPIO del montaje final y limites acordados."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Definir pines, límites de actuadores y parámetros locales del firmware.
 
-VERSION = "petcare-23nov-r8"
+VERSION = "petcare-23nov-r9"
 PIN_DHT22 = 4
 PIN_PIR = 27
 PIN_HX711_DOUT = 19

@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Registrar una prueba de banco de PRUEBA SERVO COMPUERTA para PetCare.
+
 # PetCare | Equipo 08 | Prueba independiente del montaje de la compuerta
 # Ejecutar en Thonny con MicroPython ESP32. No requiere otros archivos.
 from machine import Pin, PWM

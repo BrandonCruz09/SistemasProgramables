@@ -1,4 +1,7 @@
 """Programa integrado: salidas seguras y sin movimientos al arrancar."""
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Coordinar sensores, actuadores, red y panel local del ESP32.
 
 import time
 import config
@@ -29,7 +32,7 @@ def cleanup(resources):
 
 
 def main(solo_lectura=False, max_runtime_ms=None):
-    from actuadores import ServoSG90, PumpRelay, ActiveBuzzer
+    from actuadores import ServoMG995, PumpRelay, ActiveBuzzer
     from sensores import SensorHub
     from controlador import PetCareController
     from mqtt_link import MQTTLink
@@ -40,7 +43,7 @@ def main(solo_lectura=False, max_runtime_ms=None):
     try:
         pump = PumpRelay()
         resources.append(("bomba", pump.off))
-        servo = ServoSG90()
+        servo = ServoMG995()
         resources.append(("servo", servo.release))
         buzzer = ActiveBuzzer()
         resources.append(("buzzer", buzzer.off))

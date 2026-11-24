@@ -1,4 +1,4 @@
-# PetCare · firmware r8
+# PetCare · firmware r9
 
 ## Seguridad de arranque
 
@@ -14,7 +14,7 @@ El firmware manda el nivel seguro al inicializar GPIO, pero no puede fijar el es
 
 Servo MG995: GPIO33, 50 Hz, extremos configurados en 850 µs (abierta) y 1500 µs (cerrada). El panel incluye un deslizador para enviar posiciones intermedias dentro de esos extremos. La posición intermedia conserva los límites del servido manual: cierre a 300 g, lectura inválida o tiempo máximo. Ajusta el recorrido con la compuerta libre y detén la prueba si el servo zumba, hace fuerza o llega al tope mecánico.
 
-Relé de bomba: IN1 GPIO23, activo LOW, máximo 5 s por orden. Buzzer GPIO22, DHT22 GPIO4, PIR GPIO27, HX711 DT/SCK GPIO19/18, OLED SDA/SCL GPIO26/25. Sin LED RGB ni flotador.
+Relé de bomba: IN1 GPIO23, activo LOW, máximo 5 s por orden. Buzzer GPIO22, DHT22 GPIO4, PIR GPIO27, HX711 DT/SCK GPIO19/18, OLED SDA/SCL GPIO26/25.
 
 ## Pesa
 

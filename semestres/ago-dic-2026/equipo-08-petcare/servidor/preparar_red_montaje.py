@@ -1,3 +1,7 @@
+# Proyecto: PetCare, equipo 08.
+# Integrantes: Brandon Leonel Padilla De la Cruz (22240293); Isaac Eliseo Flores Valencia (22240324); Lidia Verenice Padilla López (22240312).
+# Objetivo: Comprobar parámetros locales de red antes de la integración.
+
 # Sistemas Programables | PetCare | Equipo 08
 # Prepara las copias locales antes de cargarlas a cada placa. No mueve actuadores.
 import argparse

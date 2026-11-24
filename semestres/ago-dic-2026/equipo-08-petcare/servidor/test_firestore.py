@@ -1,3 +1,5 @@
+# Proyecto: PetCare, equipo 08.
+
 # PetCare — Equipo 08 | Sistemas Programables
 # Integrantes: Brandon Leonel Padilla De la Cruz (22240293), Isaac Eliseo Flores
 # Valencia (22240324), Lidia Verenice Padilla López (22240312).

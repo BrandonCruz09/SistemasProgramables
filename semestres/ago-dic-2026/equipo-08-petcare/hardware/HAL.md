@@ -1,48 +1,48 @@
-# Tabla HAL — PetCare, equipo 08
+# Tabla HAL de PetCare
 
-Actualizada el 23 de noviembre de 2026 para corresponder al firmware r8 y al panel con deslizador de compuerta.
+## Objetivo del proyecto
 
-> El firmware y el panel describen el diseño de software. Las filas con estado físico pendiente requieren verificación en el montaje real.
+Desarrollar un dispensador supervisado para perro que registre el peso del alimento, permita accionar una compuerta y una bomba de agua desde una página web, e integre sensores y una cámara con procesamiento de visión en una PC. La aplicación usa MQTT para comunicar la placa con el servidor y Cloud Firestore para conservar lecturas y eventos.
 
-Asignación del firmware de este avance. Son valores configurados, **no mediciones físicas** del montaje completo.
-Prefijo MQTT: `petcare/equipo8`. El puerto USB de cada placa se selecciona en Thonny; no es un GPIO.
+## Estado y asignación de pines
 
-El 3 de noviembre se validó MQTT/Firebase con sensores y salidas simulados en PC, bajo el prefijo independiente `petcare/equipo8/simulacion/ID_EJECUCION`. Esa prueba no cambia los estados físicos de esta tabla ni calibra la celda.
+Esta tabla describe la versión de firmware `petcare-23nov-r9`. Los pines son la configuración del programa; la telemetría más reciente que había disponible es histórica y no certifica el cableado ni el estado físico del día de la presentación.
 
-| Componente | Tipo | Pin ESP32 principal | Publicación / campo | Suscripción / acción | Unidad o rango | Estado |
-|---|---|---|---|---|---|---|
-| Celda 5 kg + HX711 | Sensor | DT 19, SCK 18 | `/telemetry`: `status.weight_g`, `raw`, `hx_ok` | — | g; nominal 5000 g; tara −8994.451, factor 285.80386 | Calibración guardada; validar cambio de peso en la carcasa con una masa conocida |
-| DHT22 | Sensor | DATA 4 | `/telemetry`: `temperature_c`, `humidity_pct`, `dht_ok` | — | °C y %HR; rango real por verificar | Sin respuesta en captura del 14 de noviembre; revisar conexión |
-| PIR | Sensor | OUT 27 | `/telemetry`: `pir` | — | booleano | Confirmar modelo/VCC |
-| Flotador retirado del alcance | — | Sin pin; GPIO26 ahora es SDA de OLED | `water_available=null`, `water_level_monitored=false` | — | Nivel no medido | No se instalará |
-| MG995 | Actuador | PWM 33 | `/ack` y `status.state` | `/commands`: `feed`, `gate_open`, `gate_close`, `gate_position` | 850–1500 us; 50 Hz; posiciones intermedias desde el deslizador | Firmware r8 limita el recorrido y vigila peso/tiempo; validar sin forzar la compuerta |
-| Bomba 3–5 V + relé HW-383 K1 | Actuador | IN1 23, activo LOW | `/ack`, `/water_events`, `status.state` | `/commands`: `water`, `stop_water` | máximo 5000 ms por pulso; sin volumen calibrado | Confirmar corte físico de agua en la presentación |
-| LED RGB | — | Sin conexión | — | — | Eliminado del montaje | Fuera del alcance actual |
-| OLED SSD1306 128×64 | Pantalla | SDA26 / SCL25, VCC3V3 | Peso local del mismo SensorHub | — | g, actualización nominal 800 ms | Preparada; pendiente conexión física |
-| Buzzer pasivo | Actuador | 22 | ACK y estado auxiliar | `/commands`: `tone` | tonos PWM y avisos no bloqueantes | Comprobar en el montaje |
-| ESP32-CAM OV2640 + MB | Cámara independiente | Bus interno; no TX/RX a DevKit | HTTP `/stream` → PC; puente consulta `/api/status` y publica `/vision` | GET `/foto` o `/stream` | JPEG VGA 640×480, calidad 12 | Streaming probado; detección móvil de perro/persona confirmada por el equipo |
+| Módulo | ESP32 DevKit | Función y datos | Condición documentada |
+|---|---:|---|---|
+| Celda de carga y HX711 | DT 19, SCK 18 | Peso en gramos, RAW, estado y antigüedad de lectura | Factor y tara guardados; factor requiere validación con masa medida independientemente |
+| DHT22 | DATA 4 | Temperatura °C y humedad relativa % | Hubo lecturas fallidas en registros previos; revisar en el montaje actual |
+| PIR | OUT 27 | Estado lógico de movimiento | El nivel de salida depende de la placa del sensor; no exceder 3.3 V en GPIO |
+| MG995 | PWM 33 | Apertura, cierre y posición intermedia desde el panel | 50 Hz; pulsos limitados a 850 µs abierto y 1500 µs cerrado |
+| Módulo de relevador HW-383, canal K1 | IN1 23 | Control de la bomba, activo en nivel bajo | Pulso de agua limitado a 5000 ms; confirmar que el corte físico ocurra |
+| Buzzer pasivo de tres terminales | S 22; VCC/GND según módulo | Avisos al mover compuerta, ordenar agua y prueba manual | Confirmar sonido en montaje; una confirmación de software no verifica sonido físico |
+| OLED SSD1306, si se instala | SDA 26, SCL 25 | Mostrar peso local | La documentación no confirma una prueba física reciente del display |
+| ESP32-CAM con OV2640 | Bus interno de cámara | Captura de JPEG; HTTP hacia la PC | Cámara separada; no se conecta por UART a la DevKit |
 
-Las órdenes MQTT usan JSON con `id` único, `action` y la sesión vigente del ESP32. Entre las acciones están `feed`, `water`, `stop_water`, `stop_food`, `gate_open`, `gate_close` y `gate_position` (esta última incluye `position_us`).
+## Protocolo y datos
 
-La comida usa el objetivo total de 300 g. El modo automático inicia desarmado y requiere activación expresa desde el panel. El cierre manual y automático se supervisa por peso, validez de la lectura y tiempo máximo. El agua funciona por pulsos de hasta 5 s; no mide volumen ni nivel. El reconocimiento de perro puede solicitar alimentación cuando el modo automático está armado.
+Prefijo MQTT: `petcare/equipo8`. Los mensajes de control se validan con acción permitida, identificador y sesión de la placa. Las credenciales del broker permanecen en archivos locales ignorados por Git.
 
-La cámara independiente puede publicar frames por el transporte seleccionado en la configuración local. La PC ejecuta OpenCV/detector y sirve el visor y el panel. La detección no identifica perros individuales ni garantiza clasificación sin falsos positivos.
+| Tópico | Emisor → receptor | Contenido |
+|---|---|---|
+| `petcare/equipo8/telemetry` | ESP32 → servidor Python | Peso, sensores, estado de control y límites configurados |
+| `petcare/equipo8/commands` | Panel/servidor → ESP32 | `feed`, `water`, `stop_water`, `gate_open`, `gate_close`, `gate_position`, `tone`, `auto_enable`, `auto_disable` |
+| `petcare/equipo8/ack` | ESP32 → servidor Python | Resultado lógico de la orden e identificador relacionado |
+| `petcare/equipo8/cam/frame` | ESP32-CAM → servidor, solo si se selecciona transporte MQTT | JPEG binario; la configuración actual usa HTTP |
+| `petcare/equipo8/vision` | Procesamiento en PC → ESP32/servidor | Clasificación, confianza, tiempo y señal de presencia |
 
-## Alimentación y montaje
+El servidor de PC utiliza la API REST de Cloud Firestore bajo `petcare/equipo8`. Guarda estado reciente e histórico de lecturas y eventos. Las pruebas de noviembre incluyen escritura y lectura reales en Firestore. Un resultado con `simulated: true` corresponde a una prueba simulada, no a una medición física.
 
-- DevKit por USB durante pruebas. HX711 y DHT22 a 3V3/GND; señales del ESP32 a 3.3 V.
-- MG995 rojo a +5 V externo, marrón/negro a V−, naranja/amarillo a GPIO33. V− unido a GND de DevKit; no unir V+ al VIN si DevKit está por USB.
-- La base ESP32CAM-MB programa la cámara por USB. No se requiere FTDI.
-- Confirmar VCC del PIR por modelo; no conectar una salida de 5 V directamente al ESP32.
-- Bomba mediante COM1/NO1 del relé y diodo en paralelo con la bomba; nunca directo al GPIO. Ver guía del 11 de noviembre para RY-VCC y puente J1.
-- Jarra azul: comida. Bote rojo: agua. Montaje propuesto con bomba, sin salida inferior abierta; confirmar que la bomba sea sumergible. El embudo abierto no detiene el flujo.
-- Caja de coroplast con soportes rígidos para depósitos y celda; electrónica separada del agua.
+## Límites de control
 
-## Comportamiento y límites
+- El deslizador del panel convierte 0–100 % a pulsos entre 1500 y 850 µs. El firmware vuelve a validar el intervalo antes de mover el MG995.
+- El servido manual de alimento se supervisa con el HX711 y termina al alcanzar 300 g totales, al vencer el tiempo o cuando la lectura deja de ser válida. La exactitud depende de validar el factor con una masa conocida.
+- El agua se activa durante un máximo de 5 s por orden. El sistema no mide el volumen ni el nivel del depósito.
+- El modo automático se arma manualmente desde el panel y queda desarmado al reiniciar. La detección puede fallar y necesita verificación con el perro y el encuadre definitivos.
+- ACK confirma que el programa aceptó o aplicó una orden a nivel lógico; no comprueba por sí solo que el servo se movió, el relevador conmutó o el agua dejó de fluir.
 
-- El deslizador de compuerta traduce 0 % a la posición cerrada y 100 % al extremo abierto configurado. La placa solo acepta pulsos dentro de los extremos del firmware.
-- La posición manual mantiene los cierres supervisados por peso, sensor y tiempo; el deslizador queda bloqueado durante la bomba y mientras corre un servido automático.
-- Una lectura sin calibración o vencida bloquea la apertura/servido de alimento; no vuelve a tarar al arrancar.
-- El relé apaga la bomba al terminar cada pulso de 5 s. Confirma el corte de flujo en el montaje, porque el firmware no mide físicamente el agua.
-- El buzzer pasivo usa PWM y avisos no bloqueantes; una confirmación MQTT representa la orden aplicada por software, no una comprobación del sonido o movimiento físico.
-- La automatización se desarma al reiniciar. Prueba primero cada actuador por separado y arma el modo automático solo después de verificar el montaje.
+## Alimentación y referencia de conexión
+
+DevKit por USB durante la carga; HX711 y sensores compatibles a 3.3 V. El MG995 y la bomba usan alimentación externa de 5 V con capacidad suficiente. Conectar el borne de salida V− de la fuente a GND común de la DevKit y a los retornos de baja tensión. El símbolo de tierra de protección `⏚` no sustituye a V− y no va al riel negativo del protoboard. No unir la salida V+ externa con VIN/5V mientras la placa esté alimentada por USB, salvo que el diseño de la placa y la alimentación estén aislados y verificados.
+
+El protoboard se usa para señales y distribución de baja corriente; no llevar por sus contactos la corriente del MG995 o la bomba. La línea de agua debe mantenerse físicamente separada de la electrónica y de la fuente. Consulta [montaje y conexiones](MONTAJE_Y_CONEXIONES.md) y la versión actual de [arquitectura](arquitectura.png) y [cableado](diagrama.png).
