@@ -338,8 +338,10 @@ class PetCareBridge:
             message = 'Espera a que termine el servido y su pausa de seguridad'
         if message is None:
             payload = {k:v for k,v in command.items() if k != 'queued_at'}
-            payload['id'] = 'manual-'+uuid4().hex
-            result = self.client.publish(self.base_topic+'/commands',json.dumps(payload),qos=0,retain=False)
+            payload.setdefault('id', 'manual-'+uuid4().hex)
+            # STOP se entrega con QoS 1; otras órdenes conservan el envío liviano.
+            qos = 1 if action in ('stop_water', 'stop_food') else 0
+            result = self.client.publish(self.base_topic+'/commands',json.dumps(payload),qos=qos,retain=False)
             if result.rc == 0:
                 if action == 'water': self.last_manual_water = now
                 self.dashboard.command_sent(payload['id'], action, utc_now())
@@ -347,7 +349,8 @@ class PetCareBridge:
             else:
                 message = 'No se pudo enviar la orden'
         with self.dashboard.lock:
-            self.dashboard.events.append({'message':message,'received_at':utc_now()})
+            self.dashboard.events.append({'id':command.get('id'),'action':action,'pending':False,
+                'ok':False,'message':message,'received_at':utc_now()})
 
     def process_vision(self, result):
         """Actuar solo sobre cuadros recientes, sin alimentar por detección."""

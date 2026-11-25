@@ -11,3 +11,5 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 
 .gate-slider{margin:12px 0 8px;padding:12px;background:#f4f6f7;border:1px solid #d8e0e5;border-radius:3px}.gate-slider label{display:flex;justify-content:space-between;gap:8px;font-size:11px}.gate-slider output{font:12px var(--numbers);font-weight:600;color:var(--ink)}.gate-slider input{display:block;width:100%;margin:14px 0 8px;accent-color:var(--orange);touch-action:pan-y}.slider-ends{display:flex;justify-content:space-between;color:var(--muted);font:10px var(--numbers)}.gate-slider input:disabled{opacity:.48}
+
+.scale-diagnostics{margin:-14px 0 18px;color:var(--muted);font:11px/1.5 var(--numbers);min-height:18px}.scale-diagnostics[aria-live]{overflow-wrap:anywhere}\n

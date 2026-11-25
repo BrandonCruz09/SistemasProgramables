@@ -3,13 +3,14 @@
   "muestras": 60,
   "fecha_local": "2026-11-14",
   "referencia": "Paquete de galletas: 163 g declarados por usuario; masa bruta sin verificar",
-  "TARE_RAW": -8994.451,
+  "TARE_RAW": 1557.0,
   "tara_anterior_14nov": -428929.16,
-  "tara_fecha": "2026-11-18: cero con tazon vacio (docs/PRUEBA_CERO_18NOV.txt); factor pendiente de revalidar con masa conocida",
+  "tara_fecha": "2026-11-24: tara afinada con tazon vacio; mediana de 20 muestras RAW recibidas por MQTT; factor de referencia conservado",
   "referencia_aproximada": true,
   "variacion_raw": 168,
   "raw_con_referencia": -379154.0,
   "masa_referencia_g": 163.0,
   "CALIBRATION_FACTOR": 285.80386,
-  "validacion": "cero -0.08 a 0.15 g; paquete 163.02 a 163.30 g; misma referencia nominal"
+  "validacion": "cero -0.08 a 0.15 g; paquete 163.02 a 163.30 g; misma referencia nominal",
+  "muestras_cero_2026-11-24": 20
 }

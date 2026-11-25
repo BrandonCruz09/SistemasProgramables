@@ -40,7 +40,7 @@ class DashboardState:
         self.automation_armed = False
         self.device_session = None
 
-    def request_command(self, action, supervised=False, position_us=None):
+    def request_command(self, action, supervised=False, position_us=None, command_id=None):
         if action not in ('feed', 'water', 'stop_water', 'stop_food', 'signal_dog', 'gate_open', 'gate_close', 'gate_position', 'beep', 'tone', 'auto_enable', 'auto_disable'):
             return False, 'Accion desconocida'
         data = self.snapshot()
@@ -79,8 +79,9 @@ class DashboardState:
                 return False, 'Primero terminar o cancelar el servido de alimento'
         if action == 'water' and supervised is not True:
             return False, 'Confirma que hay agua y espacio en el plato'
+        command_id = command_id or ('manual-' + secrets.token_hex(16))
         try:
-            self.commands.put_nowait({'action':action,'supervised':supervised,
+            self.commands.put_nowait({'id':command_id,'action':action,'supervised':supervised,
                 **({'position_us':position_us} if action == 'gate_position' else {}),
                 'session_id':(data['telemetry'] or {}).get('status',{}).get('session_id'),
                 'queued_at':time.monotonic()})
@@ -165,12 +166,13 @@ def start_dashboard(state, html_path, host='0.0.0.0', port=8766, demo_mode=False
                 if not 0 < length <= 1024: raise ValueError()
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data,dict): raise ValueError()
+                command_id = 'manual-' + secrets.token_hex(16)
                 ok,message = state.request_command(
-                    data.get('action'), data.get('supervised'), data.get('position_us')
+                    data.get('action'), data.get('supervised'), data.get('position_us'), command_id
                 )
             except (ValueError, OSError):
                 self.send_error(400);return
-            body=json.dumps({'ok':ok,'message':message}).encode()
+            body=json.dumps({'ok':ok,'message':message,'id':command_id if ok else None}).encode()
             self.send_response(202 if ok else 409)
             self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(body)))
             self.end_headers();self.wfile.write(body)

@@ -26,12 +26,13 @@ if (demo) {
 }
 function cameraState() {
   const available = !demo && !videoPaused && !videoError && last?.vision?.available;
+  const visionError = last?.vision?.error;
   el('liveVideo').hidden = !available;
   el('cameraEmpty').hidden = !!available;
   el('cameraBadge').dataset.live = String(!!available);
   el('cameraState').textContent = demo ? 'Demo' : available ? 'En vivo' : videoPaused ? 'En pausa' : 'Sin señal';
   el('cameraEmptyTitle').textContent = demo ? 'Aquí verás su estación' : videoPaused ? 'Video en pausa' : 'Esperando a la cámara';
-  el('cameraEmptyText').textContent = demo ? 'La cámara real está desactivada en esta demostración.' : videoPaused ? 'Puedes reanudarlo cuando quieras.' : 'El video aparecerá cuando la cámara y el servidor estén disponibles.';
+  el('cameraEmptyText').textContent = demo ? 'La cámara real está desactivada en esta demostración.' : videoPaused ? 'Puedes reanudarlo cuando quieras.' : visionError ? `${visionError}. Comprueba que la cámara tenga 5 V y esté conectada a la misma red.` : 'Esperando imágenes de la cámara y del servidor.';
 }
 function connectVideo() {
   clearTimeout(videoRetry); videoRetry = null;
@@ -107,16 +108,27 @@ function buttons() {
   el('closeGate').disabled=!!pending||!canClose||!s.servo_manual_enabled;
   el('gateStatus').textContent=!last?.available?'Esperando conexión.':!s.servo_manual_enabled?'Esperando firmware con control manual.':s.manual_food_active?'Abierta: se cerrará al llegar a 300 g. Puedes cerrar antes.':s.gate_command==='cerrar'?'Última orden: cerrar.':'Apertura manual con cierre automático a 300 g.';
   el('foodProgress').textContent = !last?.available ? 'Esperando una lectura reciente de la pesa.' : !s.servo_enabled ? 'Servido automático pendiente. Puedes usar los botones manuales.' : s.food_result || 'Listo para completar su plato.';
-  el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.food_active ? 'Primero debe terminar el alimento.' : s.state==='BOMBA_ACTIVA' ? 'Sirviendo. Se apagará al terminar el pulso.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
+  el('waterReason').textContent = !last?.available ? 'Esperando conexión con la estación.' : s.pump_active ? 'Bomba activa: el ESP32 ordena el corte a los 5 segundos. Puedes detenerla ahora.' : s.food_active ? 'Primero debe terminar el alimento.' : Date.now()<waterLock ? 'Espera unos segundos antes del siguiente servido.' : !el('supervised').checked ? 'Confirma el depósito antes de servir.' : 'Listo para servir durante 5 segundos.';
 }
 function render(data) {
   last=data;const s=data.telemetry?.status||{};
   el('connection').dataset.state = data.available ? (demo||data.telemetry?.simulated?'demo':'online') : 'offline';
   el('connectionLabel').textContent = data.available ? (demo||data.telemetry?.simulated?'Modo demostración':'Estación conectada') : 'Sin conexión';
   el('status').textContent=data.available?`${demo?'Datos de ejemplo':'Última lectura'} · ${data.age_seconds??0} s`:'Esperando datos recientes de la estación.';
-  el('weight').textContent = data.available ? (s.calibrated ? number(s.weight_g,'g'):'Sin calibrar') : '—';
-  el('foodMeter').value = data.available && s.calibrated && finite(s.weight_g) ? Math.max(0,Math.min(300,s.weight_g)):0;
-  el('foodMeter').setAttribute('aria-valuetext',data.available&&finite(s.weight_g)?`${s.weight_g.toFixed(1)} de 300 gramos`:'Sin lectura reciente');
+  const controlledWeight = finite(s.weight_control_g) ? s.weight_control_g : s.weight_g;
+  const displayWeight = finite(controlledWeight) && Math.abs(controlledWeight) < 0.5 ? 0 : controlledWeight;
+  const scaleReady = data.available && s.calibrated && s.hx_ok && finite(controlledWeight);
+  el('weight').textContent = data.available ? (s.calibrated ? number(displayWeight,'g'):'Sin calibrar') : '—';
+  el('foodMeter').value = scaleReady ? Math.max(0,Math.min(300,controlledWeight)):0;
+  el('foodMeter').setAttribute('aria-valuetext',scaleReady?`${displayWeight.toFixed(1)} de 300 gramos`:'Sin lectura reciente');
+  const scaleHealth=el('scaleHealth');
+  if(scaleHealth){
+    if(!data.available) scaleHealth.textContent='Sin telemetría reciente de la ESP32.';
+    else if(!s.hx_ok) scaleHealth.textContent=s.hx_error||'El HX711 no está enviando lecturas.';
+    else if(!s.calibrated) scaleHealth.textContent=s.calibration_error||'Falta cargar la calibración.';
+    else if(finite(s.weight_span_g)&&s.weight_span_g>1.5) scaleHealth.textContent=`Lectura inestable · variación ${s.weight_span_g.toFixed(1)} g · revisa que el plato no toque la carcasa.`;
+    else scaleHealth.textContent=`Lectura en vivo · RAW ${s.raw??'—'} · variación ${(finite(s.weight_span_g)?s.weight_span_g:0).toFixed(1)} g · referencia de calibración aproximada.`;
+  }
   el('temp').textContent=data.available?number(s.temperature_c,'°C'):'—';
   el('humidity').textContent=data.available?number(s.humidity_pct,'%'):'—';
   el('pir').textContent=data.available&&typeof s.pir==='boolean'?(s.pir?'Hay movimiento':'Sin movimiento'):'Sin lectura';
@@ -149,10 +161,31 @@ async function command(action, extra={}) {
   try {
     const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json','X-PetCare-Token':last?.command_token||''},body:JSON.stringify({action,supervised:el('supervised').checked,...extra}),signal:abort.signal});
     const d=await r.json();feedback(d.message||'Orden recibida',!r.ok||!d.ok);
-    if(r.ok&&d.ok&&action==='water'){waterLock=Date.now()+15000;el('supervised').checked=false;}
+    if(r.ok&&d.ok&&action==='stop_water'){
+      const ack=await waitForCommandAck(d.id,6500);
+      if(ack)feedback(ack.message||'Parada confirmada por la ESP32',ack.ok!==true);
+      else feedback('La ESP32 no confirmó la parada. Si la bomba sigue echando agua, corta su alimentación de 5 V.',true);
+    }
+    if(r.ok&&d.ok&&action==='water'){
+      const ack=await waitForCommandAck(d.id,6500);
+      if(ack&&ack.ok){waterLock=Date.now()+15000;el('supervised').checked=false;feedback(ack.message||'Pulso de agua confirmado.');}
+      else if(ack)feedback(ack.message||'La ESP32 rechazó el servido.',true);
+      else feedback('Sin confirmación del ESP32. Comprueba el relé y la bomba antes de repetir.',true);
+    }
     if(r.ok&&d.ok&&action==='reset_demo'){waterLock=0;el('supervised').checked=false;}
   } catch {feedback('No se pudo confirmar la orden. Revisa la estación antes de repetirla.',true);}
   finally {clearTimeout(timeout);pending--;buttons();await refresh();}
+}
+async function waitForCommandAck(id,timeoutMs){
+  if(!id)return null;
+  const until=Date.now()+timeoutMs;
+  while(Date.now()<until){
+    await refresh();
+    const event=last?.events?.find(item=>item.id===id);
+    if(event&&!event.pending)return event;
+    await new Promise(resolve=>setTimeout(resolve,250));
+  }
+  return null;
 }
 for(const [id,action] of Object.entries({testBuzzer:'tone',closeGate:'gate_close',serveFood:'feed',serveWater:'water',stopFood:'stop_food',stopWater:'stop_water'}))el(id).addEventListener('click',()=>command(action));
 el('toggleAuto').addEventListener('click',()=>command(last?.telemetry?.status?.auto_serve_enabled&&last?.automation_armed?'auto_disable':'auto_enable'));

@@ -76,7 +76,7 @@ def title(draw, main, subtitle):
 def architecture():
     im = Image.new("RGB", (W, 1200), BG)
     d = ImageDraw.Draw(im)
-    title(d, "PetCare · arquitectura actual", "Equipo 08 | corte 23 de noviembre de 2026")
+    title(d, "PetCare · arquitectura actual", "Equipo 08 | corte 25 de noviembre de 2026")
 
     box(d, (60, 235, 420, 495), BLUE, BLUE_EDGE)
     d.text((90, 262), "ESP32-CAM + OV2640", font=f(27, True), fill=INK)
@@ -124,7 +124,7 @@ def architecture():
     d.text((1080, 610), "HTTP local", font=f(18, True), fill=PINK_EDGE)
     arrow(d, (1070, 912), (1210, 855), "#8361A9")
 
-    d.text((65, 1080), "Las placas y la PC deben compartir una red local de 2.4 GHz. Infinitum3EAE queda pendiente de comprobar en la sesión actual.", font=f(19), fill=MUTED)
+    d.text((65, 1080), "La ESP32-CAM, la DevKit y la PC comparten una red Wi-Fi local de 2.4 GHz.", font=f(19), fill=MUTED)
     im.save(OUT / "arquitectura.png", optimize=True)
 
 
@@ -186,4 +186,4 @@ def wiring():
 
 if __name__ == "__main__":
     architecture()
-    wiring()
+    wiring()\n

@@ -1,113 +1,97 @@
-# PetCare — Equipo 08
+# PetCare · Equipo 08
 
-Dispensador supervisado de alimento y agua para perros, con báscula, sensores ambientales, cámara y panel local. El proyecto combina una ESP32 DevKit, una ESP32-CAM y servicios Python en una computadora.
+Dispensador supervisado de alimento y agua para perros. El sistema integra una ESP32 DevKit, una ESP32-CAM, una computadora con visión por computadora, un panel web local y Cloud Firestore.
 
-## Estado para presentación
+**Video del proyecto:** [Ver en YouTube](https://youtu.be/n1oa04Dzscc)
+**Repositorio:** [SistemasProgramables](https://github.com/BrandonCruz09/SistemasProgramables) · rama `ago-dic-2026/equipo-08`
 
-**Corte del software: 23 de noviembre de 2026.** La rama contiene el firmware integrado `petcare-23nov-r9`, el panel web y el servidor de visión/MQTT/Firestore. Las pruebas de software no certifican la báscula, el servo, la bomba ni la alimentación en el montaje final.
+## Funciones del sistema
 
-| Parte | Estado registrado | Límite pendiente |
-|---|---|---|
-| Firmware ESP32 | Versión r9 preparada; arranca con actuadores inactivos y automatización desarmada. | Hace falta cargar y confirmar el estado de la placa en cada sesión de presentación. |
-| Báscula HX711 | Lee en gramos y conserva `calibracion_validada.json` sin volver a tarar al arrancar. | La referencia de 163 g fue declarada por el usuario, no verificada con una báscula independiente. El 21 de noviembre la última telemetría quedó en 36.46 g y después se volvió obsoleta; aún no se verificó que el peso cambie al caer croquetas. |
-| Compuerta MG995 | GPIO33; extremos configurados 850–1500 µs. El panel tiene deslizador y el servidor/firmware validan cada posición dentro del recorrido. El servido termina al llegar a 300 g, ante lectura inválida o tiempo límite. | Probar el recorrido con la tapa montada y sin forzar el tope mecánico. Se reportó movimiento irregular al trabajar junto con la bomba. |
-| Agua | Bomba por relé en GPIO23, pulso de 5 s y supervisión manual desde la página. | No mide mililitros ni nivel. Confirmar el corte real del flujo. |
-| Cámara e IA | La ESP32-CAM entrega video por HTTP; la PC procesa cuadros con OpenCV y MobileNet-SSD para perro/persona. | La detección puede confundir perro y persona. Repetir la prueba en la carcasa y con el perro. |
-| Firestore | El servidor Python usa Cloud Firestore mediante REST. Hay evidencia de escritura y lectura en Firestore real y una captura del HX711 enviada por USB a MQTT y guardada en Firestore. | Las credenciales son locales y no están en Git. Verificar que la instancia actual conecte antes de presentar; la prueba histórica no demuestra conexión desde la red actual. |
+- Muestra en gramos el peso del tazón desde la celda de carga y el HX711. La lógica de alimento usa como objetivo 300 g y supervisa el cierre de la compuerta.
+- Controla la compuerta con un servo MG995. El panel permite abrir, cerrar y elegir una posición mediante un deslizador.
+- Acciona la bomba mediante el relevador K1 durante un máximo configurado de 5 segundos por orden.
+- Emite avisos con el buzzer pasivo y presenta las lecturas del DHT22 y del PIR.
+- Recibe video de la ESP32-CAM por HTTP. El servidor de la PC procesa los cuadros con OpenCV y MobileNet-SSD.
+- Comunica telemetría, órdenes y confirmaciones por MQTT. Registra lecturas y eventos seleccionados en Cloud Firestore.
+- Ofrece control manual desde el navegador de la PC o de un teléfono conectado a la misma red local.
 
-**Resultado de pruebas del código en PC:** se actualiza después de ejecutar las suites de esta revisión. Las pruebas con dobles/simuladores no equivalen a una prueba física integral. Al preparar este corte no se detectó un puerto serie y la PC estaba en `WifiTronKira_5G`; `INFINITUM3EAE` no estaba disponible, por lo que no se afirma que las placas estén conectadas a esa red.
+El modo automático por cámara inicia desarmado después de reiniciar y se habilita desde el panel. La detección de imagen informa presencia de perro/persona; la ejecución de órdenes queda bajo las reglas del firmware y del servidor.
 
-## Cómo funciona
-
-```text
-ESP32-CAM ──video HTTP──> PC: OpenCV / detector ──> panel web del celular
-ESP32 DevKit ──MQTT──> PC: panel, comandos y registro en Firestore
-```
-
-La cámara y la DevKit son placas separadas y se comunican con la PC por la red Wi‑Fi de 2.4 GHz. El panel acepta controles manuales. La automatización por cámara inicia desarmada y solo se activa desde el panel.
-
-- **Croquetas:** la orden automática sirve por tandas hacia 300 g totales; se detiene ante falta de aumento de peso, error de lectura o límite de tiempo. Abrir manualmente mantiene el cierre supervisado por peso y por tiempo.
-- **Agua:** cada orden supervisada activa la bomba hasta 5 s. El nivel y el volumen no se miden.
-- **Buzzer:** emite un aviso corto al mover la compuerta y otro al iniciar el agua. El botón «Escuchar aviso» sirve para probarlo aparte.
-- **Sensores:** DHT22, PIR y HX711. La OLED queda como módulo opcional; su prueba física actual no está documentada.
-
-## Mapa de pines del firmware
-
-| Componente | ESP32 DevKit |
-|---|---:|
-| Servo MG995 | GPIO33 |
-| Entrada del relé de la bomba | GPIO23 |
-| Buzzer pasivo | GPIO22 |
-| DHT22 DATA | GPIO4 |
-| PIR OUT | GPIO27 |
-| HX711 DOUT/DT | GPIO19 |
-| HX711 SCK | GPIO18 |
-| OLED SSD1306, si se instala | GPIO26 / GPIO25 |
-
-El mapa de señales no certifica el cableado físico. Consulta [HAL](hardware/HAL.md) y [montaje y conexiones](hardware/MONTAJE_Y_CONEXIONES.md). No energices mientras cambias cables. La fuente del servo y la bomba necesita tierra común con la DevKit; no unas fuentes al riel de 5 V sin confirmar el esquema.
-
-## Calibración de la báscula
-
-El firmware utiliza `firmware/esp32_v2/calibracion_validada.json` con factor `285.80386` cuentas/g y tara `-8994.451`. El archivo indica que la masa de referencia de 163 g fue nominal y que el factor requiere validación con una masa medida independientemente. El programa no cambia la tara al arrancar. No copies valores de básculas de otras carpetas o pruebas antiguas.
-
-Para servir alimento, el tazón debe descansar únicamente sobre la plataforma de la celda; no debe tocar la carcasa y sus cables no deben tensarlo. Si la lectura no está fresca o la celda falla, el firmware bloquea el servido o solicita cerrar la compuerta.
-
-## Archivos principales
+## Arquitectura
 
 ```text
-firmware/esp32_v2/    Firmware integrado para la ESP32 DevKit
-firmware/esp32cam/    Código de la cámara OV2640 y ejemplos de configuración
-servidor/             Dashboard, MQTT, OpenCV, detector y Firestore REST
-interfaz/             HTML, CSS y JavaScript del panel
-hardware/HAL.md       Pines, tópicos y unidades
-hardware/             Referencias de conexión y montaje
-docs/                 Reportes, evidencia y bitácoras históricas
+ESP32-CAM ──video HTTP/Wi-Fi──> PC: OpenCV + MobileNet-SSD ──> panel web
+ESP32 DevKit <──MQTT──> PC: telemetría, órdenes y ACK
+PC ──REST autenticado──> Cloud Firestore: estado, lecturas y eventos
+Teléfono ──HTTP local──> panel servido por la PC
 ```
 
-Para la carga actual se utiliza `firmware/esp32_v2/`. Las carpetas `firmware/esp32/` y `firmware/esp32cam/` contienen versiones y utilidades de otras etapas; no mezcles archivos de pruebas antiguas con el firmware integrado.
+La ESP32-CAM y la DevKit son placas separadas. Consulta [arquitectura](hardware/arquitectura.png), [cableado de baja tensión](hardware/diagrama.png) y [tabla HAL](hardware/HAL.md) para ver las señales y responsabilidades de cada bloque.
 
-## Preparación y ejecución
+## Componentes incluidos
 
-1. Instala Python y las dependencias en la PC:
+ESP32 DevKit, ESP32-CAM OV2640, celda de carga con HX711, DHT22, PIR, servo MG995, relevador HW-383 K1, bomba de agua de 3–5 V, buzzer pasivo, diodo 1N4007, fuente regulada de 5 V, protoboard para señales, depósitos, manguera, tazones y carcasa. La versión final no usa LED RGB ni flotador; la pantalla OLED queda fuera de la integración documentada.
+
+## Pines del firmware integrado
+
+| Módulo | ESP32 DevKit | Función |
+|---|---:|---|
+| HX711 DOUT/DT | GPIO19 | Datos de peso |
+| HX711 SCK | GPIO18 | Reloj del HX711 |
+| DHT22 DATA | GPIO4 | Temperatura y humedad |
+| PIR OUT | GPIO27 | Movimiento |
+| Servo MG995 PWM | GPIO33 | Compuerta |
+| Relevador K1 IN1 | GPIO23 | Bomba de agua; entrada activa en nivel bajo |
+| Buzzer | GPIO22 | Avisos sonoros |
+
+El factor y la tara que usa el firmware se guardan en `firmware/esp32_v2/calibracion_validada.json`. El firmware conserva esos valores al arrancar y comunica el peso en gramos. El servo opera a 50 Hz con los límites configurados en la tabla HAL.
+
+## Estructura del repositorio
+
+```text
+firmware/esp32_v2/     Firmware integrado de la ESP32 DevKit
+firmware/esp32cam/     Cámara OV2640 y conexión Wi-Fi/HTTP
+firmware/lib/          Dependencias MicroPython incluidas
+servidor/              Broker/puente MQTT, IA, panel y Firestore
+interfaz/              HTML, CSS y JavaScript del panel
+hardware/              HAL, diagramas y montaje
+firebase/              Esquema y reglas de referencia
+media/                 Evidencia visual del proyecto
+docs/                 Reporte, guías y conclusiones individuales
+```
+
+El firmware integrado de la DevKit está en `firmware/esp32_v2/`. No combines módulos de carpetas de versiones anteriores. Los archivos `config_local.py`, credenciales del broker, tokens y perfiles reales permanecen locales y no se publican en GitHub.
+
+## Preparar y ejecutar en la PC
+
+Requisitos: Python 3 y los paquetes descritos en `servidor/requirements.txt`. Se necesita Mosquitto para MQTT; Firestore debe quedar configurado con credenciales locales de Firebase.
+
+1. Instala dependencias desde la raíz del proyecto:
 
    ```powershell
    python -m pip install -r servidor/requirements.txt
    ```
 
-2. En `servidor/`, copia `server_mqtt_config.example.json` a `server_mqtt_config.json`. Cambia usuario y contraseña MQTT, IP LAN de la PC y URL de la cámara. Instala Mosquitto y ajusta `mosquitto_exe`. Configura Firestore solo si ya preparaste el proyecto y las credenciales locales; el ejemplo lo deja apagado. Copia `broker.local.conf.example` a `broker.local.conf`, cambia las dos rutas de Windows y ajusta `broker.acl.example` al usuario elegido. Crea `broker.passwd` con `mosquitto_passwd`; no escribas la contraseña en el archivo de configuración. En la ESP32 DevKit y la ESP32-CAM crea los archivos locales de Wi‑Fi/MQTT desde sus ejemplos. Ningún archivo local con contraseñas o tokens se versiona.
-
-3. En Thonny, conecta la DevKit con las cargas externas apagadas y copia los módulos `.py` de `firmware/esp32_v2/` y `calibracion_validada.json` a la raíz de la placa. Conserva el `config_local.py` privado que ya está en ella. Verifica que imprima `petcare-23nov-r9` y el estado inactivo antes de conectar la bomba o el servo.
-
-4. Configura la ESP32-CAM con su firmware que incluye soporte para OV2640 y los archivos de `firmware/esp32cam/`. La URL de cámara se indica en el perfil privado del servidor; no es fija y puede cambiar al reconectar al Wi‑Fi.
-
-5. Inicia el broker, la visión y el panel desde la carpeta `servidor`:
+2. En `servidor/`, crea los archivos locales a partir de los ejemplos: `server_mqtt_config.example.json`, `server_config.example.json`, `broker.local.conf.example` y `broker.acl.example`. Coloca la IP del equipo y las URL locales correspondientes. Conserva las credenciales fuera del repositorio.
+3. En la ESP32 DevKit, carga los módulos de `firmware/esp32_v2/` y conserva `config_local.py` y `calibracion_validada.json` en la raíz de MicroPython. Carga el firmware de cámara desde `firmware/esp32cam/`.
+4. Inicia broker, servidor de visión y panel desde la carpeta `servidor`:
 
    ```powershell
    python iniciar_integracion.py
    ```
 
-   El panel queda en `http://127.0.0.1:8766/` en la PC; desde el celular usa la dirección IP de la PC y el mismo puerto. El visor de cámara usa el puerto 8765. El servidor, la cámara y la DevKit deben estar en la misma red local de 2.4 GHz; ajusta las direcciones del ejemplo a la red real.
+5. Abre `http://127.0.0.1:8766/` en la PC. Para el teléfono, abre `http://IP_DE_LA_PC:8766/` en la misma red local. El visor de cámara usa el puerto `8765`.
 
-6. Antes de armar el modo automático, comprueba que la página muestre una lectura reciente, el video y el estado correcto de los sensores. Prueba el servo y el relé por separado y confirma físicamente que la compuerta cierre y que el agua se corte.
+La dirección de la PC y la URL de la cámara pueden cambiar al reconectarse al Wi-Fi; actualízalas en los perfiles locales antes de iniciar el servidor.
 
-## Pruebas reproducibles
+## Documentación de entrega
 
-Desde la raíz de PetCare, en PowerShell:
+- [Tabla HAL](hardware/HAL.md)
+- [Esquema de Cloud Firestore](firebase/esquema.md)
+- [Reporte técnico final](docs/PetCare_Reporte_Tecnico_Final_25nov2026.docx)
+- [Guía de arranque del reporte](docs/Guia_punto_partida_reporte_PetCare.docx)
+- [Conclusión individual de Brandon](docs/PetCare_Conclusion_Individual_Brandon_23nov2026.docx)
+- [Conclusión individual de Lidia](docs/PetCare_Conclusion_Individual_Lidia_23nov2026.docx)
+- [Video del proyecto](https://youtu.be/n1oa04Dzscc)
 
-```powershell
-python -m unittest discover -s servidor -p "test_*.py" -v
-python -m unittest discover -s firmware/esp32_v2/tests -p "test_*.py" -v
-node --check interfaz/assets/dashboard.js
-git diff --check
-```
-
-Las pruebas usan dobles de sensores, actuadores y servicios. No confirman el movimiento real del MG995, el flujo de la bomba, la exactitud de la calibración ni la detección del perro en el montaje final.
-
-## Repositorio
-
-Equipo 08 · Sistemas Programables · ISC, TecNM León
-Repositorio: [SistemasProgramables](https://github.com/BrandonCruz09/SistemasProgramables)
-Rama de trabajo: `ago-dic-2026/equipo-08`
-Reporte técnico actualizado: [PetCare_Reporte_Tecnico_Final_23nov2026.docx](docs/PetCare_Reporte_Tecnico_Final_23nov2026.docx)
-
-Conclusiones individuales: [Brandon](docs/PetCare_Conclusion_Individual_Brandon_23nov2026.docx) · [Lidia](docs/PetCare_Conclusion_Individual_Lidia_23nov2026.docx). El video demostrativo se entrega por separado.
+Equipo 08 · Brandon Leonel Padilla De la Cruz (22240293), Isaac Eliseo Flores Valencia (22240324), Lidia Verenice Padilla López (22240312) · Sistemas Programables · ISC · TecNM León.\n
