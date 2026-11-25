@@ -93,5 +93,6 @@ La dirección de la PC y la URL de la cámara pueden cambiar al reconectarse al 
 - [Conclusión individual de Brandon](docs/PetCare_Conclusion_Individual_Brandon_23nov2026.docx)
 - [Conclusión individual de Lidia](docs/PetCare_Conclusion_Individual_Lidia_23nov2026.docx)
 - [Video del proyecto](https://youtu.be/n1oa04Dzscc)
+- [Fotos reales del armado (vista trasera y lateral)](media/README.md)
 
 Equipo 08 · Brandon Leonel Padilla De la Cruz (22240293), Isaac Eliseo Flores Valencia (22240324), Lidia Verenice Padilla López (22240312) · Sistemas Programables · ISC · TecNM León.\n
